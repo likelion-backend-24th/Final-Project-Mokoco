@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/users/region")
+@RequestMapping("/api/users/me/region")
 public class RegionController {
 
     private final RegionService regionService;
