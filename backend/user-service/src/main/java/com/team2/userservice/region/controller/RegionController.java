@@ -25,4 +25,12 @@ public class RegionController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping
+    public ResponseEntity<RegionResponse> getRegion(
+            @AuthenticationPrincipal String email
+    ) {
+        RegionResponse response = regionService.getRegionInfo(email);
+        return ResponseEntity.ok(response);
+    }
 }

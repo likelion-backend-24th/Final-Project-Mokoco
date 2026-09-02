@@ -55,4 +55,17 @@ public class RegionService {
         return RegionResponse.from(region);
     }
 
+    public RegionResponse getRegionInfo(String email){
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new CustomException(ErrorCode.USER_NOT_FOUND)
+                );
+
+        Region region = regionRepository.findByRegionCode(user.getRegion())
+                .orElseThrow(
+                        () -> new CustomException(ErrorCode.REGION_NOT_FOUND)
+                );
+        return RegionResponse.from(region);
+    }
+
 }
