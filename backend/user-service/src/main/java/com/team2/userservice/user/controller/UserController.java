@@ -1,9 +1,10 @@
-package com.team2.userservice.user;
+package com.team2.userservice.user.controller;
 
 import com.team2.userservice.user.dto.TokenReissueRequest;
 import com.team2.userservice.user.dto.TokenResponse;
 import com.team2.userservice.user.dto.UserLoginRequest;
 import com.team2.userservice.user.dto.UserSignUpRequest;
+import com.team2.userservice.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

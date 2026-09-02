@@ -1,4 +1,4 @@
-package com.team2.userservice.user;
+package com.team2.userservice.user.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -50,13 +50,13 @@ public class User {
     private LocalDateTime updatedAt;
 
     @Builder
-    public User(String email, String password, String name, String nickname, Role role, String region) {
+    public User(String email, String password, String name, String nickname, Role role, String regionCode) {
         this.email = email;
         this.password = password;
         this.name = name;
         this.nickname = nickname;
         this.role = role;
-        this.regionCode = region;
+        this.regionCode = regionCode;
     }
 
     @PrePersist

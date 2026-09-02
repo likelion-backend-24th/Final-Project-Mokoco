@@ -6,10 +6,8 @@ import com.team2.userservice.region.dto.RegionRequest;
 import com.team2.userservice.region.dto.RegionResponse;
 import com.team2.userservice.region.entity.Region;
 import com.team2.userservice.region.repository.RegionRepository;
-import com.team2.userservice.user.User;
-import com.team2.userservice.user.UserRepository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import com.team2.userservice.user.entity.User;
+import com.team2.userservice.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,7 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
