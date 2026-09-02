@@ -39,7 +39,7 @@ public class User {
     private Role role;
 
     @Column(length = 100)
-    private String region;
+    private String regionCode;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -56,7 +56,7 @@ public class User {
         this.name = name;
         this.nickname = nickname;
         this.role = role;
-        this.region = region;
+        this.regionCode = region;
     }
 
     @PrePersist
@@ -72,7 +72,7 @@ public class User {
     }
 
 
-    public void updateRegion(String region) {
-        this.region = region;
+    public void updateRegion(String regionCode) {
+        this.regionCode = regionCode;
     }
 }
