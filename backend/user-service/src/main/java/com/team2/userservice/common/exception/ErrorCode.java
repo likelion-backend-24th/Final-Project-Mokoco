@@ -14,7 +14,10 @@ public enum ErrorCode {
     // Token / Auth
     INVALID_REFRESH_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않은 Refresh Token입니다."),
     EXPIRED_SESSION(HttpStatus.BAD_REQUEST, "존재하지 않거나 만료된 세션입니다. 다시 로그인해주세요."),
-    INVALID_TOKEN_VALUE(HttpStatus.BAD_REQUEST, "토큰 정보가 일치하지 않습니다.");
+    INVALID_TOKEN_VALUE(HttpStatus.BAD_REQUEST, "토큰 정보가 일치하지 않습니다."),
+
+    // Region
+    REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "지역 정보를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;

@@ -70,4 +70,9 @@ public class User {
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+
+    public void updateRegion(String region) {
+        this.region = region;
+    }
 }
