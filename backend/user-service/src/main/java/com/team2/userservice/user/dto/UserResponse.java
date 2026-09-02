@@ -1,7 +1,7 @@
 package com.team2.userservice.user.dto;
 
-import com.team2.userservice.user.Role;
-import com.team2.userservice.user.User;
+import com.team2.userservice.user.entity.Role;
+import com.team2.userservice.user.entity.User;
 import lombok.Getter;
 
 @Getter

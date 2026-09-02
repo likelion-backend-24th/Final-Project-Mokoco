@@ -1,4 +1,4 @@
-package com.team2.userservice.user;
+package com.team2.userservice.user.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;

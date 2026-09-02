@@ -1,4 +1,4 @@
-package com.team2.userservice.user;
+package com.team2.userservice.user.service;
 
 import com.team2.userservice.common.exception.CustomException;
 import com.team2.userservice.common.exception.ErrorCode;
@@ -7,6 +7,11 @@ import com.team2.userservice.user.dto.TokenReissueRequest;
 import com.team2.userservice.user.dto.TokenResponse;
 import com.team2.userservice.user.dto.UserLoginRequest;
 import com.team2.userservice.user.dto.UserSignUpRequest;
+import com.team2.userservice.user.entity.RefreshToken;
+import com.team2.userservice.user.entity.Role;
+import com.team2.userservice.user.entity.User;
+import com.team2.userservice.user.repository.RefreshTokenRepository;
+import com.team2.userservice.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
