@@ -1,3 +1,19 @@
 spring:
+  profiles:
+    include: secret
   application:
     name: user-service
+
+  jpa:
+    hibernate:
+      ddl-auto: update # 혹은 create
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/mokoco_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: root1234
+    driver-class-name: com.mysql.cj.jdbc.Driver

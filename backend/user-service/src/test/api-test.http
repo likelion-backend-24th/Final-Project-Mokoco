@@ -1,0 +1,29 @@
+### 회원가입 테스트
+POST http://localhost:8080/api/auth/signup
+Content-Type: application/json
+
+{
+  "email": "jake@example.com",
+  "password": "password123",
+  "name": "곽승욱",
+  "nickname": "제이크",
+  "region": "서울"
+}
+
+### 로그인 테스트
+POST http://localhost:8080/api/auth/signin
+Content-Type: application/json
+
+{
+  "email": "jake@example.com",
+  "password": "password123"
+}
+
+### 토큰 재발급 테스트
+POST http://localhost:8080/api/auth/reissue
+Content-Type: application/json
+
+{
+  "email": "jake@example.com",
+  "refreshToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqYWtlQGV4YW1wbGUuY29tIiwiaWF0IjoxNzg4MzI1MDY3LCJleHAiOjE3ODg5Mjk4Njd9.5SksPIieUWOuR8VzYjLQuluNfubpsIYIMuL69RypxOQ"
+}
