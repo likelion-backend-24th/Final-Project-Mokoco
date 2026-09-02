@@ -61,7 +61,7 @@ public class RegionService {
                         new CustomException(ErrorCode.USER_NOT_FOUND)
                 );
 
-        Region region = regionRepository.findByRegionCode(user.getRegion())
+        Region region = regionRepository.findByRegionCode(user.getRegionCode())
                 .orElseThrow(
                         () -> new CustomException(ErrorCode.REGION_NOT_FOUND)
                 );
