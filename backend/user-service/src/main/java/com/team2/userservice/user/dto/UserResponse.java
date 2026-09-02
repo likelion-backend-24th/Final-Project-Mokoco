@@ -19,6 +19,6 @@ public class UserResponse {
         this.name = user.getName();
         this.nickname = user.getNickname();
         this.role = user.getRole();
-        this.region = user.getRegion();
+        this.region = user.getRegionCode();
     }
 }
