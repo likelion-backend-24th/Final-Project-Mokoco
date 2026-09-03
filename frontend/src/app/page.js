@@ -65,14 +65,14 @@ function RequestList({ posts, error, requestHref }) {
   return (
     <div className="request-list">
       {posts.slice(0, 5).map((post) => (
-        <article key={post.id} className="request-row">
+        <Link key={post.id} href={`/requests/${post.id}`} className="request-row">
           <div className="request-icon" aria-hidden="true"><Wrench size={27} weight="duotone" /></div>
           <div className="min-w-0 flex-1">
             <div className="request-title-line"><h3>{post.title || "제목 없는 수리 요청"}</h3><time>{formatRelativeDate(post.createdAt)}</time></div>
             <div className="request-meta"><span className={`status-badge status-${post.status?.toLowerCase()}`}>{statusLabel[post.status] ?? post.status ?? "상태 미정"}</span><span>{post.authorEmail || "작성자 정보 없음"}</span></div>
             <p className="request-content">{post.content || "등록된 상세 내용이 없습니다."}</p>
           </div>
-        </article>
+        </Link>
       ))}
     </div>
   );
@@ -113,7 +113,7 @@ function AuthenticatedHome({ posts, error, userEmail }) {
       <LocationPermissionPrompt userEmail={userEmail} /><CategoryRow compact />
       <div className="auth-dashboard-grid">
         <div className="dashboard-column">
-          <section id="requests" className="reference-card request-card"><div className="reference-card-heading"><h2>오늘의 수리 요청</h2><Link href="#requests">전체 보기 <ArrowRight size={14} /></Link></div><RequestList posts={posts} error={error} requestHref="/requests/new" /></section>
+          <section id="requests" className="reference-card request-card"><div className="reference-card-heading"><h2>오늘의 수리 요청</h2><Link href="/requests">전체 보기 <ArrowRight size={14} /></Link></div><RequestList posts={posts} error={error} requestHref="/requests/new" /></section>
           <section className="reference-card"><div className="reference-card-heading"><h2>우리 동네 요청 현황</h2></div><div className="neighborhood-summary"><Wrench size={38} weight="duotone" /><div><strong>{error ? "확인 불가" : `${posts.length}건`}</strong><span>백엔드에서 조회된 전체 수리 요청</span></div></div></section>
         </div>
         <aside className="dashboard-column">
