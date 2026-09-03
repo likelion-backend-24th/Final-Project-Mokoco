@@ -1,55 +1,52 @@
 # Design QA
 
-- Source visual truth: `reference/main.png`
-- Authentication references: `reference/login.png`, `reference/signup.png`
+- Source visual truth: `reference/main-unauth-no-data.png`, `reference/main-auth-with-data.png`
+- Source dimensions: 688 × 919 and 682 × 919 pixels
 - Implementation URL: `http://127.0.0.1:3000/`
-- Implementation screenshot: unavailable because the in-app browser runtime could not initialize
-- Intended comparison viewport: 1450 × 1086 CSS pixels at device scale factor 1
-- Source dimensions: 1450 × 1086 pixels
-- Implementation dimensions: unavailable
-- Density normalization: not performed because no browser-rendered screenshot could be captured
-- State: logged-out main screen; backend-unavailable error state
+- Implementation screenshots: unavailable because the in-app browser runtime could not initialize
+- Verified states: unauthenticated server render; authenticated server render using a request cookie
 
 ## Findings
 
 - [P0] Browser-rendered comparison evidence is unavailable.
-  - Location: full main screen and authentication screens.
-  - Evidence: the source images opened successfully, but the in-app browser runtime failed while initializing its local assets. HTTP responses and production build succeeded, but those do not substitute for visual evidence.
-  - Impact: typography, exact spacing, responsive behavior, and visual fidelity cannot be signed off against the references.
-  - Fix: restore the in-app browser runtime, capture `/`, `/login`, and `/signup`, then compare the main screen at 1450 × 1086.
+  - Evidence: both reference images opened successfully. The in-app browser failed again with `failed to write kernel assets: 지정된 경로를 찾을 수 없습니다. (os error 3)`.
+  - Impact: exact rendered typography, wrapping, spacing, and responsive fidelity cannot be signed off.
+  - Fix: restore the in-app browser runtime, capture both states at the matching reference widths, compare source and implementation together, and iterate on visible differences.
+
+- [P1] Authenticated reference includes post photographs, helper profiles, and chats that the current backend contract does not provide.
+  - Evidence: `GET /posts` returns id, title, content, authorEmail, status, createdAt, and updatedAt only. There is no image, category, helper profile, rating, or chat payload.
+  - Resolution: the implementation renders only real post fields and derived counts from those posts. It does not fabricate photos, helper identities, ratings, or chats.
 
 ## Required Fidelity Surfaces
 
-- Fonts and typography: implemented with Pretendard-compatible system fallbacks; browser comparison blocked.
-- Spacing and layout rhythm: implemented from the reference proportions; browser comparison blocked.
-- Colors and visual tokens: blue, white, slate, thin borders, rounded cards, and low elevation follow the references; browser comparison blocked.
-- Image quality and asset fidelity: the logged-out flow requires no raster content from the backend. UI icons use Phosphor rather than handcrafted SVG or CSS art.
-- Copy and content: Korean logged-out, login, signup, loading, empty, and backend-error copy is present; HTTP-rendered content checks passed.
+- Layout: separate unauthenticated and authenticated structures match the references' main sections.
+- Typography and color: compact Korean typography, blue primary actions, pale blue accents, white cards, subtle borders, and low elevation follow the references.
+- Assets: UI imagery uses the existing Phosphor icon library. No dummy raster content or copied screenshot crops are used.
+- Data: request lists use `GET /posts`; authenticated activity counts are derived from the real response and current login email.
+- Location: authenticated screen keeps the region fetch/update flow and exposes the saved region in the reference-style location bar.
 
-## Full-view Comparison Evidence
+## Functional Verification
 
-Blocked. The source was inspected, but an implementation screenshot could not be captured.
+- `npm.cmd test`: passed, 4 tests, including the 1km automatic-location accuracy boundary.
+- `npm.cmd run lint`: passed.
+- `npm.cmd run build`: passed.
+- Unauthenticated `/`: HTTP 200 and expected main copy present.
+- Authenticated `/` with login cookie: HTTP 200; region bar, request section, and activity summary present.
+- Visual capture and console inspection: blocked by the in-app browser initialization failure.
 
-## Focused Region Comparison Evidence
+## Location Confirmation Flow
 
-Blocked for header, hero, request list, login form, and signup form because no implementation screenshot is available.
-
-## Primary Interactions Tested
-
-- Main, login, signup, and registration-success URLs returned HTTP 200.
-- Login proxy returned HTTP 503 with a structured Korean message while the Gateway was offline.
-- Backend `/posts` connection was attempted and the logged-out main screen rendered the explicit server-unavailable state.
-- Browser console inspection was blocked with the browser runtime.
+- Automatic coordinates are no longer persisted immediately.
+- Accuracy at or below 1km opens a confirmation map before saving.
+- Accuracy above 1km opens a warning state with the browser estimate and its accuracy circle; saving remains disabled until the user clicks the map.
+- A manual map click replaces the estimated position and enables explicit confirmation.
+- The flow includes retry guidance and a mobile GPS recommendation.
+- Map rendering uses Leaflet with OpenStreetMap tiles; runtime tile loading requires internet access.
 
 ## Comparison History
 
-- No visual fix iteration was possible without the implementation capture.
-
-## Implementation Checklist
-
-- Restore in-app browser capture.
-- Compare the logged-out main screen at the source viewport.
-- Exercise login and signup with user-service, post-service, Gateway, and databases running.
-- Re-run this QA and resolve any P0/P1/P2 mismatch.
+- Source images inspected at original resolution.
+- First implementation pass completed and layout breakpoint adjusted so the 688/682-pixel reference widths retain the desktop composition.
+- Second visual comparison is blocked until browser capture works.
 
 final result: blocked

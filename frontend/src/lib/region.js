@@ -10,3 +10,11 @@ export function getGeolocationErrorMessage(code) {
   if (code === 3) return "위치 확인 시간이 초과되었습니다. 다시 시도해주세요.";
   return "위치를 확인하는 중 문제가 발생했습니다.";
 }
+
+export const MAX_AUTOMATIC_LOCATION_ACCURACY_METERS = 1000;
+
+export function isAutomaticLocationAccurate(accuracy) {
+  return Number.isFinite(accuracy)
+    && accuracy >= 0
+    && accuracy <= MAX_AUTOMATIC_LOCATION_ACCURACY_METERS;
+}
