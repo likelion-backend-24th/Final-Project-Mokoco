@@ -1,5 +1,5 @@
 ### 회원가입 테스트
-POST http://localhost:8080/api/auth/signup
+POST http://localhost:8000/api/auth/signup
 Content-Type: application/json
 
 {
@@ -20,10 +20,29 @@ Content-Type: application/json
 }
 
 ### 토큰 재발급 테스트
-POST http://localhost:8080/api/auth/reissue
+POST http://localhost:8000/api/auth/reissue
 Content-Type: application/json
 
 {
   "email": "jake@example.com",
-  "refreshToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqYWtlQGV4YW1wbGUuY29tIiwiaWF0IjoxNzg4MzI1MDY3LCJleHAiOjE3ODg5Mjk4Njd9.5SksPIieUWOuR8VzYjLQuluNfubpsIYIMuL69RypxOQ"
+  "refreshToken": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJqYWtlQGV4YW1wbGUuY29tIiwiaWF0IjoxNzg4NDA4NDA0LCJleHAiOjE3ODg0MTAyMDQsInJvbGUiOiJVU0VSIn0.m0zAzzL-n0g-TqhZP7wWMivwVTDXwEgL-IPS6KG4RZOpNl9J8GSozSoIhl9-LnmwmtCRdIOJff61Kbijao3tvQ"
 }
+
+### 게시글 작성 (API Gateway를 통해 요청)
+POST http://localhost:8000/posts
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJqYWtlQGV4YW1wbGUuY29tIiwiaWF0IjoxNzg4NDA4NDQzLCJleHAiOjE3ODg0MTAyNDMsInJvbGUiOiJVU0VSIn0.QqvMIqiI1Rc4xRebDQiKmD3D2q2U2zJr639AhzS9kiHOBam486n_fLb3xqOwJyzbcxWlW6PM7m0xZ84DADpn1A
+X-User-Email: jake@example.com
+
+{
+  "title": "수리 요청합니다2",
+  "content": "선풍기가 작동하지 않습니다. 확인 부탁드립니다."
+}
+
+### 게시글 목록 조회
+GET http://localhost:8000/posts
+Accept: application/json
+
+### 특정 게시글 단건 조회 (ID: 1)
+GET http://localhost:8000/posts/1
+Accept: application/json

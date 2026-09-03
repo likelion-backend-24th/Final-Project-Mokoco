@@ -1,3 +1,20 @@
+server:
+  port: 8082 # user-service가 8081을 쓰고 있으므로 포트 변경
+
 spring:
   application:
-    name: post-service
+    name: post-service # 서비스 이름 변경
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/post_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true # DB명 구분 (post_db 등)
+    username: root
+    password: root1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
