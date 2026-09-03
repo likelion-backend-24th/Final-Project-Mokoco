@@ -5,6 +5,7 @@ import {
   MapPin, ShieldCheck, UsersThree, Wrench,
 } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
+import LocationPermissionPrompt from "@/components/location-permission-prompt";
 import { backendUrl } from "@/lib/backend";
 
 const statusLabel = {
@@ -42,6 +43,7 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-[#f7f9fc]">
       <SiteHeader userEmail={userEmail} />
+      {userEmail && <LocationPermissionPrompt userEmail={userEmail} />}
       <main className="mx-auto w-full max-w-[1450px] px-5 py-6 sm:px-8">
         <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.05)]">
           <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
@@ -56,13 +58,19 @@ export default async function Home() {
                 도움이 필요할 땐 요청하고, 내가 할 수 있는 일은 나누세요. 실제 등록된 수리 요청을 확인하고 믿을 수 있는 이웃과 연결됩니다.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link className="primary-button" href="/signup">무료로 시작하기 <ArrowRight size={19} weight="bold" /></Link>
-                <Link className="secondary-button" href="/login">로그인</Link>
+                {userEmail ? (
+                  <Link className="primary-button" href="/#requests">수리 요청 보기 <ArrowRight size={19} weight="bold" /></Link>
+                ) : (
+                  <>
+                    <Link className="primary-button" href="/signup">무료로 시작하기 <ArrowRight size={19} weight="bold" /></Link>
+                    <Link className="secondary-button" href="/login">로그인</Link>
+                  </>
+                )}
               </div>
             </div>
             <div className="border-t border-slate-200 bg-blue-600 p-7 text-white lg:border-l lg:border-t-0 sm:p-10">
               <p className="text-sm font-semibold text-blue-100">MOKOCO COMMUNITY</p>
-              <h2 className="mt-3 text-3xl font-bold leading-tight">로그인하면 내 동네를 중심으로 연결돼요</h2>
+              <h2 className="mt-3 text-3xl font-bold leading-tight">{userEmail ? "내 동네 설정을 기준으로 연결할게요" : "로그인하면 내 동네를 중심으로 연결돼요"}</h2>
               <div className="mt-8 space-y-4">
                 {[
                   [MapPin, "내 지역의 가까운 수리 요청 확인"],

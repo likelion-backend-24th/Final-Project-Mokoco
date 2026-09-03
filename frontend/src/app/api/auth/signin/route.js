@@ -14,7 +14,7 @@ export async function POST(request) {
     const secure = process.env.NODE_ENV === "production";
     result.cookies.set("mokoco_access_token", payload.accessToken, { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge: 60 * 30 });
     result.cookies.set("mokoco_refresh_token", payload.refreshToken, { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge: 60 * 60 * 24 * 7 });
-    result.cookies.set("mokoco_user_email", body.email, { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge: 60 * 60 * 24 * 7 });
+    result.cookies.set("mokoco_user_email", body.email, { httpOnly: true, sameSite: "lax", secure, path: "/", maxAge: 60 * 30 });
     return result;
   } catch { return NextResponse.json({ message: "인증 서버에 연결할 수 없습니다." }, { status: 503 }); }
 }

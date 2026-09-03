@@ -29,6 +29,8 @@ Copy-Item .env.example .env.local
 
 기본 API Gateway 주소는 `http://localhost:8000`입니다. 브라우저는 Next.js Route Handler를 통해 같은 출처로 요청하고, Route Handler가 Gateway로 전달합니다.
 
+로그인 후 저장된 지역이 없으면 위치 권한 안내가 표시됩니다. 승인된 GPS 좌표는 `PATCH /api/users/me/region`으로 전달되며, 백엔드는 VWorld 역지오코딩 결과로 사용자의 행정구역 코드를 갱신합니다.
+
 ## 명령어
 
 ```bash
