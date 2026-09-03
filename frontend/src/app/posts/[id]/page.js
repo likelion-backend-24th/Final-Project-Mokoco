@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
-import RequestActions from "@/components/request-actions";
+import PostActions from "@/components/post-actions";
 import { backendUrl } from "@/lib/backend";
 
 const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "수리 완료" };
@@ -26,10 +26,10 @@ function formatDate(value) {
   return date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
 }
 
-export default async function RequestDetailPage({ params }) {
+export default async function PostDetailPage({ params }) {
   const { id } = await params;
   const cookieStore = await cookies();
-  const userEmail = cookieStore.get("mokoco_user_email")?.value ?? null;
+  const userEmail = cookieStore.get("user_email")?.value ?? null;
   const { post, error } = await getPost(id);
 
   if (!post && !error) {
@@ -42,7 +42,7 @@ export default async function RequestDetailPage({ params }) {
     <div className="min-h-screen bg-[#f7f9fc]">
       <SiteHeader userEmail={userEmail} />
       <main className="page-shell auth-main max-w-[760px]">
-        <Link href="/requests" className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-blue-600">
+        <Link href="/posts" className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-blue-600">
           <ArrowLeft size={16} weight="bold" />
           목록으로
         </Link>
@@ -61,7 +61,7 @@ export default async function RequestDetailPage({ params }) {
                 </span>
                 <h1 className="mt-3 text-[28px] font-extrabold tracking-[-0.03em] text-slate-950">{post.title}</h1>
               </div>
-              {isMine && <RequestActions postId={post.id} />}
+              {isMine && <PostActions postId={post.id} />}
             </div>
 
             <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">

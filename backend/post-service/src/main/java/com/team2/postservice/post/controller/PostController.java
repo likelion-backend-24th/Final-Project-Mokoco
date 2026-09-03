@@ -33,7 +33,7 @@ public class PostController {
         return ResponseEntity.ok(postService.getPost(id));
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<Void> updatePost(@PathVariable Long id,
                                            @RequestBody PostRequestDto.Update request,
                                            @RequestHeader("X-User-Email") String userEmail) {

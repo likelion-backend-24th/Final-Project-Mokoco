@@ -2,17 +2,17 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { backendUrl, errorMessage, readBackendPayload } from "@/lib/backend";
 
-export async function POST(request) {
+export async function POST(post) {
   const cookieStore = await cookies();
-  const accessToken = cookieStore.get("mokoco_access_token")?.value;
-  const userEmail = cookieStore.get("mokoco_user_email")?.value;
+  const accessToken = cookieStore.get("access_token")?.value;
+  const userEmail = cookieStore.get("user_email")?.value;
 
   if (!accessToken || !userEmail) {
     return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
   }
 
   try {
-    const body = await request.json();
+    const body = await post.json();
     const title = typeof body.title === "string" ? body.title.trim() : "";
     const content = typeof body.content === "string" ? body.content.trim() : "";
 

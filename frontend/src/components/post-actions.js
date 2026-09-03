@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PencilSimple, Trash } from "@phosphor-icons/react";
 
-export default function RequestActions({ postId }) {
+export default function PostActions({ postId }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState("");
@@ -23,7 +23,7 @@ export default function RequestActions({ postId }) {
         setMessage(payload.message ?? "삭제하지 못했습니다.");
         return;
       }
-      router.push("/requests");
+      router.push("/posts");
       router.refresh();
     } catch {
       setMessage("서버와 통신할 수 없습니다. 잠시 후 다시 시도해주세요.");
@@ -35,7 +35,7 @@ export default function RequestActions({ postId }) {
   return (
     <div className="flex shrink-0 flex-col items-end gap-2">
       <div className="flex gap-2">
-        <Link href={`/requests/${postId}/edit`} className="compact-outline-button gap-1.5">
+        <Link href={`/posts/${postId}/edit`} className="compact-outline-button gap-1.5">
           <PencilSimple size={16} weight="bold" />
           수정
         </Link>
