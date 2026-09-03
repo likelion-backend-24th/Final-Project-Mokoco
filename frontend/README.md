@@ -27,7 +27,7 @@ npm run dev
 Copy-Item .env.example .env.local
 ```
 
-기본 백엔드 주소는 `http://localhost:8080`입니다.
+기본 API Gateway 주소는 `http://localhost:8000`입니다. 브라우저는 Next.js Route Handler를 통해 같은 출처로 요청하고, Route Handler가 Gateway로 전달합니다.
 
 ## 명령어
 
