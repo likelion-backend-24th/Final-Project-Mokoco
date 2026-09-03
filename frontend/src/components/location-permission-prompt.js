@@ -11,8 +11,8 @@ import {
 } from "@phosphor-icons/react";
 import LocationMapPicker from "@/components/location-map-picker";
 import {
+  createManualMapFallback,
   formatRegionName,
-  getGeolocationErrorMessage,
   isAutomaticLocationAccurate,
 } from "@/lib/region";
 
@@ -66,8 +66,10 @@ export default function LocationPermissionPrompt({ userEmail }) {
     setMessage("");
 
     if (!("geolocation" in navigator)) {
-      setMessage("이 브라우저에서는 위치 기능을 지원하지 않습니다.");
-      setState("error");
+      const fallback = createManualMapFallback(0);
+      setPosition(fallback.position);
+      setMessage(`이 브라우저에서는 위치 기능을 지원하지 않습니다. 지도에서 실제 위치를 직접 선택해주세요.`);
+      setState("manual");
       return;
     }
 
@@ -91,8 +93,10 @@ export default function LocationPermissionPrompt({ userEmail }) {
         setState("manual");
       },
       (error) => {
-        setMessage(getGeolocationErrorMessage(error.code));
-        setState("error");
+        const fallback = createManualMapFallback(error.code);
+        setPosition((current) => current ?? fallback.position);
+        setMessage(fallback.message);
+        setState("manual");
       },
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
     );
@@ -143,7 +147,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
       <section className="region-status-bar" aria-label="현재 설정 지역">
         <div><MapPin size={22} weight="fill" /><strong>{locationLabel}</strong></div>
         <button type="button" onClick={() => setState("prompt")}>{regionName ? "지역 변경" : "지역 설정"}</button>
-        <a href="#requests">수리 요청하기</a>
+        <a href="/requests/new">수리 요청하기</a>
       </section>
 
       {modalVisible && <div className="location-modal-backdrop">
