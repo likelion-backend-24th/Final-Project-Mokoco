@@ -49,19 +49,19 @@ function CategoryRow({ compact = false }) {
   );
 }
 
-function EmptyRequests({ error }) {
+function EmptyRequests({ error, requestHref }) {
   return (
     <div className="reference-empty-state" role="status">
       {error ? <Wrench size={58} weight="duotone" /> : <ClipboardText size={58} weight="duotone" />}
       <h3>{error ? "데이터 연결을 확인해주세요" : "아직 등록된 수리 요청이 없어요"}</h3>
       <p>{error ?? "첫 번째 수리 요청을 올려보세요!"}</p>
-      <Link href="/login" className="compact-primary-button">수리 요청하기</Link>
+      <Link href={requestHref} className="compact-primary-button">수리 요청하기</Link>
     </div>
   );
 }
 
-function RequestList({ posts, error }) {
-  if (error || posts.length === 0) return <EmptyRequests error={error} />;
+function RequestList({ posts, error, requestHref }) {
+  if (error || posts.length === 0) return <EmptyRequests error={error} requestHref={requestHref} />;
   return (
     <div className="request-list">
       {posts.slice(0, 5).map((post) => (
@@ -98,7 +98,7 @@ function UnauthenticatedHome({ posts, error }) {
         <div className="hero-visual" aria-hidden="true"><MapTrifold size={190} weight="duotone" /></div>
       </div></section>
       <section className="page-shell unauth-section"><h2>어떤 수리를 찾고 계신가요?</h2><CategoryRow /></section>
-      <section id="requests" className="page-shell unauth-section recent-section"><h2>최근 올라온 수리 요청</h2><RequestList posts={posts} error={error} /></section>
+      <section id="requests" className="page-shell unauth-section recent-section"><h2>최근 올라온 수리 요청</h2><RequestList posts={posts} error={error} requestHref="/login" /></section>
       <section id="guide" className="page-shell community-banner"><HandHeart size={50} weight="duotone" /><div><h2>이웃과 함께 만드는 따뜻한 동네 커뮤니티</h2><p>도움이 필요한 이웃을 돕고, 나도 도움을 받을 수 있어요.</p></div><Link href="/signup" className="compact-outline-button">이용 가이드 보기</Link></section>
     </main><Footer /></>
   );
@@ -113,7 +113,7 @@ function AuthenticatedHome({ posts, error, userEmail }) {
       <LocationPermissionPrompt userEmail={userEmail} /><CategoryRow compact />
       <div className="auth-dashboard-grid">
         <div className="dashboard-column">
-          <section id="requests" className="reference-card request-card"><div className="reference-card-heading"><h2>오늘의 수리 요청</h2><Link href="#requests">전체 보기 <ArrowRight size={14} /></Link></div><RequestList posts={posts} error={error} /></section>
+          <section id="requests" className="reference-card request-card"><div className="reference-card-heading"><h2>오늘의 수리 요청</h2><Link href="#requests">전체 보기 <ArrowRight size={14} /></Link></div><RequestList posts={posts} error={error} requestHref="/requests/new" /></section>
           <section className="reference-card"><div className="reference-card-heading"><h2>우리 동네 요청 현황</h2></div><div className="neighborhood-summary"><Wrench size={38} weight="duotone" /><div><strong>{error ? "확인 불가" : `${posts.length}건`}</strong><span>백엔드에서 조회된 전체 수리 요청</span></div></div></section>
         </div>
         <aside className="dashboard-column">

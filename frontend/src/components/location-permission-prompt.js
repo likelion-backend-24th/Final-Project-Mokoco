@@ -11,8 +11,8 @@ import {
 } from "@phosphor-icons/react";
 import LocationMapPicker from "@/components/location-map-picker";
 import {
+  createManualMapFallback,
   formatRegionName,
-  getGeolocationErrorMessage,
   isAutomaticLocationAccurate,
 } from "@/lib/region";
 
@@ -66,8 +66,10 @@ export default function LocationPermissionPrompt({ userEmail }) {
     setMessage("");
 
     if (!("geolocation" in navigator)) {
-      setMessage("이 브라우저에서는 위치 기능을 지원하지 않습니다.");
-      setState("error");
+      const fallback = createManualMapFallback(0);
+      setPosition(fallback.position);
+      setMessage(`이 브라우저에서는 위치 기능을 지원하지 않습니다. 지도에서 실제 위치를 직접 선택해주세요.`);
+      setState("manual");
       return;
     }
 
@@ -91,8 +93,10 @@ export default function LocationPermissionPrompt({ userEmail }) {
         setState("manual");
       },
       (error) => {
-        setMessage(getGeolocationErrorMessage(error.code));
-        setState("error");
+        const fallback = createManualMapFallback(error.code);
+        setPosition((current) => current ?? fallback.position);
+        setMessage(fallback.message);
+        setState("manual");
       },
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
     );
@@ -137,13 +141,14 @@ export default function LocationPermissionPrompt({ userEmail }) {
   const modalVisible = ["prompt", "requesting", "error", "confirm", "manual", "manual-selected", "saving", "success"].includes(state);
   const locationLabel = regionName || (state === "checking" ? "지역 확인 중" : "내 동네를 설정해주세요");
   const manuallySelected = state === "manual-selected" && position?.source === "manual";
+  const fallbackMap = position?.source === "fallback";
 
   return (
     <>
       <section className="region-status-bar" aria-label="현재 설정 지역">
         <div><MapPin size={22} weight="fill" /><strong>{locationLabel}</strong></div>
         <button type="button" onClick={() => setState("prompt")}>{regionName ? "지역 변경" : "지역 설정"}</button>
-        <a href="#requests">수리 요청하기</a>
+        <a href="/requests/new">수리 요청하기</a>
       </section>
 
       {modalVisible && <div className="location-modal-backdrop">
@@ -160,7 +165,11 @@ export default function LocationPermissionPrompt({ userEmail }) {
             {succeeded
               ? `${regionName || "현재 지역"}을 기준으로 가까운 이웃과 연결할게요.`
               : mapVisible
-                ? manuallySelected ? "파란 점이 실제 위치와 맞는지 확인해주세요." : "파란 점과 원은 브라우저가 제공한 추정 위치입니다. 실제 위치가 원 밖에 있을 수도 있습니다."
+                ? manuallySelected
+                  ? "파란 점이 실제 위치와 맞는지 확인해주세요."
+                  : fallbackMap
+                    ? "자동 위치를 가져오지 못했습니다. 지도를 확대하고 실제 위치를 눌러주세요."
+                    : "파란 점과 원은 브라우저가 제공한 추정 위치입니다. 실제 위치가 원 밖에 있을 수도 있습니다."
                 : "현재 위치를 확인하면 가까운 지역의 수리 요청과 도움 가능한 이웃을 보여드릴 수 있어요."}
           </p>
 

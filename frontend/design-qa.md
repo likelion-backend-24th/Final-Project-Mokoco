@@ -41,6 +41,8 @@
 - Accuracy above 1km opens a warning state with the browser estimate and its accuracy circle; saving remains disabled until the user clicks the map.
 - A manual map click replaces the estimated position and enables explicit confirmation.
 - The flow includes retry guidance and a mobile GPS recommendation.
+- Geolocation timeout, denial, and unavailable-position errors now open a country-level manual map instead of trapping the user in an error-only dialog.
+- The fallback map shows no location marker until the user explicitly selects a point.
 - Map rendering uses Leaflet with OpenStreetMap tiles; runtime tile loading requires internet access.
 
 ## Comparison History
