@@ -62,7 +62,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
     setMessage("");
   }
 
-  function requestLocation() {
+  function postLocation() {
     setMessage("");
 
     if (!("geolocation" in navigator)) {
@@ -73,7 +73,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
       return;
     }
 
-    setState("requesting");
+    setState("posting");
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         const nextPosition = {
@@ -138,7 +138,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
 
   const mapVisible = Boolean(position) && ["confirm", "manual", "manual-selected", "saving"].includes(state);
   const succeeded = state === "success";
-  const modalVisible = ["prompt", "requesting", "error", "confirm", "manual", "manual-selected", "saving", "success"].includes(state);
+  const modalVisible = ["prompt", "posting", "error", "confirm", "manual", "manual-selected", "saving", "success"].includes(state);
   const locationLabel = regionName || (state === "checking" ? "지역 확인 중" : "내 동네를 설정해주세요");
   const manuallySelected = state === "manual-selected" && position?.source === "manual";
   const fallbackMap = position?.source === "fallback";
@@ -148,7 +148,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
       <section className="region-status-bar" aria-label="현재 설정 지역">
         <div><MapPin size={22} weight="fill" /><strong>{locationLabel}</strong></div>
         <button type="button" onClick={() => setState("prompt")}>{regionName ? "지역 변경" : "지역 설정"}</button>
-        <a href="/requests/new">수리 요청하기</a>
+        <a href="/posts/new">수리 요청하기</a>
       </section>
 
       {modalVisible && <div className="location-modal-backdrop">
@@ -185,7 +185,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
             <button className="primary-button mt-7 w-full justify-center" type="button" onClick={() => setState("saved")}>확인</button>
           ) : mapVisible ? (
             <div className="location-map-actions">
-              <button className="secondary-button justify-center" type="button" onClick={requestLocation} disabled={state === "saving"}>
+              <button className="secondary-button justify-center" type="button" onClick={postLocation} disabled={state === "saving"}>
                 <Crosshair size={20} weight="bold" />위치 다시 찾기
               </button>
               <button className="primary-button justify-center" type="button" onClick={savePosition} disabled={state === "saving" || state === "manual"}>
@@ -195,8 +195,8 @@ export default function LocationPermissionPrompt({ userEmail }) {
           ) : (
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
               <button className="secondary-button justify-center" type="button" onClick={dismiss}>나중에</button>
-              <button className="primary-button justify-center" type="button" onClick={requestLocation} disabled={state === "requesting"}>
-                <Crosshair size={20} weight="bold" />{state === "requesting" ? "위치 확인 중..." : "현재 위치 확인"}
+              <button className="primary-button justify-center" type="button" onClick={postLocation} disabled={state === "posting"}>
+                <Crosshair size={20} weight="bold" />{state === "posting" ? "위치 확인 중..." : "현재 위치 확인"}
               </button>
             </div>
           )}

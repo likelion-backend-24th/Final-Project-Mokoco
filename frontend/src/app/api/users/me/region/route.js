@@ -2,9 +2,9 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { backendUrl, errorMessage, readBackendPayload } from "@/lib/backend";
 
-async function forwardRegionRequest(method, body) {
+async function forwardRegionPost(method, body) {
   const cookieStore = await cookies();
-  const accessToken = cookieStore.get("mokoco_access_token")?.value;
+  const accessToken = cookieStore.get("access_token")?.value;
 
   if (!accessToken) {
     return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
@@ -37,13 +37,13 @@ async function forwardRegionRequest(method, body) {
 }
 
 export function GET() {
-  return forwardRegionRequest("GET");
+  return forwardRegionPost("GET");
 }
 
-export async function PATCH(request) {
+export async function PATCH(post) {
   try {
-    const body = await request.json();
-    return forwardRegionRequest("PATCH", {
+    const body = await post.json();
+    return forwardRegionPost("PATCH", {
       latitude: body.latitude,
       longitude: body.longitude,
     });

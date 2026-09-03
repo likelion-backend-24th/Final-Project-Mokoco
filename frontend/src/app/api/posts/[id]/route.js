@@ -2,10 +2,10 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { backendUrl, errorMessage, readBackendPayload } from "@/lib/backend";
 
-async function forwardPostRequest(id, method, body) {
+async function forwardPost(id, method, body) {
   const cookieStore = await cookies();
-  const accessToken = cookieStore.get("mokoco_access_token")?.value;
-  const userEmail = cookieStore.get("mokoco_user_email")?.value;
+  const accessToken = cookieStore.get("access_token")?.value;
+  const userEmail = cookieStore.get("user_email")?.value;
 
   if (!accessToken || !userEmail) {
     return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
@@ -43,11 +43,11 @@ async function forwardPostRequest(id, method, body) {
   }
 }
 
-export async function PATCH(request, { params }) {
+export async function PATCH(post, { params }) {
   const { id } = await params;
   let body;
   try {
-    body = await request.json();
+    body = await post.json();
   } catch {
     return NextResponse.json({ message: "요청 형식이 올바르지 않습니다." }, { status: 400 });
   }
@@ -58,10 +58,10 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ message: "제목과 요청 내용을 모두 입력해주세요." }, { status: 400 });
   }
 
-  return forwardPostRequest(id, "PATCH", { title, content });
+  return forwardPost(id, "PATCH", { title, content });
 }
 
-export async function DELETE(_request, { params }) {
+export async function DELETE(_post, { params }) {
   const { id } = await params;
-  return forwardPostRequest(id, "DELETE");
+  return forwardPost(id, "DELETE");
 }

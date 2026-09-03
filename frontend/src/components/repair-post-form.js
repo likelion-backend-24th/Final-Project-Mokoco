@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Wrench } from "@phosphor-icons/react";
 import Link from "next/link";
 
-export default function RepairRequestForm({ postId, initialValue }) {
+export default function RepairPostForm({ postId, initialValue }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const isEdit = Boolean(postId);
 
-  async function submitRequest(event) {
+  async function submitPost(event) {
     event.preventDefault();
     setSubmitting(true);
     setMessage("");
@@ -21,7 +21,15 @@ export default function RepairRequestForm({ postId, initialValue }) {
     try {
       const response = await fetch(isEdit ? `/api/posts/${postId}` : "/api/posts", {
         method: isEdit ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          // 만약 localStorage나 쿠키에서 토큰을 직접 꺼내 헤더에 박아야 한다면 아래와 같이 추가
+          ...(typeof window !== "undefined" && localStorage.getItem("access_token") 
+            ? { "Authorization": `Bearer ${localStorage.getItem("access_token")}` } 
+            : {})
+        },
+        // 브라우저 쿠키(HttpOnly 등)를 API 라우트로 함께 실어 보내려면 아래 설정 필수
+        credentials: "include",
         body: JSON.stringify({
           title: formData.get("title"),
           content: formData.get("content"),
@@ -34,7 +42,7 @@ export default function RepairRequestForm({ postId, initialValue }) {
         return;
       }
 
-      router.push(isEdit ? `/requests/${postId}` : `/requests/${payload.id}`);
+      router.push(isEdit ? `/posts/${postId}` : `/posts/${payload.id}`);
       router.refresh();
     } catch {
       setMessage("수리 요청 서버와 통신할 수 없습니다.");
@@ -45,12 +53,12 @@ export default function RepairRequestForm({ postId, initialValue }) {
 
   return (
     <section className="repair-form-card">
-      <Link href="/requests" className="repair-form-back"><ArrowLeft size={18} />목록으로 돌아가기</Link>
+      <Link href="/postss" className="repair-form-back"><ArrowLeft size={18} />목록으로 돌아가기</Link>
       <span className="repair-form-icon"><Wrench size={30} weight="duotone" /></span>
       <h1>{isEdit ? "수리 요청 수정" : "수리 요청하기"}</h1>
       <p>{isEdit ? "내용을 고치고 저장하면 바로 반영돼요." : "어떤 도움이 필요한지 이웃이 이해하기 쉽게 알려주세요."}</p>
 
-      <form onSubmit={submitRequest} className="repair-form">
+      <form onSubmit={submitPost} className="repair-form">
         <label className="form-field">
           <span>제목</span>
           <input name="title" type="text" maxLength={100} required defaultValue={initialValue?.title} placeholder="예: 세면대 수도꼭지에서 물이 새요" />

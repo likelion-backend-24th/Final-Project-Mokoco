@@ -28,22 +28,22 @@ function formatRelativeDate(value) {
   return hours < 24 ? `${hours}시간 전` : `${Math.floor(hours / 24)}일 전`;
 }
 
-function EmptyState({ error, requestHref }) {
+function EmptyState({ error, postHref }) {
   return (
     <div className="reference-empty-state" role="status">
       {error ? <Wrench size={58} weight="duotone" /> : <ClipboardText size={58} weight="duotone" />}
       <h3>{error ? "데이터 연결을 확인해주세요" : "아직 등록된 수리 요청이 없어요"}</h3>
       <p>{error ?? "첫 번째 수리 요청을 올려보세요!"}</p>
-      <Link href={requestHref} className="compact-primary-button">수리 요청하기</Link>
+      <Link href={postHref} className="compact-primary-button">수리 요청하기</Link>
     </div>
   );
 }
 
-export default async function RequestsPage() {
+export default async function PostsPage() {
   const cookieStore = await cookies();
-  const userEmail = cookieStore.get("mokoco_user_email")?.value ?? null;
+  const userEmail = cookieStore.get("user_email")?.value ?? null;
   const { posts, error } = await getPosts();
-  const requestHref = userEmail ? "/requests/new" : "/login";
+  const postHref = userEmail ? "/posts/new" : "/login";
 
   return (
     <div className="min-h-screen bg-[#f7f9fc]">
@@ -51,36 +51,36 @@ export default async function RequestsPage() {
       <main className="page-shell auth-main">
         <div className="section-heading">
           <div>
-            <p className="section-kicker">REPAIR REQUESTS</p>
+            <p className="section-kicker">REPAIR POSTS</p>
             <h2>수리 요청</h2>
           </div>
-          <Link href={requestHref} className="compact-primary-button gap-1.5">
+          <Link href={postHref} className="compact-primary-button gap-1.5">
             <Plus size={16} weight="bold" />
             수리 요청 올리기
           </Link>
         </div>
 
         {error || posts.length === 0 ? (
-          <EmptyState error={error} requestHref={requestHref} />
+          <EmptyState error={error} postHref={postHref} />
         ) : (
-          <div className="request-list">
+          <div className="post-list">
             {posts.map((post) => (
-              <Link key={post.id} href={`/requests/${post.id}`} className="request-row">
-                <div className="request-icon" aria-hidden="true">
+              <Link key={post.id} href={`/posts/${post.id}`} className="post-row">
+                <div className="post-icon" aria-hidden="true">
                   <Wrench size={27} weight="duotone" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="request-title-line">
+                  <div className="post-title-line">
                     <h3>{post.title || "제목 없는 수리 요청"}</h3>
                     <time>{formatRelativeDate(post.createdAt)}</time>
                   </div>
-                  <div className="request-meta">
+                  <div className="post-meta">
                     <span className={`status-badge status-${post.status?.toLowerCase()}`}>
                       {statusLabel[post.status] ?? post.status ?? "상태 미정"}
                     </span>
                     <span>{post.authorEmail || "작성자 정보 없음"}</span>
                   </div>
-                  <p className="request-content">{post.content || "등록된 상세 내용이 없습니다."}</p>
+                  <p className="post-content">{post.content || "등록된 상세 내용이 없습니다."}</p>
                 </div>
               </Link>
             ))}
