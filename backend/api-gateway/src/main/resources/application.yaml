@@ -10,7 +10,7 @@ spring:
         - id: user-service
           uri: http://localhost:8081 # 또는 서비스 디스커버리 사용 시 lb://user-service
           predicates:
-            - Path=/users/**
+            - Path=/api/auth/**, /users/**
 
         - id: post-service
           uri: http://localhost:8082
