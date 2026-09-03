@@ -141,6 +141,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
   const modalVisible = ["prompt", "requesting", "error", "confirm", "manual", "manual-selected", "saving", "success"].includes(state);
   const locationLabel = regionName || (state === "checking" ? "지역 확인 중" : "내 동네를 설정해주세요");
   const manuallySelected = state === "manual-selected" && position?.source === "manual";
+  const fallbackMap = position?.source === "fallback";
 
   return (
     <>
@@ -164,7 +165,11 @@ export default function LocationPermissionPrompt({ userEmail }) {
             {succeeded
               ? `${regionName || "현재 지역"}을 기준으로 가까운 이웃과 연결할게요.`
               : mapVisible
-                ? manuallySelected ? "파란 점이 실제 위치와 맞는지 확인해주세요." : "파란 점과 원은 브라우저가 제공한 추정 위치입니다. 실제 위치가 원 밖에 있을 수도 있습니다."
+                ? manuallySelected
+                  ? "파란 점이 실제 위치와 맞는지 확인해주세요."
+                  : fallbackMap
+                    ? "자동 위치를 가져오지 못했습니다. 지도를 확대하고 실제 위치를 눌러주세요."
+                    : "파란 점과 원은 브라우저가 제공한 추정 위치입니다. 실제 위치가 원 밖에 있을 수도 있습니다."
                 : "현재 위치를 확인하면 가까운 지역의 수리 요청과 도움 가능한 이웃을 보여드릴 수 있어요."}
           </p>
 

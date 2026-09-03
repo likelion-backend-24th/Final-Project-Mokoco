@@ -31,7 +31,7 @@ export default function LocationMapPicker({ position, onPositionChange }) {
         attributionControl: true,
       }).setView(
         [current.latitude, current.longitude],
-        current.accuracy > 1000 ? 12 : 16,
+        current.zoom ?? (current.accuracy > 1000 ? 12 : 16),
       );
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -39,12 +39,14 @@ export default function LocationMapPicker({ position, onPositionChange }) {
         attribution: "&copy; OpenStreetMap contributors",
       }).addTo(map);
 
+      const markerVisible = current.source !== "fallback";
       markerRef.current = L.circleMarker([current.latitude, current.longitude], {
-        radius: 9,
+        radius: markerVisible ? 9 : 0,
         color: "#ffffff",
         weight: 3,
         fillColor: "#1765f5",
-        fillOpacity: 1,
+        opacity: markerVisible ? 1 : 0,
+        fillOpacity: markerVisible ? 1 : 0,
       }).addTo(map);
 
       accuracyCircleRef.current = L.circle([current.latitude, current.longitude], {
@@ -82,9 +84,13 @@ export default function LocationMapPicker({ position, onPositionChange }) {
   useEffect(() => {
     if (!mapRef.current || !markerRef.current || !accuracyCircleRef.current) return;
     const latLng = [position.latitude, position.longitude];
-    markerRef.current.setLatLng(latLng);
+    const markerVisible = position.source !== "fallback";
+    markerRef.current
+      .setLatLng(latLng)
+      .setRadius(markerVisible ? 9 : 0)
+      .setStyle({ opacity: markerVisible ? 1 : 0, fillOpacity: markerVisible ? 1 : 0 });
     accuracyCircleRef.current.setLatLng(latLng).setRadius(Math.max(0, position.accuracy || 0));
-    mapRef.current.setView(latLng, position.accuracy > 1000 ? 12 : 16);
+    mapRef.current.setView(latLng, position.zoom ?? (position.accuracy > 1000 ? 12 : 16));
   }, [position]);
 
   return <div ref={containerRef} className="location-map" aria-label="위치를 선택하는 지도" />;

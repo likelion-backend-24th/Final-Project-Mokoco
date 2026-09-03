@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  createManualMapFallback,
   formatRegionName,
   getGeolocationErrorMessage,
   isAutomaticLocationAccurate,
@@ -26,4 +27,13 @@ test("정확도 1km 이내의 위치만 자동 위치로 허용한다", () => {
   assert.equal(isAutomaticLocationAccurate(1000), true);
   assert.equal(isAutomaticLocationAccurate(5000), false);
   assert.equal(isAutomaticLocationAccurate(Number.NaN), false);
+});
+
+test("위치 확인 시간 초과 시 수동 지도 선택 정보로 전환한다", () => {
+  const fallback = createManualMapFallback(3);
+
+  assert.equal(fallback.position.source, "fallback");
+  assert.equal(fallback.position.zoom, 7);
+  assert.match(fallback.message, /시간이 초과/);
+  assert.match(fallback.message, /직접 선택/);
 });

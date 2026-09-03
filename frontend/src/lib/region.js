@@ -18,3 +18,16 @@ export function isAutomaticLocationAccurate(accuracy) {
     && accuracy >= 0
     && accuracy <= MAX_AUTOMATIC_LOCATION_ACCURACY_METERS;
 }
+
+export function createManualMapFallback(errorCode) {
+  return {
+    position: {
+      latitude: 36.5,
+      longitude: 127.8,
+      accuracy: 0,
+      source: "fallback",
+      zoom: 7,
+    },
+    message: `${getGeolocationErrorMessage(errorCode)} 자동 위치 대신 대한민국 지도에서 실제 위치를 직접 선택해주세요.`,
+  };
+}
