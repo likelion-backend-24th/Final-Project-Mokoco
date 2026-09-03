@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import SiteHeader from "@/components/site-header";
-import RepairPostForm from "@/components/repair-post-form";
+import PostForm from "@/components/post-form";
 
 export default async function NewRepairPostPage() {
   const cookieStore = await cookies();
@@ -14,7 +14,7 @@ export default async function NewRepairPostPage() {
     <div className="min-h-screen bg-[#f7f9fc]">
       <SiteHeader userEmail={userEmail} />
       <main className="repair-form-page page-shell">
-        <RepairPostForm />
+        <PostForm />
       </main>
     </div>
   );
