@@ -5,8 +5,9 @@ import RepairRequestForm from "@/components/repair-request-form";
 
 export default async function NewRepairRequestPage() {
   const cookieStore = await cookies();
-  const userEmail = cookieStore.get("mokoco_user_email")?.value;
-  const accessToken = cookieStore.get("mokoco_access_token")?.value;
+  // mokoco_ 접두사 제거
+  const userEmail = cookieStore.get("user_email")?.value;
+  const accessToken = cookieStore.get("access_token")?.value;
 
   if (!userEmail || !accessToken) redirect("/login");
 
