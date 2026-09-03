@@ -4,8 +4,10 @@ import com.team2.postservice.post.dto.PostRequestDto;
 import com.team2.postservice.post.dto.PostResponseDto;
 import com.team2.postservice.post.service.PostService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -16,10 +18,11 @@ public class PostController {
 
     private final PostService postService;
 
-    @PostMapping
-    public ResponseEntity<Long> createPost(@RequestBody PostRequestDto.Create request,
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Long> createPost(@RequestPart("request") PostRequestDto.Create request,
+                                           @RequestPart(value = "images", required = false) List<MultipartFile> images,
                                            @RequestHeader("X-User-Email") String userEmail) {
-        Long postId = postService.createPost(request, userEmail);
+        Long postId = postService.createPost(request, images, userEmail);
         return ResponseEntity.ok(postId);
     }
 
@@ -45,6 +48,21 @@ public class PostController {
     public ResponseEntity<Void> deletePost(@PathVariable Long id,
                                            @RequestHeader("X-User-Email") String userEmail) {
         postService.deletePost(id, userEmail);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PostResponseDto.Detail> addImages(@PathVariable Long id,
+                                                             @RequestPart("images") List<MultipartFile> images,
+                                                             @RequestHeader("X-User-Email") String userEmail) {
+        return ResponseEntity.ok(postService.addImages(id, images, userEmail));
+    }
+
+    @DeleteMapping("/{id}/images/{imageId}")
+    public ResponseEntity<Void> deleteImage(@PathVariable Long id,
+                                            @PathVariable Long imageId,
+                                            @RequestHeader("X-User-Email") String userEmail) {
+        postService.deleteImage(id, imageId, userEmail);
         return ResponseEntity.ok().build();
     }
 }

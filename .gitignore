@@ -64,3 +64,6 @@ out/
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Uploaded post images (local file storage)
+**/uploads/
