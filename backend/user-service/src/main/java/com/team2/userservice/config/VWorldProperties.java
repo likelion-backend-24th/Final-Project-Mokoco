@@ -11,6 +11,5 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 public class VWorldProperties {
-    @Value("${vworld.api-key}")
     private String apiKey;
 }
