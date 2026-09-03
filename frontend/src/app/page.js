@@ -125,7 +125,7 @@ function AuthenticatedHome({ posts, error, userEmail }) {
             <div><dt><Wrench size={20} weight="duotone" />진행 중 요청</dt><dd>{inProgress}건</dd></div>
             <div><dt><Star size={20} weight="duotone" />완료한 요청</dt><dd>{completed}건</dd></div>
           </dl><Link href="#posts" className="wide-outline-button">내 활동 보기</Link></section>
-          <section id="start" className="help-card"><span><Toolbox size={50} weight="duotone" /></span><div><h2>내가 가진 재능으로<br />이웃을 도와주세요</h2><p>작은 도움이 큰 힘이 됩니다.</p></div><Link href="#posts" className="wide-outline-button">도움 주기 시작하기</Link></section>
+          <section id="start" className="help-card"><span><Toolbox size={50} weight="duotone" /></span><div><h2>내가 가진 재능으로<br />이웃을 도와주세요</h2><p>작은 도움이 큰 힘이 됩니다.</p></div><Link href="posts" className="wide-outline-button">도움 주기 시작하기</Link></section>
           <section className="reference-card signed-in-card"><UserCircle size={28} weight="duotone" /><div><span>로그인 계정</span><strong>{userEmail}</strong></div></section>
         </aside>
       </div>

@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft, CheckCircle, Wrench } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
 import PostActions from "@/components/post-actions";
+import RepairProposalForm from "@/components/proposal-form";
+import ProposalList from "@/components/proposal-list";
 import { backendUrl } from "@/lib/backend";
 
 const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "수리 완료" };
@@ -19,6 +21,16 @@ async function getPost(id) {
   }
 }
 
+async function getProposals(id) {
+  try {
+    const response = await fetch(backendUrl(`/posts/${id}/proposals`), { cache: "no-store" });
+    if (!response.ok) return [];
+    return await response.json();
+  } catch {
+    return [];
+  }
+}
+
 function formatDate(value) {
   if (!value) return "시간 정보 없음";
   const date = new Date(value);
@@ -30,7 +42,11 @@ export default async function PostDetailPage({ params }) {
   const { id } = await params;
   const cookieStore = await cookies();
   const userEmail = cookieStore.get("user_email")?.value ?? null;
-  const { post, error } = await getPost(id);
+  
+  const [{ post, error }, proposals] = await Promise.all([
+    getPost(id),
+    getProposals(id),
+  ]);
 
   if (!post && !error) {
     notFound();
@@ -53,24 +69,36 @@ export default async function PostDetailPage({ params }) {
             <p>{error}</p>
           </div>
         ) : (
-          <div className="dashboard-card">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <span className={`status-badge status-${post.status?.toLowerCase()}`}>
-                  {statusLabel[post.status] ?? post.status ?? "상태 미정"}
-                </span>
-                <h1 className="mt-3 text-[28px] font-extrabold tracking-[-0.03em] text-slate-950">{post.title}</h1>
+          <div className="space-y-6">
+            <div className="dashboard-card">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <span className={`status-badge status-${post.status?.toLowerCase()}`}>
+                    {statusLabel[post.status] ?? post.status ?? "상태 미정"}
+                  </span>
+                  <h1 className="mt-3 text-[28px] font-extrabold tracking-[-0.03em] text-slate-950">{post.title}</h1>
+                </div>
+                {isMine && <PostActions postId={post.id} />}
               </div>
-              {isMine && <PostActions postId={post.id} />}
+
+              <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">
+                <span>{post.authorEmail || "작성자 정보 없음"}</span>
+                <span aria-hidden>·</span>
+                <span>{formatDate(post.createdAt)}</span>
+              </div>
+
+              <p className="mt-6 whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{post.content}</p>
+
+              {!isMine && <RepairProposalForm postId={post.id} />}
             </div>
 
-            <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">
-              <span>{post.authorEmail || "작성자 정보 없음"}</span>
-              <span aria-hidden>·</span>
-              <span>{formatDate(post.createdAt)}</span>
+            {/* 제안 목록 섹션 */}
+            <div className="dashboard-card">
+              <h3 className="text-lg font-extrabold text-slate-900 mb-4">
+                받은 수리 제안 <span className="text-blue-600">{proposals.length}</span>
+              </h3>
+              <ProposalList postId={post.id} proposals={proposals} isMine={isMine} userEmail={userEmail} />
             </div>
-
-            <p className="mt-6 whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{post.content}</p>
           </div>
         )}
       </main>

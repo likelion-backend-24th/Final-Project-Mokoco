@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Wrench } from "@phosphor-icons/react";
 import Link from "next/link";
 
-export default function RepairPostForm({ postId, initialValue }) {
+export default function PostForm({ postId, initialValue }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");

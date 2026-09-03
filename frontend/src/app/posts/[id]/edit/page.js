@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import RepairPostForm from "@/components/repair-post-form";
+import PostForm from "@/components/post-form";
 import SiteHeader from "@/components/site-header";
 import { backendUrl } from "@/lib/backend";
 
@@ -38,7 +38,7 @@ export default async function EditPostPage({ params }) {
     <div className="min-h-screen bg-[#f7f9fc]">
       <SiteHeader userEmail={userEmail} />
       <main className="repair-form-page page-shell">
-        <RepairPostForm postId={id} initialValue={post} />
+        <PostForm postId={id} initialValue={post} />
       </main>
     </div>
   );

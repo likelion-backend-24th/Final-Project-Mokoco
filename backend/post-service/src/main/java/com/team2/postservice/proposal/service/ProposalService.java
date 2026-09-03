@@ -5,11 +5,14 @@ import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.proposal.dto.ProposalRequestDto;
+import com.team2.postservice.proposal.dto.ProposalResponseDto;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -47,5 +50,29 @@ public class ProposalService {
 
         proposal.adopt();
         post.updateStatusToMatched();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProposalResponseDto> getProposals(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
+
+        List<Proposal> proposals = proposalRepository.findByPost(post);
+
+        return proposals.stream()
+                .map(ProposalResponseDto::new)
+                .toList();
+    }
+
+    @Transactional
+    public void deleteProposal(Long postId, Long proposalId, String userEmail) {
+        Proposal proposal = proposalRepository.findById(proposalId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
+
+        if (!proposal.getRepairerEmail().equals(userEmail)) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_PROPOSAL_DELETE);
+        }
+
+        proposalRepository.delete(proposal);
     }
 }
