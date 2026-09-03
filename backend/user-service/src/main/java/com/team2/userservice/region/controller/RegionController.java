@@ -3,6 +3,7 @@ package com.team2.userservice.region.controller;
 import com.team2.userservice.region.dto.RegionRequest;
 import com.team2.userservice.region.dto.RegionResponse;
 import com.team2.userservice.region.service.RegionService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,7 +19,7 @@ public class RegionController {
     @PatchMapping
     public ResponseEntity<RegionResponse> updateRegion(
             @AuthenticationPrincipal String email,
-            @RequestBody RegionRequest request
+            @RequestBody @Valid RegionRequest request
     ) {
         RegionResponse response =
                 regionService.setMyRegion(email, request);
