@@ -1,3 +1,4 @@
+import AuthInitializer from "@/components/AuthInitializer";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
@@ -9,7 +10,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <AuthInitializer />
+        {children}
+      </body>
     </html>
   );
 }

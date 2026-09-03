@@ -9,6 +9,9 @@ import SiteHeader from "@/components/site-header";
 import LocationPermissionPrompt from "@/components/location-permission-prompt";
 import { backendUrl } from "@/lib/backend";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "수리 완료" };
 const categories = [
   [SquaresFour, "전체"], [Lightbulb, "전기·조명"], [Drop, "배관·설비"],
@@ -132,7 +135,21 @@ function AuthenticatedHome({ posts, error, userEmail }) {
 
 export default async function Home() {
   const cookieStore = await cookies();
-  const userEmail = cookieStore.get("mokoco_user_email")?.value ?? null;
+  const userEmail = cookieStore.get("user_email")?.value ?? null;
+  const accessToken = cookieStore.get("access_token")?.value ?? null;
+  
+  // user_email과 access_token이 모두 존재해야 확실한 로그인 상태로 판단
+  const isAuthenticated = Boolean(userEmail && accessToken);
+
   const { posts, error } = await getPosts();
-  return <div className="min-h-screen bg-[#f7f9fc]"><SiteHeader userEmail={userEmail} />{userEmail ? <AuthenticatedHome posts={posts} error={error} userEmail={userEmail} /> : <UnauthenticatedHome posts={posts} error={error} />}</div>;
+  return (
+    <div className="min-h-screen bg-[#f7f9fc]">
+      <SiteHeader userEmail={isAuthenticated ? userEmail : null} />
+      {isAuthenticated ? (
+        <AuthenticatedHome posts={posts} error={error} userEmail={userEmail} />
+      ) : (
+        <UnauthenticatedHome posts={posts} error={error} />
+      )}
+    </div>
+  );
 }
