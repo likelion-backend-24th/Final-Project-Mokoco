@@ -39,7 +39,7 @@ public class UserService {
                 .name(request.getName())
                 .nickname(request.getNickname())
                 .role(Role.USER)
-                .region(request.getRegion())
+                .regionCode(request.getRegionCode())
                 .build();
 
         userRepository.save(user);
