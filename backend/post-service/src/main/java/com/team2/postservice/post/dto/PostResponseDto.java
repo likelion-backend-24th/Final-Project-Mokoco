@@ -1,6 +1,7 @@
 package com.team2.postservice.post.dto;
 
 import com.team2.postservice.post.entity.Post;
+import com.team2.postservice.post.entity.PostImage;
 import com.team2.postservice.post.entity.PostStatus;
 
 import java.time.format.DateTimeFormatter;
@@ -22,6 +23,9 @@ public class PostResponseDto {
                     post.getContent(),
                     post.getAuthorEmail(),
                     post.getStatus(),
+                    post.getImages().stream()
+                            .map(PostImage::getImageUrl)
+                            .toList(),
                     post.getCreatedAt() != null ? post.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,
                     post.getUpdatedAt() != null ? post.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null
             );
