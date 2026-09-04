@@ -24,6 +24,10 @@ spring:
     password: root1234
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  Jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
 file:
   upload-dir: ./uploads/post-images # 이미지 파일이 저장되는 로컬 경로
   base-url: http://localhost:8082/images # 저장된 이미지에 접근하는 공개 URL

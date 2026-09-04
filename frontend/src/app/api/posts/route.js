@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { backendUrl, errorMessage, readBackendPayload } from "@/lib/backend";
 
-export async function POST(post) {
+export async function POST(request) {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("access_token")?.value;
   const userEmail = cookieStore.get("user_email")?.value;
@@ -12,25 +12,34 @@ export async function POST(post) {
   }
 
   try {
-    const body = await post.json();
-    const title = typeof body.title === "string" ? body.title.trim() : "";
-    const content = typeof body.content === "string" ? body.content.trim() : "";
+    // 프론트엔드에서 보낸 FormData 그대로 받기
+    const formData = await request.formData();
 
-    if (!title || !content) {
-      return NextResponse.json({ message: "제목과 요청 내용을 모두 입력해주세요." }, { status: 400 });
+    // 백엔드로 그대로 전달하기 위해 새로운 FormData 구성
+    const backendFormData = new FormData();
+    
+    const postBlob = formData.get("post");
+    if (postBlob) {
+      backendFormData.append("post", postBlob);
     }
+
+    const images = formData.getAll("images");
+    images.forEach((image) => {
+      backendFormData.append("images", image);
+    });
 
     const response = await fetch(backendUrl("/posts"), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
         "X-User-Email": userEmail,
+        // 주의: multipart/form-data 전송 시 Content-Type 헤더는 수동으로 넣지 않아야 boundary가 자동 생성됩니다.
       },
-      body: JSON.stringify({ title, content }),
+      body: backendFormData,
       cache: "no-store",
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(15000), // 파일 업로드가 있으니 타임아웃 넉넉히
     });
+
     const payload = await readBackendPayload(response);
 
     if (!response.ok) {
@@ -40,8 +49,9 @@ export async function POST(post) {
       );
     }
 
-    return NextResponse.json({ id: payload }, { status: 201 });
-  } catch {
+    return NextResponse.json(payload, { status: 201 });
+  } catch (error) {
+    console.error("Post creation error:", error);
     return NextResponse.json({ message: "수리 요청 서버에 연결할 수 없습니다." }, { status: 503 });
   }
 }

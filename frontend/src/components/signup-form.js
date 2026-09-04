@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeSlash } from "@phosphor-icons/react";
+import TermsModal from "@/components/terms-modal";
 
 export default function SignupForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [agreed, setAgreed] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -39,7 +41,7 @@ export default function SignupForm() {
         <label className="form-field sm:col-span-2"><span>이메일</span><input type="email" name="email" autoComplete="email" placeholder="이메일 주소를 입력해주세요" required /></label>
         <label className="form-field sm:col-span-2"><span>비밀번호</span><div className="password-field"><input type={showPassword ? "text" : "password"} name="password" autoComplete="new-password" minLength={8} placeholder="영문과 숫자를 포함해 8자 이상" required /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}>{showPassword ? <EyeSlash size={21} /> : <Eye size={21} />}</button></div></label>
         <label className="form-field sm:col-span-2"><span>비밀번호 확인</span><input type={showPassword ? "text" : "password"} name="passwordConfirm" autoComplete="new-password" minLength={8} placeholder="비밀번호를 다시 입력해주세요" required /></label>
-        <label className="sm:col-span-2 flex items-start gap-3 text-sm leading-6 text-slate-600"><input type="checkbox" name="agreement" className="mt-1 size-4 accent-blue-600" required /><span>이용약관 및 개인정보 수집에 동의합니다.</span></label>
+        <label className="sm:col-span-2 flex items-start gap-3 text-sm leading-6 text-slate-600"><input type="checkbox" name="agreement" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} className="mt-1 size-4 accent-blue-600" required /><span><TermsModal trigger="이용약관 및 개인정보 수집" onConfirm={() => setAgreed(true)} />에 동의합니다.</span></label>
         {message && <p className="form-message form-message-error sm:col-span-2" role="alert">{message}</p>}
         <button className="primary-button h-14 justify-center text-base sm:col-span-2" type="submit" disabled={loading}>{loading ? "가입 중..." : "회원가입"}</button>
       </form>
