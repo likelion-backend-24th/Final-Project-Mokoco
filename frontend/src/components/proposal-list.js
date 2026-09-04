@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle, Trash } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 
@@ -9,6 +9,11 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
   const [loadingId, setLoadingId] = useState(null);
   const router = useRouter();
 
+  // 부모 컴포넌트에서 router.refresh()로 새로운 데이터가 내려올 때 상태 동기화
+  useEffect(() => {
+    setProposals(initialProposals);
+  }, [initialProposals]);
+
   if (!proposals || proposals.length === 0) {
     return (
       <div className="py-8 text-center text-sm text-slate-400">
@@ -16,6 +21,15 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
       </div>
     );
   }
+
+  // 이미 채택된 제안이 하나라도 존재하는지 확인
+  const hasAdopted = proposals.some((p) => p.isAdopted);
+
+  // 채택된 제안(isAdopted === true)이 맨 위로 오도록 정렬
+  const sortedProposals = [...proposals].sort((a, b) => {
+    if (a.isAdopted === b.isAdopted) return 0;
+    return a.isAdopted ? -1 : 1;
+  });
 
   const handleAdopt = async (proposalId) => {
     if (!confirm("이 제안을 채택하시겠습니까?")) return;
@@ -64,7 +78,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
 
   return (
     <div className="space-y-4">
-      {proposals.map((proposal) => {
+      {sortedProposals.map((proposal) => {
         const isMyProposal = userEmail && proposal.repairerEmail === userEmail;
         const isAdopted = proposal.isAdopted;
 
@@ -108,8 +122,8 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 </button>
               )}
 
-              {/* 게시글 작성자이고 채택되지 않았을 때 채택 버튼 노출 */}
-              {isMine && !isAdopted && (
+              {/* 게시글 작성자이고, 아직 채택된 제안이 없으며, 본인 제안도 채택되지 않았을 때만 채택 버튼 노출 */}
+              {isMine && !hasAdopted && !isAdopted && (
                 <button
                   onClick={() => handleAdopt(proposal.id)}
                   disabled={loadingId === proposal.id}

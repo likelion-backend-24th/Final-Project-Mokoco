@@ -3,7 +3,7 @@ package com.team2.postservice.post.dto;
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.entity.PostStatus;
 
-import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class PostResponseDto {
     public record Detail(
@@ -12,8 +12,8 @@ public class PostResponseDto {
             String content,
             String authorEmail,
             PostStatus status,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt
+            String createdAt, // String 타입으로 변경
+            String updatedAt  // String 타입으로 변경
     ) {
         public static Detail from(Post post) {
             return new Detail(
@@ -22,8 +22,8 @@ public class PostResponseDto {
                     post.getContent(),
                     post.getAuthorEmail(),
                     post.getStatus(),
-                    post.getCreatedAt(),
-                    post.getUpdatedAt()
+                    post.getCreatedAt() != null ? post.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,
+                    post.getUpdatedAt() != null ? post.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null
             );
         }
     }

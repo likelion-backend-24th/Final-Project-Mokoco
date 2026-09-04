@@ -18,3 +18,7 @@ spring:
     username: root
     password: root1234
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+  Jackson:
+    serialization:
+      write-dates-as-timestamps: false
