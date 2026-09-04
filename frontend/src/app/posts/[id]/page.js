@@ -89,6 +89,20 @@ export default async function PostDetailPage({ params }) {
 
               <p className="mt-6 whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{post.content}</p>
 
+              {post.images && post.images.length > 0 && (
+                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {post.images.map((imgUrl, index) => (
+                    <div key={index} className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+                      <img 
+                        src={backendUrl(imgUrl)} 
+                        alt={`수리 요청 이미지 ${index + 1}`} 
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {!isMine && <RepairProposalForm postId={post.id} />}
             </div>
 

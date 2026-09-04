@@ -5,6 +5,7 @@ import com.team2.postservice.post.entity.PostImage;
 import com.team2.postservice.post.entity.PostStatus;
 
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 public class PostResponseDto {
     public record Detail(
@@ -13,8 +14,9 @@ public class PostResponseDto {
             String content,
             String authorEmail,
             PostStatus status,
-            String createdAt, // String 타입으로 변경
-            String updatedAt  // String 타입으로 변경
+            List<String> images, // 이미지 URL 리스트 필드 추가
+            String createdAt,
+            String updatedAt
     ) {
         public static Detail from(Post post) {
             return new Detail(
