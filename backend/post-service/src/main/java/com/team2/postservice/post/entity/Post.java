@@ -10,6 +10,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "posts")
@@ -35,6 +37,10 @@ public class Post {
     @Column(nullable = false)
     private PostStatus status;
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC")
+    private List<PostImage> images = new ArrayList<>();
+
     @CreatedDate
     private LocalDateTime createdAt;
 
@@ -56,5 +62,20 @@ public class Post {
 
     public void updateStatusToMatched() {
         this.status = PostStatus.MATCHED;
+    }
+
+    public PostImage addImage(String imageUrl, String storedFileName) {
+        PostImage postImage = PostImage.builder()
+                .post(this)
+                .imageUrl(imageUrl)
+                .storedFileName(storedFileName)
+                .sortOrder(images.size())
+                .build();
+        images.add(postImage);
+        return postImage;
+    }
+
+    public void removeImage(PostImage image) {
+        images.remove(image);
     }
 }

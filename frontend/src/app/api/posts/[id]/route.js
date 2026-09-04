@@ -43,11 +43,11 @@ async function forwardPost(id, method, body) {
   }
 }
 
-export async function PATCH(post, { params }) {
+export async function PATCH(request, { params }) {
   const { id } = await params;
   let body;
   try {
-    body = await post.json();
+    body = await request.json();
   } catch {
     return NextResponse.json({ message: "요청 형식이 올바르지 않습니다." }, { status: 400 });
   }

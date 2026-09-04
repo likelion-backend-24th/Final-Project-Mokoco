@@ -4,7 +4,6 @@ import PostForm from "@/components/post-form";
 import SiteHeader from "@/components/site-header";
 import { backendUrl } from "@/lib/backend";
 
-// accessToken을 인자로 받아 헤더에 포함시킵니다.
 async function getPost(id, accessToken) {
   try {
     const response = await fetch(backendUrl(`/posts/${id}`), {
@@ -29,7 +28,6 @@ export default async function EditPostPage({ params }) {
 
   if (!userEmail || !accessToken) redirect("/login");
 
-  // accessToken을 함께 전달
   const post = await getPost(id, accessToken);
   if (!post) notFound();
   if (post.authorEmail !== userEmail) redirect(`/posts/${id}`);
@@ -38,7 +36,7 @@ export default async function EditPostPage({ params }) {
     <div className="min-h-screen bg-[#f7f9fc]">
       <SiteHeader userEmail={userEmail} />
       <main className="repair-form-page page-shell">
-        <PostForm postId={id} initialValue={post} />
+        <PostForm postId={id} initialValue={post} userEmail={userEmail} accessToken={accessToken} />
       </main>
     </div>
   );
