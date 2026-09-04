@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { X, Wrench } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
 
 export default function ProposalForm({ postId }) {
   const [isOpen, setIsOpen] = useState(false);
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,6 +24,7 @@ export default function ProposalForm({ postId }) {
         alert("수리 제안이 성공적으로 등록되었습니다.");
         setContent("");
         setIsOpen(false);
+        router.refresh(); // 3. Next.js 서버 컴포넌트 데이터 재요청 및 화면 갱신
       } else {
         alert("수리 제안 등록에 실패했습니다.");
       }

@@ -14,7 +14,7 @@ export default async function NewRepairPostPage() {
     <div className="min-h-screen bg-[#f7f9fc]">
       <SiteHeader userEmail={userEmail} />
       <main className="repair-form-page page-shell">
-        <PostForm />
+        <PostForm userEmail={userEmail} accessToken={accessToken} />
       </main>
     </div>
   );

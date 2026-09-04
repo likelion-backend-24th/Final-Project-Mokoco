@@ -19,7 +19,7 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Long> createPost(@RequestPart("request") PostRequestDto.Create request,
+    public ResponseEntity<Long> createPost(@RequestPart("post") PostRequestDto.Create request,
                                            @RequestPart(value = "images", required = false) List<MultipartFile> images,
                                            @RequestHeader("X-User-Email") String userEmail) {
         Long postId = postService.createPost(request, images, userEmail);

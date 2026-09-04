@@ -30,9 +30,21 @@ async function getPosts() {
 }
 
 function formatRelativeDate(value) {
+  // 실제 넘어오는 데이터와 타입을 콘솔에 출력
+  console.log("Received createdAt value:", value, "Type:", typeof value);
+
   if (!value) return "시간 정보 없음";
-  const date = new Date(value);
+
+  let date;
+  if (Array.isArray(value)) {
+    const [y, m, d, h = 0, min = 0, s = 0] = value;
+    date = new Date(y, m - 1, d, h, min, s);
+  } else {
+    date = new Date(value);
+  }
+
   if (Number.isNaN(date.getTime())) return "시간 정보 없음";
+  
   const minutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
   if (minutes < 1) return "방금 전";
   if (minutes < 60) return `${minutes}분 전`;
