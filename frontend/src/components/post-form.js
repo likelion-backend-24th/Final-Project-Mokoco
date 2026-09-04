@@ -53,7 +53,7 @@ export default function PostForm({ postId, initialValue }) {
 
   return (
     <section className="repair-form-card">
-      <Link href="/postss" className="repair-form-back"><ArrowLeft size={18} />목록으로 돌아가기</Link>
+      <Link href="/posts" className="repair-form-back"><ArrowLeft size={18} />목록으로 돌아가기</Link>
       <span className="repair-form-icon"><Wrench size={30} weight="duotone" /></span>
       <h1>{isEdit ? "수리 요청 수정" : "수리 요청하기"}</h1>
       <p>{isEdit ? "내용을 고치고 저장하면 바로 반영돼요." : "어떤 도움이 필요한지 이웃이 이해하기 쉽게 알려주세요."}</p>
