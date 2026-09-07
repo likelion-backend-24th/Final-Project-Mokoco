@@ -30,6 +30,7 @@ public class ProposalService {
         Proposal proposal = Proposal.builder()
                 .post(post)
                 .repairerEmail(repairerEmail)
+                .estimatedPrice(request.estimatedPrice())
                 .content(request.content())
                 .build();
 

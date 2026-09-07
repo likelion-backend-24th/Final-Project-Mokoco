@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation"; // 1. 경로 확인을 위한 훅 임포트
-import { Bell, ChatCircleDots, UserCircle } from "@phosphor-icons/react/dist/ssr";
+import { usePathname } from "next/navigation";
+import { Bell, UserCircle } from "@phosphor-icons/react/dist/ssr";
 import BrandLogo from "@/components/brand-logo";
 import { useAuthStore } from "@/store/authStore";
 import { useEffect, useState } from "react";
 
 export default function SiteHeader({ userEmail: serverUserEmail }) {
-  const pathname = usePathname(); // 2. 현재 경로 가져오기
+  const pathname = usePathname();
   const { userEmail: storeEmail, initAuth } = useAuthStore();
   const [mounted, setMounted] = useState(false);
 
@@ -27,13 +27,10 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
     <header className="site-header"><div className="page-shell header-inner">
       <BrandLogo />
       <nav className="desktop-nav" aria-label="주요 메뉴">
-        {/* 3. 현재 경로에 따라 active 클래스 동적 부여 */}
         <Link href="/" className={`nav-link ${pathname === "/" ? "nav-link-active" : ""}`}>홈</Link>
         <Link href="/posts" className={`nav-link ${pathname.startsWith("/posts") ? "nav-link-active" : ""}`}>수리 요청</Link>
-        <Link href="/#start" className="nav-link">도움 주기</Link>
-        {userEmail ? <Link href="/#posts" className="nav-link">채팅</Link> : <Link href="/#guide" className="nav-link">이용 가이드</Link>}
       </nav>
-      {userEmail ? <div className="header-account"><span className="header-icon"><Bell size={20} /></span><span className="header-icon"><ChatCircleDots size={21} /></span><UserCircle size={29} weight="duotone" className="text-blue-600" /><span className="header-email">{userEmail}</span><form action="/api/auth/logout" method="post" onSubmit={() => {
+      {userEmail ? <div className="header-account"><span className="header-icon"><Bell size={20} /></span><UserCircle size={29} weight="duotone" className="text-blue-600" /><span className="header-email">{userEmail}</span><form action="/api/auth/logout" method="post" onSubmit={() => {
         if (typeof window !== "undefined") {
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");

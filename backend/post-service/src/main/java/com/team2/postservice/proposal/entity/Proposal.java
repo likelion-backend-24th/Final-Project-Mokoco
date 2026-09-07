@@ -24,6 +24,9 @@ public class Proposal {
     @Column(nullable = false)
     private String repairerEmail; // 수리공 이메일
 
+    @Column(nullable = false)
+    private Integer estimatedPrice; // 희망 견적 금액
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content; // 수리 제안 및 견적 내용
 
@@ -31,9 +34,10 @@ public class Proposal {
     private boolean isAdopted = false; // 채택 여부
 
     @Builder
-    public Proposal(Post post, String repairerEmail, String content) {
+    public Proposal(Post post, int estimatedPrice, String repairerEmail, String content) {
         this.post = post;
         this.repairerEmail = repairerEmail;
+        this.estimatedPrice = estimatedPrice;
         this.content = content;
         this.isAdopted = false;
     }
