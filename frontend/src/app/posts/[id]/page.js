@@ -33,7 +33,13 @@ async function getProposals(id) {
 
 function formatDate(value) {
   if (!value) return "시간 정보 없음";
-  const date = new Date(value);
+  let date;
+  if (Array.isArray(value)) {
+    const [y, m, d, h = 0, min = 0, s = 0] = value;
+    date = new Date(y, m - 1, d, h, min, s);
+  } else {
+    date = new Date(value);
+  }
   if (Number.isNaN(date.getTime())) return "시간 정보 없음";
   return date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
 }
@@ -91,15 +97,18 @@ export default async function PostDetailPage({ params }) {
 
               {post.images && post.images.length > 0 && (
                 <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {post.images.map((imgUrl, index) => (
-                    <div key={index} className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
-                      <img 
-                        src={backendUrl(imgUrl)} 
-                        alt={`수리 요청 이미지 ${index + 1}`} 
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-                  ))}
+                  {post.images.map((img, index) => {
+                    const imgUrl = typeof img === "string" ? img : img.imageUrl;
+                    return (
+                      <div key={index} className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+                        <img 
+                          src={backendUrl(imgUrl)} 
+                          alt={`수리 요청 이미지 ${index + 1}`} 
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 

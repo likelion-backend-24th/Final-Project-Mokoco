@@ -1,6 +1,7 @@
 package com.team2.postservice.post.repository;
 
 import com.team2.postservice.post.entity.Post;
+import com.team2.postservice.post.entity.PostCategory;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -16,4 +17,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Override
     @EntityGraph(attributePaths = "images")
     Optional<Post> findById(Long id);
+
+    @EntityGraph(attributePaths = "images")
+    List<Post> findByCategory(PostCategory category);
 }

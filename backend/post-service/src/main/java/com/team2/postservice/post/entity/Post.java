@@ -35,6 +35,10 @@ public class Post {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    private PostCategory category;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private PostStatus status;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -48,16 +52,18 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Post(String title, String content, String authorEmail) {
+    public Post(String title, String content, String authorEmail, PostCategory category) {
         this.title = title;
         this.content = content;
         this.authorEmail = authorEmail;
+        this.category = category;
         this.status = PostStatus.WAITING;
     }
 
-    public void update(String title, String content) {
+    public void update(String title, String content, PostCategory category) {
         this.title = title;
         this.content = content;
+        this.category = category;
     }
 
     public void updateStatusToMatched() {

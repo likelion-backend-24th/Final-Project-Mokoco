@@ -5,6 +5,7 @@ import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.post.dto.PostRequestDto;
 import com.team2.postservice.post.dto.PostResponseDto;
 import com.team2.postservice.post.entity.Post;
+import com.team2.postservice.post.entity.PostCategory;
 import com.team2.postservice.post.entity.PostImage;
 import com.team2.postservice.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class PostService {
         Post post = Post.builder()
                 .title(request.title())
                 .content(request.content())
+                .category(request.category())
                 .authorEmail(authorEmail)
                 .build();
 
@@ -37,8 +39,12 @@ public class PostService {
         return postRepository.save(post).getId();
     }
 
-    public List<PostResponseDto.Detail> getAllPosts() {
-        return postRepository.findAll().stream()
+    public List<PostResponseDto.Detail> getAllPosts(PostCategory category) {
+        List<Post> posts = (category == null || category == PostCategory.ALL)
+                ? postRepository.findAll()
+                : postRepository.findByCategory(category);
+
+        return posts.stream()
                 .map(PostResponseDto.Detail::from)
                 .toList();
     }
@@ -53,7 +59,7 @@ public class PostService {
         Post post = getPostOrThrow(id);
         validateAuthor(post, userEmail, ErrorCode.UNAUTHORIZED_POST_UPDATE);
 
-        post.update(request.title(), request.content());
+        post.update(request.title(), request.content(), request.category());
     }
 
     @Transactional

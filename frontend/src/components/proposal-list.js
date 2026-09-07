@@ -106,6 +106,12 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 {proposal.createdAt ? new Date(proposal.createdAt).toLocaleDateString() : ""}
               </span>
             </div>
+
+            {proposal.estimatedPrice !== undefined && proposal.estimatedPrice !== null && (
+              <div className="mb-2 text-sm font-bold text-blue-600">
+                희망 견적: {proposal.estimatedPrice.toLocaleString()}원
+              </div>
+            )}
             
             <p className="text-sm text-slate-700 whitespace-pre-line mb-4">{proposal.content}</p>
             

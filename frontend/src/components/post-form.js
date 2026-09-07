@@ -4,19 +4,33 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Wrench, Upload, X } from "@phosphor-icons/react";
 import Link from "next/link";
+import { backendUrl } from "@/lib/backend";
+
+const categories = [
+  { value: "ELECTRIC_LIGHT", label: "전기·조명" },
+  { value: "PLUMBING", label: "배관·설비" },
+  { value: "FURNITURE_INSTALL", label: "가구·설치" },
+  { value: "HOME_APP_LIANCE", label: "가전제품" },
+  { value: "DOOR_WINDOW", label: "문·창문" },
+  { value: "LIVING_ETC", label: "생활·기타" },
+];
 
 export default function PostForm({ postId, initialValue, userEmail, accessToken }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
+  
+  // 기존에 이미 등록되어 있던 이미지 목록 상태 관리
+  const [existingImages, setExistingImages] = useState(initialValue?.images || []);
+  const [selectedCategory, setSelectedCategory] = useState(initialValue?.category || "ELECTRIC_LIGHT");
   const isEdit = Boolean(postId);
 
   const handleFileChange = (e) => {
     if (!e.target.files) return;
     const filesArray = Array.from(e.target.files);
     
-    if (selectedFiles.length + filesArray.length > 5) {
+    if (existingImages.length + selectedFiles.length + filesArray.length > 5) {
       setMessage("이미지는 최대 5장까지 등록할 수 있습니다.");
       return;
     }
@@ -25,8 +39,12 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
     setMessage("");
   };
 
-  const removeFile = (index) => {
+  const removeNewFile = (index) => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (index) => {
+    setExistingImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   async function submitPost(event) {
@@ -40,20 +58,25 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
 
     const formData = new FormData();
 
-    // 1. @RequestPart("post")에 매핑될 JSON 데이터를 Blob으로 감싸서 추가
-    const postDto = { title, content };
+    // 수정 시 기존 이미지 중 유지할 목록(existingImages)도 함께 백엔드로 전달해야 할 수 있습니다.
+    const postDto = { 
+      title, 
+      content, 
+      category: selectedCategory,
+      images: existingImages // 백엔드 DTO 구조에 맞춰 유지할 이미지 전송
+    };
+
     formData.append(
       "post",
       new Blob([JSON.stringify(postDto)], { type: "application/json" })
     );
 
-    // 2. @RequestPart("images")에 매핑될 파일들 추가
     selectedFiles.forEach((file) => {
       formData.append("images", file);
     });
 
     try {
-      const response = await fetch(isEdit ? `/api/posts/${postId}` : "/api/posts", {
+      const response = await fetch(isEdit ? backendUrl(`/posts/${postId}`) : backendUrl("/posts"), {
         method: isEdit ? "PATCH" : "POST",
         headers: {
           "X-User-Email": userEmail ?? "",
@@ -88,6 +111,21 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
 
       <form onSubmit={submitPost} className="repair-form">
         <label className="form-field">
+          <span>카테고리</span>
+          <select 
+            value={selectedCategory} 
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none bg-white"
+          >
+            {categories.map((cat) => (
+              <option key={cat.value} value={cat.value}>
+                {cat.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="form-field">
           <span>제목</span>
           <input name="title" type="text" maxLength={100} required defaultValue={initialValue?.title} placeholder="예: 세면대 수도꼭지에서 물이 새요" />
         </label>
@@ -105,10 +143,23 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
               <Upload size={20} /> 사진 선택하기
             </label>
             <div className="file-preview-list">
+              {/* 기존에 업로드되어 있던 이미지 미리보기 및 삭제 */}
+              {existingImages.map((img, idx) => {
+                const imgUrl = typeof img === "string" ? img : img.imageUrl;
+                return (
+                  <div key={`existing-${idx}`} className="file-preview-item flex items-center gap-2">
+                    <img src={backendUrl(imgUrl)} alt="기존 이미지" className="w-8 h-8 object-cover rounded" />
+                    <span className="truncate max-w-[120px]">기존 이미지 {idx + 1}</span>
+                    <button type="button" onClick={() => removeExistingImage(idx)}><X size={14} /></button>
+                  </div>
+                );
+              })}
+
+              {/* 새로 추가한 파일 미리보기 및 삭제 */}
               {selectedFiles.map((file, idx) => (
-                <div key={idx} className="file-preview-item">
-                  <span>{file.name}</span>
-                  <button type="button" onClick={() => removeFile(idx)}><X size={14} /></button>
+                <div key={`new-${idx}`} className="file-preview-item flex items-center gap-2">
+                  <span className="truncate max-w-[120px]">{file.name}</span>
+                  <button type="button" onClick={() => removeNewFile(idx)}><X size={14} /></button>
                 </div>
               ))}
             </div>

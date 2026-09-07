@@ -30,9 +30,6 @@ async function getPosts() {
 }
 
 function formatRelativeDate(value) {
-  // 실제 넘어오는 데이터와 타입을 콘솔에 출력
-  console.log("Received createdAt value:", value, "Type:", typeof value);
-
   if (!value) return "시간 정보 없음";
 
   let date;
@@ -102,43 +99,66 @@ function Footer() {
   );
 }
 
-function UnauthenticatedHome({ posts, error }) {
-  return (
-    <><main>
-      <section className="unauth-hero"><div className="page-shell hero-grid">
-        <div><h1>가까운 이웃과 연결되어<br />수리가 쉬워지는 <span>동네생활</span></h1>
-          <p>생활 속 작은 수리부터 전문가의 도움이 필요한 일까지,<br className="hidden sm:block" /> 우리 동네에서 쉽고 빠르게 해결해보세요.</p>
-          <div className="hero-actions"><Link href="/login" className="compact-primary-button">수리 요청하기</Link><Link href="/signup" className="compact-outline-button">도움 주기</Link></div>
-        </div>
-        <div className="hero-visual" aria-hidden="true"><MapTrifold size={190} weight="duotone" /></div>
-      </div></section>
-      <section className="page-shell unauth-section"><h2>어떤 수리를 찾고 계신가요?</h2><CategoryRow /></section>
-      <section id="posts" className="page-shell unauth-section recent-section"><h2>최근 올라온 수리 요청</h2><PostList posts={posts} error={error} postHref="/login" /></section>
-      <section id="guide" className="page-shell community-banner"><HandHeart size={50} weight="duotone" /><div><h2>이웃과 함께 만드는 따뜻한 동네 커뮤니티</h2><p>도움이 필요한 이웃을 돕고, 나도 도움을 받을 수 있어요.</p></div><Link href="/signup" className="compact-outline-button">이용 가이드 보기</Link></section>
-    </main><Footer /></>
-  );
-}
-
-function AuthenticatedHome({ posts, error, userEmail }) {
-  const myPosts = posts.filter((post) => post.authorEmail === userEmail);
+function UnifiedHome({ posts, error, userEmail, isAuthenticated }) {
+  const myPosts = isAuthenticated ? posts.filter((post) => post.authorEmail === userEmail) : [];
   const inProgress = myPosts.filter((post) => post.status === "MATCHED").length;
   const completed = myPosts.filter((post) => post.status === "COMPLETED").length;
+
   return (
     <><main className="page-shell auth-main">
-      <LocationPermissionPrompt userEmail={userEmail} /><CategoryRow compact />
+      {isAuthenticated && <LocationPermissionPrompt userEmail={userEmail} />}
+      <CategoryRow compact />
       <div className="auth-dashboard-grid">
         <div className="dashboard-column">
-          <section id="posts" className="reference-card post-card"><div className="reference-card-heading"><h2>오늘의 수리 요청</h2><Link href="/posts">전체 보기 <ArrowRight size={14} /></Link></div><PostList posts={posts} error={error} postHref="/posts/new" /></section>
-          <section className="reference-card"><div className="reference-card-heading"><h2>우리 동네 요청 현황</h2></div><div className="neighborhood-summary"><Wrench size={38} weight="duotone" /><div><strong>{error ? "확인 불가" : `${posts.length}건`}</strong><span>백엔드에서 조회된 전체 수리 요청</span></div></div></section>
+          <section id="posts" className="reference-card post-card">
+            <div className="reference-card-heading">
+              <h2>오늘의 수리 요청</h2>
+              <Link href="/posts">전체 보기 <ArrowRight size={14} /></Link>
+            </div>
+            <PostList posts={posts} error={error} postHref={isAuthenticated ? "/posts/new" : "/login"} />
+          </section>
+          <section className="reference-card">
+            <div className="reference-card-heading"><h2>우리 동네 요청 현황</h2></div>
+            <div className="neighborhood-summary">
+              <Wrench size={38} weight="duotone" />
+              <div><strong>{error ? "확인 불가" : `${posts.length}건`}</strong><span>백엔드에서 조회된 전체 수리 요청</span></div>
+            </div>
+          </section>
         </div>
         <aside className="dashboard-column">
-          <section className="reference-card activity-card"><h2>내 활동 요약</h2><dl>
-            <div><dt><ClipboardText size={20} weight="duotone" />내가 올린 요청</dt><dd>{myPosts.length}건</dd></div>
-            <div><dt><Wrench size={20} weight="duotone" />진행 중 요청</dt><dd>{inProgress}건</dd></div>
-            <div><dt><Star size={20} weight="duotone" />완료한 요청</dt><dd>{completed}건</dd></div>
-          </dl><Link href="#posts" className="wide-outline-button">내 활동 보기</Link></section>
-          <section id="start" className="help-card"><span><Toolbox size={50} weight="duotone" /></span><div><h2>내가 가진 재능으로<br />이웃을 도와주세요</h2><p>작은 도움이 큰 힘이 됩니다.</p></div><Link href="posts" className="wide-outline-button">도움 주기 시작하기</Link></section>
-          <section className="reference-card signed-in-card"><UserCircle size={28} weight="duotone" /><div><span>로그인 계정</span><strong>{userEmail}</strong></div></section>
+          {isAuthenticated ? (
+            <section className="reference-card activity-card">
+              <h2>내 활동 요약</h2>
+              <dl>
+                <div><dt><ClipboardText size={20} weight="duotone" />내가 올린 요청</dt><dd>{myPosts.length}건</dd></div>
+                <div><dt><Wrench size={20} weight="duotone" />진행 중 요청</dt><dd>{inProgress}건</dd></div>
+                <div><dt><Star size={20} weight="duotone" />완료한 요청</dt><dd>{completed}건</dd></div>
+              </dl>
+              <Link href="#posts" className="wide-outline-button">내 활동 보기</Link>
+            </section>
+          ) : (
+            <section className="reference-card activity-card text-center py-8">
+              <h2 className="mb-2">로그인하고 더 많은 기능을 이용해보세요</h2>
+              <p className="text-sm text-slate-500 mb-4">내 수리 요청 현황을 관리하고 이웃과 소통할 수 있습니다.</p>
+              <Link href="/login" className="compact-primary-button w-full justify-center">로그인하기</Link>
+            </section>
+          )}
+
+          <section id="start" className="help-card">
+            <span><Toolbox size={50} weight="duotone" /></span>
+            <div>
+              <h2>내가 가진 재능으로<br />이웃을 도와주세요</h2>
+              <p>작은 도움이 큰 힘이 됩니다.</p>
+            </div>
+            <Link href="/posts" className="wide-outline-button">수리 요청 둘러보기</Link>
+          </section>
+
+          {isAuthenticated && (
+            <section className="reference-card signed-in-card">
+              <UserCircle size={28} weight="duotone" />
+              <div><span>로그인 계정</span><strong>{userEmail}</strong></div>
+            </section>
+          )}
         </aside>
       </div>
     </main><Footer /></>
@@ -156,11 +176,7 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-[#f7f9fc]">
       <SiteHeader userEmail={isAuthenticated ? userEmail : null} />
-      {isAuthenticated ? (
-        <AuthenticatedHome posts={posts} error={error} userEmail={userEmail} />
-      ) : (
-        <UnauthenticatedHome posts={posts} error={error} />
-      )}
+      <UnifiedHome posts={posts} error={error} userEmail={userEmail} isAuthenticated={isAuthenticated} />
     </div>
   );
 }

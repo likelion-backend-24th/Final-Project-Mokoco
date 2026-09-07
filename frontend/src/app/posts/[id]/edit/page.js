@@ -21,7 +21,9 @@ async function getPost(id, accessToken) {
 }
 
 export default async function EditPostPage({ params }) {
-  const { id } = await params;
+  const resolvedParams = await params;
+  const id = resolvedParams?.id;
+  
   const cookieStore = await cookies();
   const userEmail = cookieStore.get("user_email")?.value;
   const accessToken = cookieStore.get("access_token")?.value;
