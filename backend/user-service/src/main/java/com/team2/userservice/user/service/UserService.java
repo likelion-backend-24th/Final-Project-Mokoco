@@ -3,10 +3,7 @@ package com.team2.userservice.user.service;
 import com.team2.userservice.common.exception.CustomException;
 import com.team2.userservice.common.exception.ErrorCode;
 import com.team2.userservice.config.JwtTokenProvider;
-import com.team2.userservice.user.dto.TokenReissueRequest;
-import com.team2.userservice.user.dto.TokenResponse;
-import com.team2.userservice.user.dto.UserLoginRequest;
-import com.team2.userservice.user.dto.UserSignUpRequest;
+import com.team2.userservice.user.dto.*;
 import com.team2.userservice.user.entity.RefreshToken;
 import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
@@ -99,5 +96,17 @@ public class UserService {
     public User findById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    public UserResponse getUserInfo(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        return UserResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .region(user.getRegionCode())
+                .build();
     }
 }
