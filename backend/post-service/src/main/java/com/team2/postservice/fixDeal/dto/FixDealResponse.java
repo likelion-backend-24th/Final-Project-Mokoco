@@ -11,6 +11,7 @@ public record FixDealResponse(
         Long requesterId,
         Long repairerId,
         FixDealStatus status,
+        boolean chatRoomCreatable,
         LocalDateTime createdAt
 ) {
 }
