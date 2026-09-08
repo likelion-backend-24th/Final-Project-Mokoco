@@ -55,6 +55,14 @@ public class ProposalService {
         Proposal proposal = proposalRepository.findById(proposalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROPOSAL_NOT_FOUND));
 
+        if (!proposal.getPost().getId().equals(postId)) {
+            throw new CustomException(ErrorCode.PROPOSAL_NOT_FOUND);
+        }
+        if (proposal.isAdopted()) return;
+        if (proposalRepository.findByPost(post).stream().anyMatch(Proposal::isAdopted)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
         proposal.adopt();
         post.updateStatusToMatched();
 
@@ -80,7 +88,9 @@ public class ProposalService {
         List<Proposal> proposals = proposalRepository.findByPost(post);
 
         return proposals.stream()
-                .map(ProposalResponseDto::new)
+                .map(proposal -> new ProposalResponseDto(proposal,
+                        proposal.isAdopted() ? fixDealRepository.findByProposalId(proposal.getId())
+                                .map(FixDeal::getId).orElse(null) : null))
                 .toList();
     }
 

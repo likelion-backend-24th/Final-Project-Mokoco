@@ -8,12 +8,12 @@ import java.util.Optional;
 
 public interface FixDealRepository extends JpaRepository<FixDeal, Long> {
 
-    Optional<FixDeal> findByFixProposalId(Long fixProposalId);
+    Optional<FixDeal> findByProposalId(Long proposalId);
 
-    Optional<FixDeal> findByFixRequestIdAndStatus(
+    Optional<FixDeal> findByPostIdAndStatus(
             Long fixRequestId,
             FixDealStatus status
     );
 
-    boolean existsByFixProposalId(Long fixProposalId);
+    boolean existsByProposalId(Long proposalId);
 }

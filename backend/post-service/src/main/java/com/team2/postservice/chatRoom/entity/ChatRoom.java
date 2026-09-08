@@ -22,7 +22,8 @@ public class ChatRoom {
     @JoinColumn(name = "fix_deal_id", nullable = false, unique = true)
     private FixDeal fixDeal;
 
-    private LocalDateTime createdAt;
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
 
 
 }

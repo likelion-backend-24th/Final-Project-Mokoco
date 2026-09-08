@@ -4,7 +4,6 @@ import com.team2.postservice.chatRoom.dto.ChatRoomResponse;
 import com.team2.postservice.chatRoom.service.ChatRoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,7 +16,7 @@ public class ChatRoomController {
     @PostMapping("/fix-deals/{fixDealId}")
     public ResponseEntity<ChatRoomResponse> createChatRoom(
             @PathVariable Long fixDealId,
-            @AuthenticationPrincipal String email
+            @RequestHeader("X-User-Email") String email
     ) {
         ChatRoomResponse response = chatRoomService.createChatRoom(fixDealId, email);
 
@@ -27,7 +26,7 @@ public class ChatRoomController {
     @GetMapping("/fix-deals/{fixDealId}")
     public ResponseEntity<ChatRoomResponse> getChatRoom(
             @PathVariable Long fixDealId,
-            @AuthenticationPrincipal String email
+            @RequestHeader("X-User-Email") String email
     ) {
         return ResponseEntity.ok(
                 chatRoomService.getChatRoom(fixDealId, email)
