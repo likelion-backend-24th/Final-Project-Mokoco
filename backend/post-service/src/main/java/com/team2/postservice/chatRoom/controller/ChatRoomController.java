@@ -13,6 +13,14 @@ public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
 
+    @GetMapping
+    public java.util.List<com.team2.postservice.chatRoom.dto.ChatRoomListItem> getMyRooms(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        return chatRoomService.getMyRooms(authorization, page, size);
+    }
+
     @PostMapping("/fix-deals/{fixDealId}")
     public ResponseEntity<ChatRoomResponse> createChatRoom(
             @PathVariable Long fixDealId,
