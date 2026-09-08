@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChatCircle } from "@phosphor-icons/react";
 
 export default function ProposalChatRoom({ fixDealId, isRequester }) {
   const [room, setRoom] = useState(null);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
-  const [expanded, setExpanded] = useState(false);
+  const router = useRouter();
   const endpoint = `/api/chat-rooms/fix-deals/${fixDealId}`;
 
   useEffect(() => {
@@ -27,7 +28,7 @@ export default function ProposalChatRoom({ fixDealId, isRequester }) {
   }, [endpoint, fixDealId]);
 
   async function openRoom() {
-    if (room) { setExpanded(true); return; }
+    if (room) { router.push(`/chat-rooms/${room.chatRoomId}`); return; }
     setStatus("loading");
     setError("");
     try {
@@ -44,7 +45,7 @@ export default function ProposalChatRoom({ fixDealId, isRequester }) {
       }
       if (!response.ok) throw new Error(data.error || "채팅방 요청에 실패했습니다.");
       setRoom(data);
-      setExpanded(true);
+      router.push(`/chat-rooms/${data.chatRoomId}`);
       setStatus("ready");
     } catch (failure) { setError(failure.message); setStatus("error"); }
   }
@@ -64,15 +65,7 @@ export default function ProposalChatRoom({ fixDealId, isRequester }) {
         </button>
       </div>
       {error && <p role="alert" className="mt-2 text-sm text-red-600">{error}</p>}
-      {expanded && room && (
-        <section aria-label="제안 채팅방" className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
-          <div className="flex items-center justify-between">
-            <h4 className="font-bold text-slate-900">채팅방 #{room.chatRoomId}</h4>
-            <button type="button" onClick={() => setExpanded(false)} className="text-sm text-slate-500">닫기</button>
-          </div>
-          <p className="mt-3 text-sm text-slate-600">채팅방이 준비되었습니다. 메시지 주고받기는 준비 중입니다.</p>
-        </section>
-      )}
+
     </div>
   );
 }
