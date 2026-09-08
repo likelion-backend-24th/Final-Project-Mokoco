@@ -6,17 +6,15 @@ import lombok.Builder;
 @Builder
 public record RegionResponse(
         String regionCode,
-        String sido,
-        String sigungu,
-        String dong
+        String regionName
 ) {
 
     public static RegionResponse from(Region region) {
+        String fullName = region.getSido() + " " + region.getSigungu() + " " + region.getDong();
+
         return RegionResponse.builder()
                 .regionCode(region.getRegionCode())
-                .sido(region.getSido())
-                .sigungu(region.getSigungu())
-                .dong(region.getDong())
+                .regionName(fullName)
                 .build();
     }
 }

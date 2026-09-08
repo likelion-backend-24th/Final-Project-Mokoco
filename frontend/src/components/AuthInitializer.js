@@ -15,6 +15,7 @@ export default function AuthInitializer() {
     // 브라우저 뒤로가기 등으로 bfcache(캐시)에서 페이지가 살아날 때 실행
     const handlePageShow = (event) => {
       if (event.persisted) {
+        initAuth(); // 캐시 복원 시 쿠키와 스토어 상태 재동기화
         router.refresh(); // 서버 컴포넌트와 쿠키 상태를 강제로 다시 동기화
       }
     };

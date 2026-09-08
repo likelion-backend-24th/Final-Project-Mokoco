@@ -15,6 +15,7 @@ import {
   formatRegionName,
   isAutomaticLocationAccurate,
 } from "@/lib/region";
+import { backendUrl } from "@/lib/backend"; // 백엔드 URL 유틸 임포트 추가
 
 export default function LocationPermissionPrompt({ userEmail }) {
   const [state, setState] = useState("checking");
@@ -28,12 +29,16 @@ export default function LocationPermissionPrompt({ userEmail }) {
 
     async function checkRegion() {
       try {
-        const response = await fetch("/api/users/me/region", { cache: "no-store" });
+        // credentials: "include" 추가하여 쿠키 동반 전송
+        const response = await fetch(backendUrl("/api/users/me/region"), { 
+          cache: "no-store",
+          credentials: "include" 
+        });
 
         if (response.ok) {
           const region = await response.json();
           if (active) {
-            setRegionName(formatRegionName(region));
+            setRegionName(region.regionName);
             setState("saved");
           }
           return;
@@ -114,10 +119,12 @@ export default function LocationPermissionPrompt({ userEmail }) {
     setState("saving");
 
     try {
-      const response = await fetch("/api/users/me/region", {
+      // credentials: "include" 추가하여 쿠키 동반 전송
+      const response = await fetch(backendUrl("/api/users/me/region"), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ latitude: position.latitude, longitude: position.longitude }),
+        credentials: "include",
       });
       const payload = await response.json();
 
@@ -127,7 +134,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
         return;
       }
 
-      setRegionName(formatRegionName(payload));
+      setRegionName(payload.regionName);
       window.sessionStorage.removeItem(dismissalKey);
       setState("success");
     } catch {

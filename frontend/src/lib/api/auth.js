@@ -13,22 +13,55 @@ export async function loginUser(email, password) {
   }
 
   if (data.accessToken) {
-    useAuthStore.getState().setLogin(data.accessToken, email);
-    if (data.refreshToken) {
-      // 로컬스토리지와 일반 쿠키 양쪽에 refresh_token을 확실하게 동기화
-      localStorage.setItem("refresh_token", data.refreshToken);
-      document.cookie = `refresh_token=${data.refreshToken}; path=/; max-age=604800; SameSite=Lax`;
+    let userEmail = email;
+
+    // accessToken 페이로드에서 sub(이메일) 추출
+    try {
+      const base64Payload = data.accessToken.split(".")[1];
+      const jsonPayload = decodeURIComponent(
+        atob(base64Payload)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+      const payload = JSON.parse(jsonPayload);
+      userEmail = payload.sub || email;
+    } catch (e) {
+      console.error("토큰 파싱 실패", e);
     }
+
+    // Refresh Token은 localStorage에 백업용으로 보관 (선택 사항)
+    if (data.refreshToken && typeof window !== "undefined") {
+      localStorage.setItem("refresh_token", data.refreshToken);
+    }
+
+    // Zustand 스토어 업데이트 (쿠키는 이미 Next.js API Route 서버에서 구워짐)
+    useAuthStore.getState().setLogin(
+      data.accessToken, 
+      userEmail, 
+      data.regionCode, 
+      data.regionName
+    );
   }
 
   return data;
 }
 
 export async function logoutUser() {
-  const response = await fetch("/api/auth/logout", {
-    method: "POST",
-  });
-  
-  useAuthStore.getState().setLogout();
-  return response.ok;
+  try {
+    await fetch("/api/auth/logout", { method: "POST" });
+  } catch (e) {
+    console.error("로그아웃 통신 실패", e);
+  } finally {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("refresh_token");
+      // 만약 zustand persist를 쓰고 있다면 해당 키도 여기서 지워야 함
+      // localStorage.removeItem("auth-storage"); 
+    }
+    
+    useAuthStore.getState().setLogout();
+    
+    // 캐시를 완전히 날리고 홈이나 로그인으로 강제 이동
+    window.location.href = "/";
+  }
 }
