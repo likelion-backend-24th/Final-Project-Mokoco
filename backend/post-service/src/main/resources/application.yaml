@@ -2,6 +2,8 @@ server:
   port: 8082 # user-service가 8081을 쓰고 있으므로 포트 변경
 
 spring:
+  profiles:
+    include: secret
   application:
     name: post-service # 서비스 이름 변경
 
@@ -24,7 +26,7 @@ spring:
     password: root1234
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  Jackson:
+  jackson:
     serialization:
       write-dates-as-timestamps: false
 

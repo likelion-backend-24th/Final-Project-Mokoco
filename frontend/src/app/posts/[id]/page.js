@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CheckCircle, Wrench } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft, CheckCircle, Wrench, MapPin } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
 import PostActions from "@/components/post-actions";
 import RepairProposalForm from "@/components/proposal-form";
@@ -79,9 +79,17 @@ export default async function PostDetailPage({ params }) {
             <div className="dashboard-card">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <span className={`status-badge status-${post.status?.toLowerCase()}`}>
-                    {statusLabel[post.status] ?? post.status ?? "상태 미정"}
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`status-badge status-${post.status?.toLowerCase()}`}>
+                      {statusLabel[post.status] ?? post.status ?? "상태 미정"}
+                    </span>
+                    {(post.regionName || post.regionCode) && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 rounded-full">
+                        <MapPin size={12} weight="duotone" />
+                        {post.regionName || post.regionCode}
+                      </span>
+                    )}
+                  </div>
                   <h1 className="mt-3 text-[28px] font-extrabold tracking-[-0.03em] text-slate-950">{post.title}</h1>
                 </div>
                 {isMine && <PostActions postId={post.id} />}

@@ -33,6 +33,9 @@ public class Post {
     @Column(nullable = false)
     private String authorEmail;
 
+    @Column(nullable = false, length = 100)
+    private String regionName; // 지역 이름 필드
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PostCategory category;
@@ -52,10 +55,11 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Post(String title, String content, String authorEmail, PostCategory category) {
+    public Post(String title, String content, String authorEmail, String regionName, PostCategory category) {
         this.title = title;
         this.content = content;
         this.authorEmail = authorEmail;
+        this.regionName = regionName; // 빌더에 지역 이름 추가
         this.category = category;
         this.status = PostStatus.WAITING;
     }

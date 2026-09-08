@@ -1,5 +1,6 @@
 package com.team2.userservice.user.entity;
 
+import com.team2.userservice.region.entity.Region;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -38,8 +39,9 @@ public class User {
     @Column(nullable = false, length = 20)
     private Role role;
 
-    @Column(length = 100)
-    private String regionCode;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "region_id")
+    private Region region; // 문자열 대신 Region 엔티티 연관관계 매핑
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -50,13 +52,13 @@ public class User {
     private LocalDateTime updatedAt;
 
     @Builder
-    public User(String email, String password, String name, String nickname, Role role, String regionCode) {
+    public User(String email, String password, String name, String nickname, Role role, Region region) {
         this.email = email;
         this.password = password;
         this.name = name;
         this.nickname = nickname;
         this.role = role;
-        this.regionCode = regionCode;
+        this.region = region;
     }
 
     @PrePersist
@@ -72,7 +74,11 @@ public class User {
     }
 
 
-    public void updateRegion(String regionCode) {
-        this.regionCode = regionCode;
+    public void updateRegion(Region region) {
+        this.region = region;
+    }
+
+    public String getRegionCode() {
+        return this.region != null ? this.region.getRegionCode() : null;
     }
 }

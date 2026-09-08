@@ -1,5 +1,7 @@
 package com.team2.userservice.config;
 
+import com.team2.userservice.user.entity.User;
+import com.team2.userservice.user.repository.UserRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -17,20 +19,26 @@ import java.io.IOException;
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-        // 주의: CustomOAuth2UserService에서 반환하는 Principal의 속성(Attribute) 구조에 맞춰 이메일을 가져와야 함
         String email = (String) oAuth2User.getAttributes().get("email");
 
-        // JWT 토큰 생성
-        String accessToken = jwtTokenProvider.createAccessToken(email, "USER"); // 권한 정보 맞추어 수정
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다: " + email));
 
-        // 프론트엔드 리다이렉트 URL 생성 (토큰을 쿼리 파라미터로 전달)
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:3000/oauth2/redirect") // 프론트 주소에 맞게 수정
+        String role = user.getRole().name();
+
+        // 토큰 생성 시 이메일과 권한만 전달
+        String accessToken = jwtTokenProvider.createAccessToken(email, role);
+        String refreshToken = jwtTokenProvider.createRefreshToken(email);
+
+        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:3000/oauth2/redirect")
                 .queryParam("token", accessToken)
+                .queryParam("refreshToken", refreshToken)
                 .build().toUriString();
 
         response.sendRedirect(targetUrl);

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { 
   ClipboardText, Plus, Wrench, SquaresFour, Lightbulb, 
-  Drop, Hammer, WashingMachine, DoorOpen, Toolbox 
+  Drop, Hammer, WashingMachine, DoorOpen, Toolbox, MapPin 
 } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
 import { backendUrl } from "@/lib/backend";
@@ -122,11 +122,19 @@ export default async function PostsPage({ searchParams }) {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 min-w-0 flex-wrap">
                           <h3 className="truncate font-semibold text-slate-900">{post.title || "제목 없는 수리 요청"}</h3>
                           <span className={`shrink-0 status-badge status-${post.status?.toLowerCase()}`}>
                             {statusLabel[post.status] ?? post.status ?? "상태 미정"}
                           </span>
+                          
+                          {/* 지역 이름 뱃지 우선 노출 (없으면 기존 코드 대체) */}
+                          {(post.regionName || post.regionCode) && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 rounded-full shrink-0">
+                              <MapPin size={12} weight="duotone" />
+                              {post.regionName || post.regionCode}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex flex-col items-end shrink-0 text-xs text-slate-400 gap-0.5">

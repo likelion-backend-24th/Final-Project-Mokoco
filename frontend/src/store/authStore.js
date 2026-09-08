@@ -1,4 +1,6 @@
+// store/authStore.js
 import { create } from "zustand";
+import { jwtDecode } from "jwt-decode";
 
 export const useAuthStore = create((set) => ({
   accessToken: null,
@@ -26,14 +28,15 @@ export const useAuthStore = create((set) => ({
       }
       
       try {
-        const base64Payload = token.split(".")[1];
-        const payload = JSON.parse(atob(base64Payload));
+        const payload = jwtDecode(token);
         const email = payload.sub;
+
         if (email) {
           document.cookie = `user_email=${encodeURIComponent(email)}; path=/; max-age=604800; SameSite=Lax`;
-          set({ accessToken: token, userEmail: email });
-          return;
         }
+
+        set({ accessToken: token, userEmail: email });
+        return;
       } catch (e) {
         console.error("소셜 토큰 파싱 실패", e);
       }
@@ -56,12 +59,22 @@ export const useAuthStore = create((set) => ({
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("access_token");
       if (token) {
+        document.cookie = `access_token=${token}; path=/; max-age=604800; SameSite=Lax`;
+
         try {
-          const base64Payload = token.split(".")[1];
-          const payload = JSON.parse(atob(base64Payload));
-          set({ accessToken: token, userEmail: payload.sub });
+          const payload = jwtDecode(token);
+          const email = payload.sub;
+          if (email) {
+            document.cookie = `user_email=${encodeURIComponent(email)}; path=/; max-age=604800; SameSite=Lax`;
+          }
+
+          set({ 
+            accessToken: token, 
+            userEmail: email,
+          });
         } catch (e) {
           console.error("Auth 복원 실패", e);
+          set({ accessToken: token });
         }
       }
     }

@@ -16,6 +16,7 @@ public class PostResponseDto {
             String authorEmail,
             PostCategory category,
             PostStatus status,
+            String regionName,
             List<String> images,
             String createdAt,
             String updatedAt
@@ -28,6 +29,7 @@ public class PostResponseDto {
                     post.getAuthorEmail(),
                     post.getCategory(),
                     post.getStatus(),
+                    post.getRegionName(),
                     post.getImages().stream()
                             .map(PostImage::getImageUrl)
                             .toList(),

@@ -28,28 +28,29 @@ public class JwtTokenProvider {
         this.refreshTokenValidity = refreshTokenValidity;
     }
 
-    // Access Token 생성 (30분)
+    // Access Token 생성 (이메일과 권한만 포함)
     public String createAccessToken(String email, String role) {
-        return createToken(email, role, accessTokenValidity, accessSecretKey);
-    }
-
-    // Refresh Token 생성 (7일)
-    public String createRefreshToken(String email) {
-        return createToken(email, null, refreshTokenValidity, refreshSecretKey);
-    }
-
-    private String createToken(String email, String role, long validity, SecretKey key) {
         JwtBuilder builder = Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + validity))
-                .signWith(key);
+                .expiration(new Date(System.currentTimeMillis() + accessTokenValidity))
+                .signWith(accessSecretKey);
 
         if (role != null) {
             builder.claim("role", role);
         }
 
         return builder.compact();
+    }
+
+    // Refresh Token 생성 (7일)
+    public String createRefreshToken(String email) {
+        return Jwts.builder()
+                .subject(email)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + refreshTokenValidity))
+                .signWith(refreshSecretKey)
+                .compact();
     }
 
     // Access Token 검증

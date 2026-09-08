@@ -21,7 +21,6 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
   
-  // 기존에 이미 등록되어 있던 이미지 목록 상태 관리
   const [existingImages, setExistingImages] = useState(initialValue?.images || []);
   const [selectedCategory, setSelectedCategory] = useState(initialValue?.category || "ELECTRIC_LIGHT");
   const isEdit = Boolean(postId);
@@ -58,12 +57,10 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
 
     const formData = new FormData();
 
-    // 수정 시 기존 이미지 중 유지할 목록(existingImages)도 함께 백엔드로 전달해야 할 수 있습니다.
     const postDto = { 
       title, 
       content, 
-      category: selectedCategory,
-      images: existingImages // 백엔드 DTO 구조에 맞춰 유지할 이미지 전송
+      category: selectedCategory
     };
 
     formData.append(
@@ -124,52 +121,64 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
             ))}
           </select>
         </label>
-
+        
+        {/* 제목 입력 */}
         <label className="form-field">
           <span>제목</span>
-          <input name="title" type="text" maxLength={100} required defaultValue={initialValue?.title} placeholder="예: 세면대 수도꼭지에서 물이 새요" />
-        </label>
-        
-        <label className="form-field">
-          <span>요청 내용</span>
-          <textarea name="content" required rows={7} defaultValue={initialValue?.content} placeholder="문제가 발생한 상황과 필요한 도움을 자세히 적어주세요." />
+          <input 
+            name="title" 
+            type="text" 
+            defaultValue={initialValue?.title || ""} 
+            placeholder="제목을 입력해주세요" 
+            required
+            className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+          />
         </label>
 
+        {/* 내용 입력 */}
         <label className="form-field">
+          <span>내용</span>
+          <textarea 
+            name="content" 
+            rows={6}
+            defaultValue={initialValue?.content || ""} 
+            placeholder="어떤 도움이 필요한지 자세히 적어주세요" 
+            required
+            className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+          />
+        </label>
+
+        {/* 파일 첨부 영역 */}
+        <div className="form-field">
           <span>사진 첨부 (최대 5장)</span>
-          <div className="file-upload-box">
-            <input type="file" accept="image/*" multiple onChange={handleFileChange} id="image-input" className="hidden" />
-            <label htmlFor="image-input" className="file-upload-button cursor-pointer">
-              <Upload size={20} /> 사진 선택하기
-            </label>
-            <div className="file-preview-list">
-              {/* 기존에 업로드되어 있던 이미지 미리보기 및 삭제 */}
-              {existingImages.map((img, idx) => {
-                const imgUrl = typeof img === "string" ? img : img.imageUrl;
-                return (
-                  <div key={`existing-${idx}`} className="file-preview-item flex items-center gap-2">
-                    <img src={backendUrl(imgUrl)} alt="기존 이미지" className="w-8 h-8 object-cover rounded" />
-                    <span className="truncate max-w-[120px]">기존 이미지 {idx + 1}</span>
-                    <button type="button" onClick={() => removeExistingImage(idx)}><X size={14} /></button>
-                  </div>
-                );
-              })}
-
-              {/* 새로 추가한 파일 미리보기 및 삭제 */}
-              {selectedFiles.map((file, idx) => (
-                <div key={`new-${idx}`} className="file-preview-item flex items-center gap-2">
-                  <span className="truncate max-w-[120px]">{file.name}</span>
-                  <button type="button" onClick={() => removeNewFile(idx)}><X size={14} /></button>
-                </div>
-              ))}
-            </div>
+          <label className="flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-4 cursor-pointer hover:border-blue-500 transition">
+            <Upload size={20} className="mr-2 text-slate-500" />
+            <span className="text-sm text-slate-600">이미지 파일 업로드</span>
+            <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
+          </label>
+          
+          {/* 선택된 파일 목록 프리뷰 */}
+          <div className="flex flex-wrap gap-2 mt-2">
+            {selectedFiles.map((file, idx) => (
+              <div key={idx} className="relative bg-slate-100 px-3 py-1 rounded-lg text-xs flex items-center">
+                <span>{file.name}</span>
+                <button type="button" onClick={() => removeNewFile(idx)} className="ml-2 text-red-500">
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
           </div>
-        </label>
+        </div>
 
-        {message && <div className="form-message form-message-error" role="alert">{message}</div>}
+        {/* 💡 에러 메시지를 파란색 등록 버튼 바로 위로 이동 */}
+        {message && (
+          <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm font-medium text-center">
+            {message}
+          </div>
+        )}
 
-        <button type="submit" className="primary-button w-full justify-center" disabled={submitting}>
-          {submitting ? "저장 중..." : isEdit ? "수정 완료" : "수리 요청 등록"}
+        <button type="submit" disabled={submitting} className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition disabled:opacity-50">
+          {submitting ? "저장 중..." : (isEdit ? "수정하기" : "등록하기")}
         </button>
       </form>
     </section>

@@ -30,8 +30,9 @@ public class PostController {
 
     @GetMapping
     public ResponseEntity<List<PostResponseDto.Detail>> getPosts(
-            @RequestParam(required = false) PostCategory category) {
-        return ResponseEntity.ok(postService.getAllPosts(category));
+            @RequestParam(required = false) PostCategory category,
+            @RequestParam(required = false) String regionName) {
+        return ResponseEntity.ok(postService.getAllPosts(category, regionName));
     }
 
     @GetMapping("/{id}")
