@@ -1,0 +1,11 @@
+# Run: caddy run --config infra/Caddyfile
+# Trust Caddy's local CA before opening https://localhost:3443.
+https://localhost:3443 {
+    tls internal
+    handle /ws/chat {
+        reverse_proxy localhost:8082
+    }
+    handle {
+        reverse_proxy localhost:3000
+    }
+}
