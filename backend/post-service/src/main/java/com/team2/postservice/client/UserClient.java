@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestParam;
         configuration = UserClientConfig.class
 )
 public interface UserClient {
+    @org.springframework.web.bind.annotation.PostMapping("/internal/users/verify-token")
+    UserClientResponse verifyToken(@org.springframework.web.bind.annotation.RequestBody String token);
 
     @GetMapping("/internal/users/by-email")
     UserClientResponse getUserByEmail(@RequestParam("email") String email);

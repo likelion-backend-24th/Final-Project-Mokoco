@@ -14,6 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class UserClientController {
     private final UserService userService;
+    private final com.team2.userservice.config.JwtTokenProvider tokenProvider;
+
+    @org.springframework.web.bind.annotation.PostMapping("/verify-token")
+    public ResponseEntity<UserResponse> verifyToken(@org.springframework.web.bind.annotation.RequestBody String token) {
+        if (!tokenProvider.validateAccessToken(token)) return ResponseEntity.status(401).build();
+        return ResponseEntity.ok(userService.getUserInfo(tokenProvider.getEmailFromAccessToken(token)));
+    }
 
     @GetMapping("/by-email")
     public ResponseEntity<UserResponse> getUserByEmail(@RequestParam String email) {
