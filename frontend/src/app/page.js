@@ -7,6 +7,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
 import LocationPermissionPrompt from "@/components/location-permission-prompt";
+import HomeChatList from "@/components/home-chat-list";
 import { backendUrl } from "@/lib/backend";
 
 export const dynamic = 'force-dynamic';
@@ -144,14 +145,7 @@ function UnifiedHome({ posts, error, userEmail, isAuthenticated }) {
             </section>
           )}
 
-          <section id="start" className="help-card">
-            <span><Toolbox size={50} weight="duotone" /></span>
-            <div>
-              <h2>내가 가진 재능으로<br />이웃을 도와주세요</h2>
-              <p>작은 도움이 큰 힘이 됩니다.</p>
-            </div>
-            <Link href="/posts" className="wide-outline-button">수리 요청 둘러보기</Link>
-          </section>
+          <HomeChatList key={userEmail || "guest"} isAuthenticated={isAuthenticated} />
 
           {isAuthenticated && (
             <section className="reference-card signed-in-card">
