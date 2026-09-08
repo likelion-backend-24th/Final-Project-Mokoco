@@ -18,10 +18,10 @@ public class FixDeal {
 
 
     @Column(nullable = false)
-    private Long fixRequestId;
+    private Long postId;
 
     @Column(nullable = false)
-    private Long fixProposalId;
+    private Long proposalId;
 
     @Column(nullable = false)
     private Long requesterId;
