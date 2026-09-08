@@ -2,9 +2,13 @@ package com.team2.userservice.user.dto;
 
 import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
+import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
+@Builder
+@AllArgsConstructor
 public class UserResponse {
     private Long id;
     private String email;
