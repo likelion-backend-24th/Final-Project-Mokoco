@@ -1,7 +1,11 @@
 package com.team2.postservice.proposal.service;
 
+import com.team2.postservice.client.UserClient;
+import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.common.exception.CustomException;
 import com.team2.postservice.common.exception.ErrorCode;
+import com.team2.postservice.fixDeal.entity.FixDeal;
+import com.team2.postservice.fixDeal.repository.FixDealRepository;
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.proposal.dto.ProposalRequestDto;
@@ -21,6 +25,8 @@ public class ProposalService {
 
     private final ProposalRepository proposalRepository;
     private final PostRepository postRepository;
+    private final FixDealRepository fixDealRepository;
+    private final UserClient userClient;
 
     @Transactional
     public Long createProposal(Long postId, ProposalRequestDto.Create request, String repairerEmail) {
@@ -30,6 +36,7 @@ public class ProposalService {
         Proposal proposal = Proposal.builder()
                 .post(post)
                 .repairerEmail(repairerEmail)
+                .estimatedPrice(request.estimatedPrice())
                 .content(request.content())
                 .build();
 
@@ -48,8 +55,29 @@ public class ProposalService {
         Proposal proposal = proposalRepository.findById(proposalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROPOSAL_NOT_FOUND));
 
+        if (!proposal.getPost().getId().equals(postId)) {
+            throw new CustomException(ErrorCode.PROPOSAL_NOT_FOUND);
+        }
+        if (proposal.isAdopted()) return;
+        if (proposalRepository.findByPost(post).stream().anyMatch(Proposal::isAdopted)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
         proposal.adopt();
         post.updateStatusToMatched();
+
+        UserClientResponse requester = userClient.getUserByEmail(post.getAuthorEmail());
+        UserClientResponse repairer = userClient.getUserByEmail(proposal.getRepairerEmail());
+
+        FixDeal fixDeal = FixDeal.builder()
+                .postId(post.getId())
+                .proposalId(proposal.getId())
+                .requesterId(requester.id())
+                .repairerId(repairer.id())
+                .build();
+
+        fixDealRepository.save(fixDeal);
+
     }
 
     @Transactional(readOnly = true)
@@ -60,7 +88,9 @@ public class ProposalService {
         List<Proposal> proposals = proposalRepository.findByPost(post);
 
         return proposals.stream()
-                .map(ProposalResponseDto::new)
+                .map(proposal -> new ProposalResponseDto(proposal,
+                        proposal.isAdopted() ? fixDealRepository.findByProposalId(proposal.getId())
+                                .map(FixDeal::getId).orElse(null) : null))
                 .toList();
     }
 

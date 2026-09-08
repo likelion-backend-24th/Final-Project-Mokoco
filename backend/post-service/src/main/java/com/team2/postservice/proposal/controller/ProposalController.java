@@ -3,6 +3,7 @@ package com.team2.postservice.proposal.controller;
 import com.team2.postservice.proposal.dto.ProposalRequestDto;
 import com.team2.postservice.proposal.dto.ProposalResponseDto;
 import com.team2.postservice.proposal.service.ProposalService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,7 @@ public class ProposalController {
     // 제안 등록 (수리공)
     @PostMapping
     public ResponseEntity<Long> createProposal(@PathVariable Long postId,
-                                               @RequestBody ProposalRequestDto.Create request,
+                                               @RequestBody @Valid ProposalRequestDto.Create request,
                                                @RequestHeader("X-User-Email") String repairerEmail) {
         Long proposalId = proposalService.createProposal(postId, request, repairerEmail);
         return ResponseEntity.ok(proposalId);

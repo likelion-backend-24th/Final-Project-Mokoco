@@ -3,10 +3,13 @@ package com.team2.userservice.user.service;
 import com.team2.userservice.common.exception.CustomException;
 import com.team2.userservice.common.exception.ErrorCode;
 import com.team2.userservice.config.JwtTokenProvider;
+import com.team2.userservice.region.entity.Region;
+import com.team2.userservice.region.repository.RegionRepository;
 import com.team2.userservice.user.dto.TokenReissueRequest;
 import com.team2.userservice.user.dto.TokenResponse;
 import com.team2.userservice.user.dto.UserLoginRequest;
 import com.team2.userservice.user.dto.UserSignUpRequest;
+import com.team2.userservice.user.dto.*;
 import com.team2.userservice.user.entity.RefreshToken;
 import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
@@ -26,11 +29,18 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final RegionRepository regionRepository;
 
     @Transactional
     public Long signUp(UserSignUpRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
+        }
+
+        Region region = null;
+        if (request.getRegionCode() != null) {
+            region = regionRepository.findByRegionCode(request.getRegionCode())
+                    .orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND));
         }
 
         User user = User.builder()
@@ -39,7 +49,7 @@ public class UserService {
                 .name(request.getName())
                 .nickname(request.getNickname())
                 .role(Role.USER)
-                .regionCode(request.getRegionCode())
+                .region(region)
                 .build();
 
         userRepository.save(user);
@@ -73,12 +83,10 @@ public class UserService {
 
     @Transactional
     public TokenResponse reissue(TokenReissueRequest request) {
-        // Refresh Token 유효성 검증
         if (!jwtTokenProvider.validateRefreshToken(request.getRefreshToken())) {
             throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        // DB에 저장된 토큰과 일치하는지 확인
         RefreshToken savedToken = refreshTokenRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new CustomException(ErrorCode.EXPIRED_SESSION));
 
@@ -86,11 +94,9 @@ public class UserService {
             throw new CustomException(ErrorCode.INVALID_TOKEN_VALUE);
         }
 
-        // 회원 정보 조회 (Role 추출용)
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        // 새로운 Access Token 발급 (Refresh Token은 그대로 유지)
         String newAccessToken = jwtTokenProvider.createAccessToken(user.getEmail(), user.getRole().name());
 
         return new TokenResponse(newAccessToken, request.getRefreshToken());
@@ -99,5 +105,25 @@ public class UserService {
     public User findById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private String formatRegionName(Region region) {
+        if (region == null) {
+            return null;
+        }
+        return String.format("%s %s %s", region.getSido(), region.getSigungu(), region.getDong()).trim();
+    }
+
+    public UserResponse findUserByEmail(String email) {
+        // 1. Repository를 통해 유저 엔티티 조회 (유저가 없으면 예외 처리)
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다: " + email));
+
+        // 2. 엔티티를 UserResponse DTO로 변환해서 반환
+        return UserResponse.builder()
+                .email(user.getEmail())
+                .name(user.getName())
+                // 필요한 다른 필드들도 여기에 매핑
+                .build();
     }
 }

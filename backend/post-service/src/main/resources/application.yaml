@@ -2,6 +2,8 @@ server:
   port: 8082 # user-service가 8081을 쓰고 있으므로 포트 변경
 
 spring:
+  profiles:
+    include: secret
   application:
     name: post-service # 서비스 이름 변경
 
@@ -24,10 +26,20 @@ spring:
     password: root1234
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  Jackson:
+  jackson:
     serialization:
       write-dates-as-timestamps: false
 
 file:
   upload-dir: ./uploads/post-images # 이미지 파일이 저장되는 로컬 경로
   base-url: http://localhost:8082/images # 저장된 이미지에 접근하는 공개 URL
+
+
+services:
+  user-service:
+    url: http://localhost:8081
+internal:
+  service-key: ${INTERNAL_SERVICE_KEY}
+
+chat:
+  allowed-origins: ${CHAT_ALLOWED_ORIGINS:http://localhost:3000}

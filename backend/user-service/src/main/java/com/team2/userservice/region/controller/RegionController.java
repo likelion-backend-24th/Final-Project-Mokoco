@@ -32,6 +32,9 @@ public class RegionController {
             @AuthenticationPrincipal String email
     ) {
         RegionResponse response = regionService.getRegionInfo(email);
+        if (response == null) {
+            return ResponseEntity.notFound().build(); // 👈 지역이 없으면 404를 반환해야 프론트가 동네 설정 모달을 띄웁니다!
+        }
         return ResponseEntity.ok(response);
     }
 }

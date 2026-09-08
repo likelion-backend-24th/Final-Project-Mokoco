@@ -11,11 +11,17 @@ public class ProposalResponseDto {
     private final Long postId;
     private final String repairerEmail;
     private final String content;
+    private final Long fixDealId;
 
     @JsonProperty("isAdopted")
     private final boolean isAdopted;
 
     public ProposalResponseDto(Proposal proposal) {
+        this(proposal, null);
+    }
+
+    public ProposalResponseDto(Proposal proposal, Long fixDealId) {
+        this.fixDealId = fixDealId;
         this.id = proposal.getId();
         this.postId = proposal.getPost() != null ? proposal.getPost().getId() : null;
         this.repairerEmail = proposal.getRepairerEmail();

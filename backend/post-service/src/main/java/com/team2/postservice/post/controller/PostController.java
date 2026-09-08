@@ -2,7 +2,9 @@ package com.team2.postservice.post.controller;
 
 import com.team2.postservice.post.dto.PostRequestDto;
 import com.team2.postservice.post.dto.PostResponseDto;
+import com.team2.postservice.post.entity.PostCategory;
 import com.team2.postservice.post.service.PostService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +21,7 @@ public class PostController {
     private final PostService postService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Long> createPost(@RequestPart("post") PostRequestDto.Create request,
+    public ResponseEntity<Long> createPost(@RequestPart("post") @Valid PostRequestDto.Create request,
                                            @RequestPart(value = "images", required = false) List<MultipartFile> images,
                                            @RequestHeader("X-User-Email") String userEmail) {
         Long postId = postService.createPost(request, images, userEmail);
@@ -27,8 +29,10 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PostResponseDto.Detail>> getPosts() {
-        return ResponseEntity.ok(postService.getAllPosts());
+    public ResponseEntity<List<PostResponseDto.Detail>> getPosts(
+            @RequestParam(required = false) PostCategory category,
+            @RequestParam(required = false) String regionName) {
+        return ResponseEntity.ok(postService.getAllPosts(category, regionName));
     }
 
     @GetMapping("/{id}")
@@ -38,7 +42,7 @@ public class PostController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<Void> updatePost(@PathVariable Long id,
-                                           @RequestBody PostRequestDto.Update request,
+                                           @RequestBody @Valid PostRequestDto.Update request,
                                            @RequestHeader("X-User-Email") String userEmail) {
         postService.updatePost(id, request, userEmail);
         return ResponseEntity.ok().build();
@@ -53,8 +57,8 @@ public class PostController {
 
     @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PostResponseDto.Detail> addImages(@PathVariable Long id,
-                                                             @RequestPart("images") List<MultipartFile> images,
-                                                             @RequestHeader("X-User-Email") String userEmail) {
+                                                            @RequestPart("images") List<MultipartFile> images,
+                                                            @RequestHeader("X-User-Email") String userEmail) {
         return ResponseEntity.ok(postService.addImages(id, images, userEmail));
     }
 

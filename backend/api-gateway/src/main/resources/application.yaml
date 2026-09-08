@@ -6,6 +6,19 @@ spring:
     name: api-gateway
   cloud:
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "http://localhost:3000"
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowed-headers: "*"
+            allow-credentials: true
       routes:
         - id: user-service
           uri: http://localhost:8081
@@ -15,7 +28,7 @@ spring:
         - id: post-service
           uri: http://localhost:8082
           predicates:
-            - Path=/posts/**
+            - Path=/posts/**, /api/chat-rooms/**
 
         - id: payment-service
           uri: http://localhost:8083

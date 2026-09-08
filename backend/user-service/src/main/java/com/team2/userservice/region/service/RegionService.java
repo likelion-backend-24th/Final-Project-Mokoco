@@ -28,7 +28,6 @@ public class RegionService {
             String email,
             RegionRequest request
     ) {
-
         RegionInfo info = vWorldClient.getRegionInfo(
                 request.latitude(),
                 request.longitude()
@@ -50,7 +49,8 @@ public class RegionService {
                         new CustomException(ErrorCode.USER_NOT_FOUND)
                 );
 
-        user.updateRegion(region.getRegionCode());
+        // 문자열 코드가 아닌 Region 엔티티 객체를 전달
+        user.updateRegion(region);
 
         return RegionResponse.from(region);
     }
@@ -61,11 +61,13 @@ public class RegionService {
                         new CustomException(ErrorCode.USER_NOT_FOUND)
                 );
 
-        Region region = regionRepository.findByRegionCode(user.getRegionCode())
-                .orElseThrow(
-                        () -> new CustomException(ErrorCode.REGION_NOT_FOUND)
-                );
+        // User 엔티티 내부에 연관된 Region이 바로 매핑되어 있다면
+        // user.getRegion()을 곧바로 가져다 쓸 수 있어 리포지토리 조회를 줄일 수도 있습니다!
+        Region region = user.getRegion();
+        if (region == null) {
+            throw new CustomException(ErrorCode.REGION_NOT_FOUND);
+        }
+
         return RegionResponse.from(region);
     }
-
 }

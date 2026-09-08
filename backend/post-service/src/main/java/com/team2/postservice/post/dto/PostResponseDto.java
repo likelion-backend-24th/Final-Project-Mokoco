@@ -1,6 +1,7 @@
 package com.team2.postservice.post.dto;
 
 import com.team2.postservice.post.entity.Post;
+import com.team2.postservice.post.entity.PostCategory;
 import com.team2.postservice.post.entity.PostImage;
 import com.team2.postservice.post.entity.PostStatus;
 
@@ -13,8 +14,10 @@ public class PostResponseDto {
             String title,
             String content,
             String authorEmail,
+            PostCategory category,
             PostStatus status,
-            List<String> images, // 이미지 URL 리스트 필드 추가
+            String regionName,
+            List<String> images,
             String createdAt,
             String updatedAt
     ) {
@@ -24,7 +27,9 @@ public class PostResponseDto {
                     post.getTitle(),
                     post.getContent(),
                     post.getAuthorEmail(),
+                    post.getCategory(),
                     post.getStatus(),
+                    post.getRegionName(),
                     post.getImages().stream()
                             .map(PostImage::getImageUrl)
                             .toList(),

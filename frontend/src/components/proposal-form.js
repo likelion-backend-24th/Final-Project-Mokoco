@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 export default function ProposalForm({ postId }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [estimatedPrice, setEstimatedPrice] = useState("");
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
@@ -17,14 +18,18 @@ export default function ProposalForm({ postId }) {
       const response = await fetch(`/api/posts/${postId}/proposals`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ 
+          estimatedPrice: Number(estimatedPrice), 
+          content 
+        }),
       });
 
       if (response.ok) {
         alert("수리 제안이 성공적으로 등록되었습니다.");
+        setEstimatedPrice("");
         setContent("");
         setIsOpen(false);
-        router.refresh(); // 3. Next.js 서버 컴포넌트 데이터 재요청 및 화면 갱신
+        router.refresh();
       } else {
         alert("수리 제안 등록에 실패했습니다.");
       }
@@ -66,18 +71,34 @@ export default function ProposalForm({ postId }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="수리 가능 일정, 예상 비용 등 구체적인 제안 내용을 작성해주세요."
-            className="w-full h-32 resize-none rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
-            required
-          />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">희망 견적 금액 (원)</label>
+            <input
+              type="number"
+              value={estimatedPrice}
+              onChange={(e) => setEstimatedPrice(e.target.value)}
+              placeholder="예: 50000"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">제안 내용</label>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="수리 가능 일정, 부품 교체 포함 여부 등 구체적인 제안 내용을 작성해주세요."
+              className="w-full h-28 resize-none rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+              required
+            />
+          </div>
+
           <button
             type="submit"
             disabled={submitting}
-            className="mt-4 w-full rounded-xl bg-blue-600 py-3.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition disabled:opacity-50"
+            className="w-full rounded-xl bg-blue-600 py-3.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition disabled:opacity-50"
           >
             {submitting ? "제안 전송 중..." : "제안 보내기"}
           </button>

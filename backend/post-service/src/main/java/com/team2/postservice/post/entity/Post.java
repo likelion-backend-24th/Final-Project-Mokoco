@@ -33,6 +33,13 @@ public class Post {
     @Column(nullable = false)
     private String authorEmail;
 
+    @Column(nullable = false, length = 100)
+    private String regionName; // 지역 이름 필드
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PostCategory category;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PostStatus status;
@@ -48,16 +55,19 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Post(String title, String content, String authorEmail) {
+    public Post(String title, String content, String authorEmail, String regionName, PostCategory category) {
         this.title = title;
         this.content = content;
         this.authorEmail = authorEmail;
+        this.regionName = regionName; // 빌더에 지역 이름 추가
+        this.category = category;
         this.status = PostStatus.WAITING;
     }
 
-    public void update(String title, String content) {
+    public void update(String title, String content, PostCategory category) {
         this.title = title;
         this.content = content;
+        this.category = category;
     }
 
     public void updateStatusToMatched() {

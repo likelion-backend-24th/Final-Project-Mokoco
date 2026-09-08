@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { CheckCircle, Trash } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
+import ProposalChatRoom from "@/components/proposal-chat-room";
 
 export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail }) {
   const [proposals, setProposals] = useState(initialProposals);
+  const [previousProposals, setPreviousProposals] = useState(initialProposals);
   const [loadingId, setLoadingId] = useState(null);
   const router = useRouter();
 
   // 부모 컴포넌트에서 router.refresh()로 새로운 데이터가 내려올 때 상태 동기화
-  useEffect(() => {
+  if (previousProposals !== initialProposals) {
+    setPreviousProposals(initialProposals);
     setProposals(initialProposals);
-  }, [initialProposals]);
+  }
 
   if (!proposals || proposals.length === 0) {
     return (
@@ -41,6 +44,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
       });
 
       if (response.ok) {
+        setProposals((current) => current.map((proposal) => proposal.id === proposalId ? { ...proposal, isAdopted: true } : proposal));
         alert("제안이 채택되었습니다.");
         router.refresh();
       } else {
@@ -106,6 +110,12 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 {proposal.createdAt ? new Date(proposal.createdAt).toLocaleDateString() : ""}
               </span>
             </div>
+
+            {proposal.estimatedPrice !== undefined && proposal.estimatedPrice !== null && (
+              <div className="mb-2 text-sm font-bold text-blue-600">
+                희망 견적: {proposal.estimatedPrice.toLocaleString()}원
+              </div>
+            )}
             
             <p className="text-sm text-slate-700 whitespace-pre-line mb-4">{proposal.content}</p>
             
@@ -114,7 +124,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
               {isMyProposal && !isAdopted && (
                 <button
                   onClick={() => handleDelete(proposal.id)}
-                  disabled={loadingId === proposal.id}
+                  disabled={loadingId !== null}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-300 transition disabled:opacity-50"
                 >
                   <Trash size={16} weight="bold" />
@@ -126,7 +136,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
               {isMine && !hasAdopted && !isAdopted && (
                 <button
                   onClick={() => handleAdopt(proposal.id)}
-                  disabled={loadingId === proposal.id}
+                  disabled={loadingId !== null}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition disabled:opacity-50"
                 >
                   <CheckCircle size={16} weight="bold" />
@@ -134,6 +144,9 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 </button>
               )}
             </div>
+            {isAdopted && (isMine || isMyProposal) && (
+              <ProposalChatRoom key={`${proposal.id}-${proposal.fixDealId}`} fixDealId={proposal.fixDealId} isRequester={Boolean(isMine)} />
+            )}
           </div>
         );
       })}

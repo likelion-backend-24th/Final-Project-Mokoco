@@ -1,13 +1,18 @@
 package com.team2.postservice.post.service;
 
+import com.team2.postservice.client.UserClient;
+import com.team2.postservice.client.dto.RegionResponse;
+import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.common.exception.CustomException;
 import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.post.dto.PostRequestDto;
 import com.team2.postservice.post.dto.PostResponseDto;
 import com.team2.postservice.post.entity.Post;
+import com.team2.postservice.post.entity.PostCategory;
 import com.team2.postservice.post.entity.PostImage;
 import com.team2.postservice.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,13 +28,21 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final FileStorageService fileStorageService;
+    private final UserClient userClient; // 💡 OpenFeign 클라이언트 주입
 
     @Transactional
     public Long createPost(PostRequestDto.Create request, List<MultipartFile> images, String authorEmail) {
+        // 💡 User-Service에서 이메일로 최신 지역 정보를 Feign을 통해 조회
+        RegionResponse response = userClient.getRegionByEmail(authorEmail);
+
+        System.out.println("조회된 지역 이름: " + response.regionName());
+
         Post post = Post.builder()
                 .title(request.title())
                 .content(request.content())
+                .category(request.category())
                 .authorEmail(authorEmail)
+                .regionName(response.regionName())
                 .build();
 
         attachImages(post, images);
@@ -37,8 +50,25 @@ public class PostService {
         return postRepository.save(post).getId();
     }
 
-    public List<PostResponseDto.Detail> getAllPosts() {
-        return postRepository.findAll().stream()
+    public List<PostResponseDto.Detail> getAllPosts(PostCategory category, String regionName) {
+        List<Post> posts;
+
+        boolean hasRegion = regionName != null && !regionName.isBlank();
+        boolean hasCategory = category != null && category != PostCategory.ALL;
+
+        Sort sort = Sort.by(Sort.Direction.DESC, "id");
+
+        if (hasRegion && hasCategory) {
+            posts = postRepository.findByRegionNameAndCategory(regionName, category, sort);
+        } else if (hasRegion) {
+            posts = postRepository.findByRegionName(regionName, sort);
+        } else if (hasCategory) {
+            posts = postRepository.findByCategory(category, sort);
+        } else {
+            posts = postRepository.findAll(sort);
+        }
+
+        return posts.stream()
                 .map(PostResponseDto.Detail::from)
                 .toList();
     }
@@ -53,7 +83,7 @@ public class PostService {
         Post post = getPostOrThrow(id);
         validateAuthor(post, userEmail, ErrorCode.UNAUTHORIZED_POST_UPDATE);
 
-        post.update(request.title(), request.content());
+        post.update(request.title(), request.content(), request.category());
     }
 
     @Transactional
