@@ -21,6 +21,12 @@ public class ChatService {
     private final ChatMessageRepository messages;
 
     @Transactional(readOnly = true)
+    public Long counterpartId(Long roomId, Long userId) {
+        var deal = authorize(roomId, userId).getFixDeal();
+        return userId.equals(deal.getRequesterId()) ? deal.getRepairerId() : deal.getRequesterId();
+    }
+
+    @Transactional(readOnly = true)
     public ChatRoom authorize(Long roomId, Long userId) {
         var room = rooms.findById(roomId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         var deal = room.getFixDeal();
@@ -35,6 +41,16 @@ public class ChatService {
         return messages.findByChatRoomIdAndIdLessThanOrderByIdDesc(roomId,
                 before == null ? Long.MAX_VALUE : before, PageRequest.of(0, 50))
                 .stream().map(ChatMessageResponse::from).toList();
+    }
+
+    @Transactional
+    public ChatMessageResponse delete(Long roomId, Long messageId, Long userId) {
+        authorize(roomId, userId);
+        var message = messages.findById(messageId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!message.getChatRoom().getId().equals(roomId)) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        if (!userId.equals(message.getSenderId())) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        message.delete();
+        return ChatMessageResponse.from(message);
     }
 
     @Transactional

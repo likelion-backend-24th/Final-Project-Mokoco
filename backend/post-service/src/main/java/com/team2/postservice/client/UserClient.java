@@ -11,6 +11,11 @@ import org.springframework.web.bind.annotation.*;
         configuration = UserClientConfig.class
 )
 public interface UserClient {
+    record UserNicknameResponse(Long id, String nickname) {}
+
+    @GetMapping("/api/internal/users/by-id/{userId}")
+    UserNicknameResponse getNickname(@PathVariable("userId") Long userId);
+
     @PostMapping("/api/internal/users/verify-token")
     UserClientResponse verifyToken(@RequestBody String token);
 

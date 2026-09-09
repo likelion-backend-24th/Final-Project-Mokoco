@@ -16,6 +16,11 @@ public class LocalFileStorageService implements FileStorageService {
 
     @Override
     public StoredFile store(MultipartFile file) {
+        // Preserve the existing post-image limit after enabling larger chat videos.
+        if (file.getSize() > 10L * 1024 * 1024) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.PAYLOAD_TOO_LARGE, "게시글 이미지는 10MB 이하여야 합니다.");
+        }
         try {
             // 상위 디렉토리가 없으면 한 번에 생성
             Files.createDirectories(uploadPath);

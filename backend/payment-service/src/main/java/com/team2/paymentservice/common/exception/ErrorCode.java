@@ -12,6 +12,7 @@ public enum ErrorCode {
     UNAUTHORIZED_PAYMENT_CREATE(HttpStatus.FORBIDDEN, "UNAUTHORIZED_PAYMENT_CREATE", "의뢰자 본인만 결제를 생성할 수 있습니다."),
     DUPLICATE_PAYMENT(HttpStatus.CONFLICT, "DUPLICATE_PAYMENT", "이미 결제가 진행 중이거나 완료된 거래입니다."),
     POST_NOT_FOUND_FOR_PAYMENT(HttpStatus.NOT_FOUND, "POST_NOT_FOUND_FOR_PAYMENT", "결제 대상 게시글이 존재하지 않습니다."),
+    POST_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "POST_SERVICE_UNAVAILABLE", "게시글 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요."),
     INVALID_PAYMENT_STATUS(HttpStatus.CONFLICT, "INVALID_PAYMENT_STATUS", "결제를 생성할 수 없는 거래 상태입니다."),
 
     // Common
