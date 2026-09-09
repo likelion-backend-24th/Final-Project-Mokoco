@@ -12,6 +12,13 @@ public class FixDealController {
 
     private final FixDealService fixDealService;
 
+    @PatchMapping("/fix-deals/{fixDealId}/product-sent")
+    public ResponseEntity<Void> markProductSent(@PathVariable Long fixDealId,
+                                                 @RequestHeader("X-User-Email") String repairerEmail) {
+        fixDealService.markProductSent(fixDealId, repairerEmail);
+        return ResponseEntity.ok().build();
+    }
+
     @PatchMapping("/fix-deals/{fixDealId}/repair-done")
     public ResponseEntity<Void> requestCompletion(@PathVariable Long fixDealId,
                                                    @RequestHeader("X-User-Email") String repairerEmail) {

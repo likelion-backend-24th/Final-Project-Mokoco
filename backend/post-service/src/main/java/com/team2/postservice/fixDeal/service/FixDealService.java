@@ -25,6 +25,23 @@ public class FixDealService {
     private final PaymentClient paymentClient;
 
     @Transactional
+    public void markProductSent(Long fixDealId, String repairerEmail) {
+        FixDeal fixDeal = fixDealRepository.findById(fixDealId)
+                .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
+
+        UserClientResponse repairer = userClient.getUserByEmail(repairerEmail);
+        if (!fixDeal.getRepairerId().equals(repairer.id())) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
+        }
+
+        if (fixDeal.getStatus() != FixDealStatus.MATCHED) {
+            throw new CustomException(ErrorCode.INVALID_FIX_DEAL_STATUS);
+        }
+
+        fixDeal.changeStatus(FixDealStatus.PRODUCT_SENT);
+    }
+
+    @Transactional
     public void requestCompletion(Long fixDealId, String repairerEmail) {
         FixDeal fixDeal = fixDealRepository.findById(fixDealId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
