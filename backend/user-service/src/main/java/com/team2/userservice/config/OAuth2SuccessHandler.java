@@ -1,5 +1,6 @@
 package com.team2.userservice.config;
 
+import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
 import com.team2.userservice.user.repository.UserRepository;
 import jakarta.servlet.ServletException;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -27,9 +29,18 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
         String email = (String) oAuth2User.getAttributes().get("email");
+        String name = (String) oAuth2User.getAttributes().get("name");
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다: " + email));
+        User user = userRepository.findByEmail(email).orElseGet(() -> {
+            User newUser = User.builder()
+                    .email(email)
+                    .name(name != null ? name : "SocialUser")
+                    .nickname(name != null ? name : "SocialUser")
+                    .password(UUID.randomUUID().toString()) // 소셜 유저는 패스워드 미사용
+                    .role(Role.USER)
+                    .build();
+            return userRepository.save(newUser);
+        });
 
         String role = user.getRole().name();
 
@@ -47,12 +58,12 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         // 구글이면 nip.io 도메인, 카카오 등 그 외에는 기본 주소 사용
         String baseUrl;
         if ("google".equals(registrationId)) {
-            baseUrl = "http://18.212.91.33.nip.io:8000/login/oauth2/code/google";
+            baseUrl = "http://18.212.91.33.nip.io:3000";
         } else {
-            baseUrl = "http://18.212.91.33:8000/login/oauth2/code/kakao";
+            baseUrl = "http://18.212.91.33:3000";
         }
 
-        String targetUrl = UriComponentsBuilder.fromUriString(baseUrl)
+        String targetUrl = UriComponentsBuilder.fromUriString(baseUrl + "/oauth2/redirect")
                 .queryParam("token", accessToken)
                 .queryParam("refreshToken", refreshToken)
                 .build().toUriString();
