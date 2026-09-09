@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle, Trash } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import ProposalChatRoom from "@/components/proposal-chat-room";
+import FixDealProgress from "@/components/fix-deal-progress";
 
 export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail }) {
   const [proposals, setProposals] = useState(initialProposals);
@@ -145,7 +146,17 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
               )}
             </div>
             {isAdopted && (isMine || isMyProposal) && (
-              <ProposalChatRoom key={`${proposal.id}-${proposal.fixDealId}`} fixDealId={proposal.fixDealId} isRequester={Boolean(isMine)} />
+              <>
+                <ProposalChatRoom key={`${proposal.id}-${proposal.fixDealId}`} fixDealId={proposal.fixDealId} isRequester={Boolean(isMine)} />
+                <FixDealProgress
+                  fixDealId={proposal.fixDealId}
+                  postId={postId}
+                  isRequester={Boolean(isMine)}
+                  isRepairer={Boolean(isMyProposal)}
+                  estimatedPrice={proposal.estimatedPrice}
+                  repairerEmail={proposal.repairerEmail}
+                />
+              </>
             )}
           </div>
         );
