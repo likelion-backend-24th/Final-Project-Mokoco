@@ -72,18 +72,18 @@ services:
   # --------------------
   # Backend: Payment Service
   # --------------------
-  payment-service:
-    build:
-      context: ./backend/payment-service
-      dockerfile: Dockerfile
-    container_name: mokoco-payment-service
-    restart: always
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-    depends_on:
-      - mysql
-    networks:
-      - mokoco-net
+  # payment-service:
+  #   build:
+  #     context: ./backend/payment-service
+  #     dockerfile: Dockerfile
+  #   container_name: mokoco-payment-service
+  #   restart: always
+  #   environment:
+  #     - SPRING_PROFILES_ACTIVE=prod
+  #   depends_on:
+  #     - mysql
+  #   networks:
+  #     - mokoco-net
 
   # --------------------
   # Frontend (Next.js)
