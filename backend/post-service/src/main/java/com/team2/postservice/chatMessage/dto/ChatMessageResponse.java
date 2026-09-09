@@ -11,7 +11,11 @@ public record ChatMessageResponse(
         Long senderId,
         String content,
         MessageType type,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String attachmentName,
+        String attachmentMime,
+        Long attachmentSize,
+        String attachmentUrl
 ) {
 
     public static ChatMessageResponse from(ChatMessage message) {
@@ -21,7 +25,12 @@ public record ChatMessageResponse(
                 message.getSenderId(),
                 message.getContent(),
                 message.getMessageType(),
-                message.getCreatedAt()
+                message.getCreatedAt(),
+                message.getAttachmentName(),
+                message.getAttachmentMime(),
+                message.getAttachmentSize(),
+                message.getAttachmentKey() == null ? null : "/api/chat-rooms/" + message.getChatRoom().getId()
+                        + "/attachments/" + message.getId()
         );
     }
 }

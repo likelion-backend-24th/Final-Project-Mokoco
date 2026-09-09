@@ -33,4 +33,9 @@ public class ChatMessage {
     private LocalDateTime createdAt;
 
     private LocalDateTime readAt;
+
+    private String attachmentKey;
+    private String attachmentName;
+    private String attachmentMime;
+    private Long attachmentSize;
 }
