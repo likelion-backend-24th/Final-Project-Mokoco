@@ -72,7 +72,7 @@ public class ChatAttachmentService {
         chat.authorize(roomId, userId);
         var message = messages.findById(messageId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (!message.getChatRoom().getId().equals(roomId) || message.getAttachmentKey() == null)
+        if (!message.getChatRoom().getId().equals(roomId) || message.getAttachmentKey() == null || message.getDeletedAt() != null)
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         Path path = root.resolve(message.getAttachmentKey()).normalize();
         if (!path.startsWith(root) || !Files.isRegularFile(path))

@@ -15,7 +15,8 @@ public record ChatMessageResponse(
         String attachmentName,
         String attachmentMime,
         Long attachmentSize,
-        String attachmentUrl
+        String attachmentUrl,
+        boolean deleted
 ) {
 
     public static ChatMessageResponse from(ChatMessage message) {
@@ -26,11 +27,12 @@ public record ChatMessageResponse(
                 message.getContent(),
                 message.getMessageType(),
                 message.getCreatedAt(),
-                message.getAttachmentName(),
-                message.getAttachmentMime(),
-                message.getAttachmentSize(),
-                message.getAttachmentKey() == null ? null : "/api/chat-rooms/" + message.getChatRoom().getId()
-                        + "/attachments/" + message.getId()
+                message.getDeletedAt() == null ? message.getAttachmentName() : null,
+                message.getDeletedAt() == null ? message.getAttachmentMime() : null,
+                message.getDeletedAt() == null ? message.getAttachmentSize() : null,
+                message.getAttachmentKey() == null || message.getDeletedAt() != null ? null : "/api/chat-rooms/" + message.getChatRoom().getId()
+                        + "/attachments/" + message.getId(),
+                message.getDeletedAt() != null
         );
     }
 }

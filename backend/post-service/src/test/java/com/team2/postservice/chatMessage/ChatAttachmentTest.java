@@ -62,4 +62,12 @@ class ChatAttachmentTest {
         assertThatThrownBy(() -> service.download(1L, 3L, 2L))
                 .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
     }
+    @Test void deletedAttachmentCannotBeDownloaded() {
+        var message = ChatMessage.builder().chatRoom(ChatRoom.builder().id(1L).build())
+                .attachmentKey("file").content("photo").build();
+        message.delete();
+        when(messages.findById(3L)).thenReturn(java.util.Optional.of(message));
+        assertThatThrownBy(() -> service.download(1L, 3L, 2L))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+    }
 }

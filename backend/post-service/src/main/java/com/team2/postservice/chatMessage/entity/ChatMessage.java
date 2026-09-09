@@ -38,4 +38,10 @@ public class ChatMessage {
     private String attachmentName;
     private String attachmentMime;
     private Long attachmentSize;
+    private LocalDateTime deletedAt;
+
+    public void delete() {
+        if (deletedAt == null) deletedAt = LocalDateTime.now();
+        content = "삭제된 메시지입니다.";
+    }
 }

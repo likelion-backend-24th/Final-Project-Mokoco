@@ -37,4 +37,15 @@ public class ChatController {
         var saved = service.send(roomId, Long.valueOf(principal.getName()), request.content());
         broker.convertAndSend("/topic/chat/" + roomId, saved);
     }
+
+    @DeleteMapping("/api/chat-rooms/{roomId}/messages/{messageId}")
+    public ChatMessageResponse delete(@PathVariable Long roomId, @PathVariable Long messageId,
+            @RequestHeader(value = "Authorization", required = false) String auth) {
+        if (auth == null || !auth.startsWith("Bearer "))
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+        var user = users.verifyToken(auth.substring(7));
+        var deleted = service.delete(roomId, messageId, user.id());
+        broker.convertAndSend("/topic/chat/" + roomId, deleted);
+        return deleted;
+    }
 }

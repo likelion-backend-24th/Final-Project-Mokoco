@@ -38,6 +38,16 @@ public class ChatService {
     }
 
     @Transactional
+    public ChatMessageResponse delete(Long roomId, Long messageId, Long userId) {
+        authorize(roomId, userId);
+        var message = messages.findById(messageId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!message.getChatRoom().getId().equals(roomId)) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        if (!userId.equals(message.getSenderId())) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        message.delete();
+        return ChatMessageResponse.from(message);
+    }
+
+    @Transactional
     public ChatMessageResponse send(Long roomId, Long userId, String content) {
         var room = authorize(roomId, userId);
         if (content == null || content.isBlank() || content.length() > 2000)

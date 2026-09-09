@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Client } from "@stomp/stompjs";
 import ChatAttachment from "@/components/chat-attachment";
-import { ArrowLeft, ArrowUp, ChatCircleDots, ShieldCheck, User, Wrench } from "@phosphor-icons/react";
+import { Trash, ArrowLeft, ArrowUp, ChatCircleDots, ShieldCheck, User, Wrench } from "@phosphor-icons/react";
 import "./chat-room.css";
 import { chatThemes, useChatTheme } from "@/components/chat-theme";
 
@@ -27,15 +27,27 @@ export default function ChatRoom({ roomId }) {
   const [userId, setUserId] = useState(null);
   const [more, setMore] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(null);
   const clientRef = useRef(null);
   const bottom = useRef(null);
 
   function merge(rows) {
     setMessages(current => {
       const map = new Map(current.map(row => [row.messageId, row]));
-      for (const row of rows) map.set(row.messageId, row);
+      for (const row of rows) if (!map.get(row.messageId)?.deleted) map.set(row.messageId, row);
       return [...map.values()].sort((a, b) => a.messageId - b.messageId);
     });
+  }
+  async function deleteMessage(messageId) {
+    if (!window.confirm("메시지를 삭제하시겠습니까? 상대방에게도 삭제된 메시지로 표시됩니다.")) return;
+    setDeleting(messageId); setError("");
+    try {
+      const response = await fetch(`/api/chat-rooms/${roomId}/messages/${messageId}`, { method: "DELETE" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      merge([data]);
+    } catch (failure) { setError(failure.message); }
+    finally { setDeleting(null); }
   }
   async function history(before) {
     const response = await fetch(`/api/chat-rooms/${roomId}/messages${before ? `?before=${before}` : ""}`, { cache: "no-store" });
@@ -129,8 +141,9 @@ export default function ChatRoom({ roomId }) {
             {!mine && <div className="conversation-avatar" aria-hidden="true"><User size={21} weight="duotone" /></div>}
             <div className="conversation-message">
               <div className="message-meta"><span>{mine ? "나" : "수리 이웃"}</span><time>{date?.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
+                {mine && !message.deleted && <button type="button" aria-label="메시지 삭제" title="메시지 삭제" disabled={deleting !== null} onClick={() => deleteMessage(message.messageId)} className="message-delete"><Trash size={14} /></button>}
               </div>
-              <div className={`message-bubble ${message.attachmentUrl ? "has-media" : ""}`}>
+              <div className={`message-bubble ${message.attachmentUrl ? "has-media" : ""} ${message.deleted ? "is-deleted" : ""}`}>
                 {message.attachmentUrl ? message.type === "VIDEO"
                   ? <video src={message.attachmentUrl} controls preload="metadata" />
                   : <a href={message.attachmentUrl} target="_blank" rel="noreferrer">

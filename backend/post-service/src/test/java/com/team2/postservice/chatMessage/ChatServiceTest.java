@@ -40,4 +40,26 @@ class ChatServiceTest {
         assertThatThrownBy(() -> service.send(1L, 2L, "x".repeat(2001))).isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
         verifyNoInteractions(messages);
     }
+    @Test void onlySenderCanDeleteAndDeletionHidesAttachment() {
+        room();
+        var message = ChatMessage.builder().id(7L).chatRoom(rooms.findById(1L).orElseThrow())
+                .senderId(2L).content("photo").attachmentKey("private-file").attachmentName("name.png").build();
+        when(messages.findById(7L)).thenReturn(Optional.of(message));
+        assertThatThrownBy(() -> service.delete(1L, 7L, 3L)).isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+        assertThat(message.getDeletedAt()).isNull();
+        var result = service.delete(1L, 7L, 2L);
+        assertThat(result.deleted()).isTrue();
+        assertThat(result.content()).isEqualTo("삭제된 메시지입니다.");
+        assertThat(result.attachmentUrl()).isNull();
+        assertThat(result.attachmentName()).isNull();
+        var deletedAt = message.getDeletedAt();
+        service.delete(1L, 7L, 2L);
+        assertThat(message.getDeletedAt()).isEqualTo(deletedAt);
+    }
+    @Test void cannotDeleteMessageThroughDifferentRoom() {
+        room();
+        when(messages.findById(7L)).thenReturn(Optional.of(ChatMessage.builder().id(7L)
+                .chatRoom(ChatRoom.builder().id(99L).build()).senderId(2L).build()));
+        assertThatThrownBy(() -> service.delete(1L, 7L, 2L)).isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+    }
 }
