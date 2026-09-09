@@ -16,7 +16,7 @@ public class InternalServiceSecurityConfig {
     @Order(1)
     public SecurityFilterChain internalServiceSecurityFilterChain(
             HttpSecurity http, @Value("${internal.service-key}") String key) throws Exception {
-        return http.securityMatcher("/internal/**")
+        return http.securityMatcher("/internal/**", "/api/internal/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .requestCache(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

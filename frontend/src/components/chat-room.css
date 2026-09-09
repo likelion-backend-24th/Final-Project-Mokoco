@@ -42,3 +42,4 @@
 .conversation-shell select:focus-visible{outline:2px solid var(--chat-accent);outline-offset:2px}
 .chat-attachment-menu button{background:var(--chat-soft);color:var(--chat-accent)}
 @media(max-width:600px){.chat-theme-bar{padding:8px 18px}}
+.conversation-heading h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.message-meta>span{overflow-wrap:anywhere;min-width:0}.message-meta time{flex-shrink:0}

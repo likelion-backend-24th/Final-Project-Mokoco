@@ -21,6 +21,12 @@ public class ChatService {
     private final ChatMessageRepository messages;
 
     @Transactional(readOnly = true)
+    public Long counterpartId(Long roomId, Long userId) {
+        var deal = authorize(roomId, userId).getFixDeal();
+        return userId.equals(deal.getRequesterId()) ? deal.getRepairerId() : deal.getRequesterId();
+    }
+
+    @Transactional(readOnly = true)
     public ChatRoom authorize(Long roomId, Long userId) {
         var room = rooms.findById(roomId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         var deal = room.getFixDeal();

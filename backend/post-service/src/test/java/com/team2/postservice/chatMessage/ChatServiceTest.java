@@ -19,6 +19,13 @@ class ChatServiceTest {
         when(rooms.findById(1L)).thenReturn(Optional.of(ChatRoom.builder().id(1L)
                 .fixDeal(FixDeal.builder().requesterId(2L).repairerId(3L).build()).build()));
     }
+    @Test void resolvesCounterpartOnlyForParticipants() {
+        room();
+        assertThat(service.counterpartId(1L, 2L)).isEqualTo(3L);
+        assertThat(service.counterpartId(1L, 3L)).isEqualTo(2L);
+        assertThatThrownBy(() -> service.counterpartId(1L, 9L))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+    }
     @Test void rejectsOutsidersForReadAndWrite() {
         room();
         assertThatThrownBy(() -> service.history(1L, 9L, null)).isInstanceOf(org.springframework.web.server.ResponseStatusException.class);

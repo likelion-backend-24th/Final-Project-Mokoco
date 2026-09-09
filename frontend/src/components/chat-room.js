@@ -25,6 +25,8 @@ export default function ChatRoom({ roomId }) {
   const [status, setStatus] = useState("연결 중");
   const [error, setError] = useState("");
   const [userId, setUserId] = useState(null);
+  const [counterpart, setCounterpart] = useState(null);
+  const nickname = counterpart?.roomId === roomId ? counterpart.nickname : "";
   const [more, setMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(null);
@@ -80,6 +82,10 @@ export default function ChatRoom({ roomId }) {
       onConnect: () => {
         if (!active) return;
         setStatus("연결됨"); setError("");
+        fetch(`/api/chat-rooms/${roomId}/counterpart`, { cache: "no-store" })
+          .then(async response => { const data = await response.json(); if (!response.ok) throw new Error(data.error); return data; })
+          .then(data => { if (active) setCounterpart({ roomId, nickname: data.nickname?.trim() || "이웃" }); })
+          .catch(failure => { if (active) setError(failure.message); });
         client.subscribe(`/topic/chat/${roomId}`, frame => {
           if (active) merge([JSON.parse(frame.body)]);
         });
@@ -113,7 +119,7 @@ export default function ChatRoom({ roomId }) {
     <header className="conversation-header">
       <Link href="/#my-chats" className="chat-icon-button" aria-label="내 채팅 목록으로"><ArrowLeft size={22} /></Link>
       <div className="conversation-mark"><Wrench size={24} weight="duotone" /></div>
-      <div className="conversation-heading"><span>동네수리 · 1:1 대화</span><h1>수리 상담 <small>#{roomId}</small></h1></div>
+      <div className="conversation-heading"><span>동네수리 · 1:1 대화</span><h1>{nickname || "수리 상담"} <small>#{roomId}</small></h1></div>
       <span role="status" className={`connection-status ${status === "연결됨" ? "is-connected" : ""}`}>{status}</span>
     </header>
     <div className="chat-theme-bar">
@@ -140,7 +146,7 @@ export default function ChatRoom({ roomId }) {
           <article className={`conversation-row ${mine ? "is-mine" : ""}`}>
             {!mine && <div className="conversation-avatar" aria-hidden="true"><User size={21} weight="duotone" /></div>}
             <div className="conversation-message">
-              <div className="message-meta"><span>{mine ? "나" : "수리 이웃"}</span><time>{date?.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
+              <div className="message-meta"><span>{mine ? "나" : nickname || "이웃"}</span><time>{date?.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
                 {mine && !message.deleted && <button type="button" aria-label="메시지 삭제" title="메시지 삭제" disabled={deleting !== null} onClick={() => deleteMessage(message.messageId)} className="message-delete"><Trash size={14} /></button>}
               </div>
               <div className={`message-bubble ${message.attachmentUrl ? "has-media" : ""} ${message.deleted ? "is-deleted" : ""}`}>
