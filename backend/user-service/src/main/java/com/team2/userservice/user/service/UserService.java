@@ -124,6 +124,8 @@ public class UserService {
                 .email(user.getEmail())
                 .name(user.getName())
                 // 필요한 다른 필드들도 여기에 매핑
+                .id(user.getId())
+                .nickname(user.getNickname())
                 .build();
     }
 }

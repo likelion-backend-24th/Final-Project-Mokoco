@@ -22,6 +22,25 @@ public class ChatRoomService {
     private final FixDealRepository fixDealRepository;
     private final UserClient userClient;
 
+    public java.util.List<com.team2.postservice.chatRoom.dto.ChatRoomListItem> getMyRooms(
+            String authorization, int page, int size) {
+        if (authorization == null || !authorization.startsWith("Bearer ") || authorization.substring(7).isBlank())
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+        if (page < 0 || size < 1 || size > 50)
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "page must be non-negative and size must be between 1 and 50");
+        UserClientResponse user;
+        try {
+            user = userClient.verifyToken(authorization.substring(7));
+        } catch (feign.FeignException failure) {
+            if (failure.status() == 401)
+                throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED);
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_GATEWAY,
+                    "User authentication service unavailable");
+        }
+        return chatRoomRepository.findMyRooms(user.id(), org.springframework.data.domain.PageRequest.of(page, size));
+    }
+
     @Transactional
     public ChatRoomResponse createChatRoom(Long fixDealId, String userEmail){
 
