@@ -34,7 +34,7 @@ export default function LoginForm({ registered = false }) {
   }
 
   const handleSocialLogin = (provider) => {
-    const backendBaseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8000";
+    const backendBaseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://18.212.91.33:8081";
     window.location.href = `${backendBaseUrl}/oauth2/authorization/${provider}`;
   };
 
