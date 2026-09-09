@@ -1,13 +1,23 @@
 package com.team2.postservice.chatRoom.repository;
 
+import com.team2.postservice.chatRoom.dto.ChatRoomListItem;
 import com.team2.postservice.chatRoom.entity.ChatRoom;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.repository.query.Param;
 
+
+import java.util.List;
 import java.util.Optional;
 
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
+    @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select room from ChatRoom room where room.id = :id")
+    Optional<ChatRoom> lockById(@Param("id") Long id);
 
-    @org.springframework.data.jpa.repository.Query("""
+    @Query("""
             select new com.team2.postservice.chatRoom.dto.ChatRoomListItem(
                 room.id, deal.id, deal.postId, post.title,
                 case when deal.requesterId = :userId then deal.repairerId else deal.requesterId end,
@@ -20,9 +30,9 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
             where deal.requesterId = :userId or deal.repairerId = :userId
             order by coalesce(message.createdAt, room.createdAt) desc, room.id desc
             """)
-    java.util.List<com.team2.postservice.chatRoom.dto.ChatRoomListItem> findMyRooms(
-            @org.springframework.data.repository.query.Param("userId") Long userId,
-            org.springframework.data.domain.Pageable pageable);
+    List<ChatRoomListItem> findMyRooms(
+            @Param("userId") Long userId,
+            Pageable pageable);
 
     Optional<ChatRoom> findByFixDealId(Long fixDealId);
 
