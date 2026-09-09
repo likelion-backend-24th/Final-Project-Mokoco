@@ -9,12 +9,13 @@ services:
     container_name: mokoco-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: mokocodb
+      MYSQL_ROOT_PASSWORD: root1234
+      # MYSQL_DATABASE: mokocodb # 이 줄은 삭제 또는 주석 처리
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - mokoco-net
 

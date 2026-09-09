@@ -11,11 +11,11 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       # 1. 각 서비스별 application-secret.yml 파일 동적 생성
       - name: Create application-secret.yml files
