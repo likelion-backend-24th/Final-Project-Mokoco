@@ -26,4 +26,17 @@ public class PostServiceClient {
             throw new CustomException(ErrorCode.POST_SERVICE_UNAVAILABLE);
         }
     }
+
+    public FixDealStatusResponse getFixDealStatus(Long postId) {
+        try {
+            return postServiceRestClient.get()
+                    .uri("/posts/{postId}/fix-deal", postId)
+                    .retrieve()
+                    .body(FixDealStatusResponse.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new CustomException(ErrorCode.INVALID_PAYMENT_STATUS);
+        } catch (RestClientException e) {
+            throw new CustomException(ErrorCode.POST_SERVICE_UNAVAILABLE);
+        }
+    }
 }

@@ -15,5 +15,7 @@ public interface FixDealRepository extends JpaRepository<FixDeal, Long> {
             FixDealStatus status
     );
 
+    Optional<FixDeal> findByPostId(Long postId);
+
     boolean existsByProposalId(Long proposalId);
 }

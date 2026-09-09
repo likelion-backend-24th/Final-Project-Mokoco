@@ -26,6 +26,10 @@ public enum ErrorCode {
 
     // FixDeal
     FIX_DEAL_NOT_FOUND(HttpStatus.NOT_FOUND, "FIX_DEAL_NOT_FOUND", "해당 수리거래 내역을 찾을 수 없습니다."),
+    UNAUTHORIZED_FIX_DEAL_ACTION(HttpStatus.FORBIDDEN, "UNAUTHORIZED_FIX_DEAL_ACTION", "본인이 참여한 거래만 처리할 수 있습니다."),
+    INVALID_FIX_DEAL_STATUS(HttpStatus.CONFLICT, "INVALID_FIX_DEAL_STATUS", "현재 거래 상태에서는 처리할 수 없습니다."),
+    PAYMENT_NOT_COMPLETED(HttpStatus.CONFLICT, "PAYMENT_NOT_COMPLETED", "결제가 완료되지 않아 수리 완료를 수락할 수 없습니다."),
+    PAYMENT_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "PAYMENT_SERVICE_UNAVAILABLE", "결제 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요."),
 
     // ChatRoom
     UNAUTHORIZED_CHAT_ROOM_CREATE(HttpStatus.FORBIDDEN, "UNAUTHORIZED_CHAT_ROOM_CREATE", "수리 요청글 작성자만 채팅방을 만들 수 있습니다."),
