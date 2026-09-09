@@ -1,5 +1,6 @@
 package com.team2.postservice.fixDeal.controller;
 
+import com.team2.postservice.fixDeal.dto.FixDealDetailResponse;
 import com.team2.postservice.fixDeal.dto.FixDealStatusResponse;
 import com.team2.postservice.fixDeal.service.FixDealService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,19 @@ public class FixDealController {
                                                  @RequestHeader("X-User-Email") String repairerEmail) {
         fixDealService.markProductSent(fixDealId, repairerEmail);
         return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/fix-deals/{fixDealId}/repairing")
+    public ResponseEntity<Void> markRepairing(@PathVariable Long fixDealId,
+                                               @RequestHeader("X-User-Email") String repairerEmail) {
+        fixDealService.markRepairing(fixDealId, repairerEmail);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/fix-deals/{fixDealId}")
+    public ResponseEntity<FixDealDetailResponse> getFixDeal(@PathVariable Long fixDealId,
+                                                             @RequestHeader("X-User-Email") String userEmail) {
+        return ResponseEntity.ok(fixDealService.getFixDeal(fixDealId, userEmail));
     }
 
     @PatchMapping("/fix-deals/{fixDealId}/repair-done")
