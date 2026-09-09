@@ -21,16 +21,16 @@ spring:
             allow-credentials: true
       routes:
         - id: user-service
-          uri: http://localhost:8081
+          uri: http://mokoco-user-service:8081
           predicates:
-            - Path=/api/auth/**, /api/users/**, /oauth2/**
+            - Path=/api/auth/**, /api/users/**, /oauth2/**, /login/oauth2/**
 
         - id: post-service
-          uri: http://localhost:8082
+          uri: http://mokoco-post-service:8082
           predicates:
             - Path=/posts/**, /api/chat-rooms/**, /fix-deals/**
 
         - id: payment-service
-          uri: http://localhost:8083
+          uri: http://mokoco-payment-service:8083
           predicates:
             - Path=/payments/**
