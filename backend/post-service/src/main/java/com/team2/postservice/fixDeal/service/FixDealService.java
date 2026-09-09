@@ -82,11 +82,7 @@ public class FixDealService {
             throw new CustomException(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
         }
 
-        FixDealStatus current = fixDeal.getStatus();
-        boolean allowed = current == FixDealStatus.MATCHED
-                || current == FixDealStatus.PRODUCT_SENT
-                || current == FixDealStatus.REPAIRING;
-        if (!allowed) {
+        if (fixDeal.getStatus() != FixDealStatus.REPAIRING) {
             throw new CustomException(ErrorCode.INVALID_FIX_DEAL_STATUS);
         }
 

@@ -140,4 +140,62 @@ class FixDealServiceTest {
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
     }
+
+    @Test void repairerRequestsCompletionFromRepairing() {
+        FixDeal deal = fixDeal(FixDealStatus.REPAIRING);
+        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(users.getUserByEmail("repairer@test.com"))
+                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
+
+        service.requestCompletion(1L, "repairer@test.com");
+
+        assertThat(deal.getStatus()).isEqualTo(FixDealStatus.REPAIR_DONE);
+    }
+
+    @Test void rejectsCompletionRequestWhenMatchedStepsSkipped() {
+        FixDeal deal = fixDeal(FixDealStatus.MATCHED);
+        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(users.getUserByEmail("repairer@test.com"))
+                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
+
+        assertThatThrownBy(() -> service.requestCompletion(1L, "repairer@test.com"))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_FIX_DEAL_STATUS);
+    }
+
+    @Test void rejectsCompletionRequestWhenProductSentStepSkipped() {
+        FixDeal deal = fixDeal(FixDealStatus.PRODUCT_SENT);
+        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(users.getUserByEmail("repairer@test.com"))
+                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
+
+        assertThatThrownBy(() -> service.requestCompletion(1L, "repairer@test.com"))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.INVALID_FIX_DEAL_STATUS);
+    }
+
+    @Test void rejectsCompletionRequestByRequester() {
+        FixDeal deal = fixDeal(FixDealStatus.REPAIRING);
+        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(users.getUserByEmail("requester@test.com"))
+                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
+
+        assertThatThrownBy(() -> service.requestCompletion(1L, "requester@test.com"))
+                .isInstanceOf(CustomException.class)
+                .extracting(e -> ((CustomException) e).getErrorCode())
+                .isEqualTo(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
+
+        assertThat(deal.getStatus()).isEqualTo(FixDealStatus.REPAIRING);
+    }
+
+    @Test void requesterConfirmsCompletionRequestThroughGetFixDeal() {
+        FixDeal deal = fixDeal(FixDealStatus.REPAIR_DONE);
+        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(users.getUserByEmail("requester@test.com"))
+                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
+
+        assertThat(service.getFixDeal(1L, "requester@test.com").status()).isEqualTo(FixDealStatus.REPAIR_DONE);
+    }
 }
