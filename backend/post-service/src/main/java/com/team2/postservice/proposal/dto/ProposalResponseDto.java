@@ -10,6 +10,7 @@ public class ProposalResponseDto {
     private final Long id;
     private final Long postId;
     private final String repairerEmail;
+    private final Integer estimatedPrice;
     private final String content;
     private final Long fixDealId;
 
@@ -25,6 +26,7 @@ public class ProposalResponseDto {
         this.id = proposal.getId();
         this.postId = proposal.getPost() != null ? proposal.getPost().getId() : null;
         this.repairerEmail = proposal.getRepairerEmail();
+        this.estimatedPrice = proposal.getEstimatedPrice();
         this.content = proposal.getContent();
         this.isAdopted = proposal.isAdopted();
     }
