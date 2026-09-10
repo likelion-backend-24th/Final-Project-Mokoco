@@ -1,5 +1,6 @@
 package com.team2.userservice.config;
 
+import com.team2.userservice.user.dto.OAuthAttributes;
 import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
 import com.team2.userservice.user.repository.UserRepository;
@@ -76,8 +77,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private String extractEmail(String registrationId, Map<String, Object> attributes) {
         if ("kakao".equals(registrationId)) {
-            Map<String, Object> kakaoAccount = asMap(attributes.get("kakao_account"));
-            return kakaoAccount != null ? (String) kakaoAccount.get("email") : null;
+            // 카카오는 이메일 동의를 못 받으므로 user id 로 합성한 주소를 사용
+            return OAuthAttributes.resolveKakaoEmail(attributes);
         }
         return (String) attributes.get("email"); // google
     }
@@ -86,7 +87,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         if ("kakao".equals(registrationId)) {
             Map<String, Object> kakaoAccount = asMap(attributes.get("kakao_account"));
             Map<String, Object> profile = kakaoAccount != null ? asMap(kakaoAccount.get("profile")) : null;
-            return profile != null ? (String) profile.get("nickname") : null;
+            String nickname = profile != null ? (String) profile.get("nickname") : null;
+            return StringUtils.hasText(nickname) ? nickname : "카카오사용자";
         }
         return (String) attributes.get("name"); // google
     }

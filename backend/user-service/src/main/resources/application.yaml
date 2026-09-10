@@ -39,8 +39,8 @@ spring:
             client-authentication-method: client_secret_post
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            # account_email 은 카카오 비즈앱 전환이 필요해 제외. 이메일은 kakao user id 로 합성한다.
             scope:
-              - account_email
               - profile_nickname
         provider:
           kakao:
