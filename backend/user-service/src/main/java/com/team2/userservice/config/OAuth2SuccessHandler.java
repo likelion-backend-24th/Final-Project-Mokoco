@@ -1,8 +1,10 @@
 package com.team2.userservice.config;
 
 import com.team2.userservice.user.dto.OAuthAttributes;
+import com.team2.userservice.user.entity.RefreshToken;
 import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
+import com.team2.userservice.user.repository.RefreshTokenRepository;
 import com.team2.userservice.user.repository.UserRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +32,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -66,6 +69,18 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String role = user.getRole().name();
         String accessToken = jwtTokenProvider.createAccessToken(email, role);
         String refreshToken = jwtTokenProvider.createRefreshToken(email);
+
+        // Refresh Token 저장 (재발급에 필요). 이메일 로그인(signin)과 동일하게 upsert.
+        final String finalEmail = email;
+        final String finalRefresh = refreshToken;
+        refreshTokenRepository.findByEmail(finalEmail).ifPresentOrElse(
+                token -> {
+                    token.updateToken(finalRefresh);
+                    refreshTokenRepository.save(token);
+                },
+                () -> refreshTokenRepository.save(
+                        RefreshToken.builder().email(finalEmail).token(finalRefresh).build())
+        );
 
         String targetUrl = UriComponentsBuilder.fromUriString(BASE_URL + "/oauth2/redirect")
                 .queryParam("token", accessToken)
