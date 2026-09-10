@@ -17,9 +17,13 @@
 		reverse_proxy post-service:8082
 	}
 
-	# 채팅: 컨트롤러가 이미 /api/chat-rooms 매핑이라 접두어 유지, post-service 직결
+	# 채팅/계약 API 는 Next BFF(route handler) 경유 — 쿠키의 access_token 을 Authorization 헤더로 주입해준다.
+	# (프론트 컴포넌트가 인증 헤더 없이 상대경로로 호출하는 구조라 직결하면 401)
 	handle /api/chat-rooms/* {
-		reverse_proxy post-service:8082
+		reverse_proxy frontend:3000
+	}
+	handle /api/chat/* {
+		reverse_proxy frontend:3000
 	}
 
 	# 나머지 /api/* (auth, users) 는 게이트웨이 -> user-service
