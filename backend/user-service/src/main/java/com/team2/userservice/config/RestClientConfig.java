@@ -8,9 +8,10 @@ import org.springframework.web.client.RestClient;
 public class RestClientConfig {
 
     @Bean
-    public RestClient vworldRestClient(RestClient.Builder builder) {
+    public RestClient vworldRestClient(RestClient.Builder builder,
+            @org.springframework.beans.factory.annotation.Value("${vworld.base-url:https://api.vworld.kr}") String baseUrl) {
         return builder
-                .baseUrl("https://api.vworld.kr")
+                .baseUrl(baseUrl)
                 .build();
     }
 }
