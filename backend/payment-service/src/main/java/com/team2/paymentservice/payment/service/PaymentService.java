@@ -45,15 +45,21 @@ public class PaymentService {
             throw new CustomException(ErrorCode.DUPLICATE_PAYMENT);
         }
 
+        int expectedTotal = Payment.calculateTotalAmount(request.baseAmount());
+        if (expectedTotal != request.amount()) {
+            throw new CustomException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
+        }
+
         PortOnePaymentResponse portOnePayment = portOnePaymentClient.getPayment(request.paymentId());
-        verifyPaidAndAmount(portOnePayment, request.amount());
+        verifyPaidAndAmount(portOnePayment, expectedTotal);
 
         Payment payment = Payment.builder()
                 .postId(request.postId())
                 .portonePaymentId(request.paymentId())
                 .payerEmail(payerEmail)
                 .payeeEmail(request.payeeEmail())
-                .amount(request.amount())
+                .totalAmount(expectedTotal)
+                .baseAmount(request.baseAmount())
                 .build();
 
         paymentRepository.save(payment);
@@ -81,7 +87,8 @@ public class PaymentService {
                 .portonePaymentId(portonePaymentId)
                 .payerEmail(customData.payerEmail())
                 .payeeEmail(customData.payeeEmail())
-                .amount(portOnePayment.amount().total())
+                .totalAmount(portOnePayment.amount().total())
+                .baseAmount(customData.baseAmount())
                 .build();
 
         paymentRepository.save(payment);
@@ -94,14 +101,15 @@ public class PaymentService {
             Long postId = node.path("postId").asLong();
             String payerEmail = node.path("payerEmail").asText(null);
             String payeeEmail = node.path("payeeEmail").asText(null);
-            if (postId == 0 || payerEmail == null || payeeEmail == null) return null;
-            return new WebhookCustomData(postId, payerEmail, payeeEmail);
+            int baseAmount = node.path("baseAmount").asInt(-1);
+            if (postId == 0 || payerEmail == null || payeeEmail == null || baseAmount < 0) return null;
+            return new WebhookCustomData(postId, payerEmail, payeeEmail, baseAmount);
         } catch (Exception e) {
             return null;
         }
     }
 
-    private record WebhookCustomData(Long postId, String payerEmail, String payeeEmail) {
+    private record WebhookCustomData(Long postId, String payerEmail, String payeeEmail, Integer baseAmount) {
     }
 
     private void verifyPaidAndAmount(PortOnePaymentResponse portOnePayment, int expectedAmount) {

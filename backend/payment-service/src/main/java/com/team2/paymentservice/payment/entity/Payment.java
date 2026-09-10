@@ -25,23 +25,25 @@ public class Payment {
     @Column(nullable = false, unique = true)
     private Long postId;
 
+    // PortOne이 채번한 결제 건 식별자. 프론트가 결제창 호출 시 생성한 값과 동일하다.
+    // 프론트 확인 요청과 웹훅이 같은 결제를 중복 저장하지 않도록 이 값으로 멱등성을 보장한다.
     @Column(nullable = false, unique = true)
     private String portonePaymentId;
 
     @Column(nullable = false)
-    private String payerEmail; // 의뢰자
+    private String payerEmail; // 의뢰자 (결제자)
 
     @Column(nullable = false)
-    private String payeeEmail; // 수리자
+    private String payeeEmail; // 수리자 (정산 대상)
 
     @Column(nullable = false)
-    private Integer amount;
+    private Integer amount; // 의뢰자가 실제 결제한 총액 (baseAmount + feeAmount)
 
     @Column(nullable = false)
-    private Integer feeAmount;
+    private Integer feeAmount; // 플랫폼 수수료 (baseAmount의 10%, 의뢰자가 추가로 부담)
 
     @Column(nullable = false)
-    private Integer netAmount; // 수리자 정산액
+    private Integer netAmount; // 수리자가 받는 금액 = 수리자가 제안한 금액(baseAmount) 그대로
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -53,19 +55,25 @@ public class Payment {
     private LocalDateTime paidAt;
 
     @Builder
-    public Payment(Long postId, String portonePaymentId, String payerEmail, String payeeEmail, Integer amount) {
+    public Payment(Long postId, String portonePaymentId, String payerEmail, String payeeEmail,
+                   Integer totalAmount, Integer baseAmount) {
         this.postId = postId;
         this.portonePaymentId = portonePaymentId;
         this.payerEmail = payerEmail;
         this.payeeEmail = payeeEmail;
-        this.amount = amount;
-        this.feeAmount = BigDecimal.valueOf(amount)
-                .multiply(FEE_RATE)
-                .setScale(0, RoundingMode.HALF_UP)
-                .intValue();
-        this.netAmount = amount - this.feeAmount;
+        this.amount = totalAmount;
+        this.netAmount = baseAmount;
+        this.feeAmount = totalAmount - baseAmount;
         this.status = PaymentStatus.COMPLETED;
         this.createdAt = LocalDateTime.now();
         this.paidAt = LocalDateTime.now();
+    }
+
+    public static int calculateTotalAmount(int baseAmount) {
+        int fee = BigDecimal.valueOf(baseAmount)
+                .multiply(FEE_RATE)
+                .setScale(0, RoundingMode.HALF_UP)
+                .intValue();
+        return baseAmount + fee;
     }
 }

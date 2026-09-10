@@ -26,6 +26,7 @@ export async function POST(request) {
         postId: body.postId,
         payeeEmail: body.payeeEmail,
         amount: body.amount,
+        baseAmount: body.baseAmount,
         paymentId: body.paymentId,
       }),
       cache: "no-store",
