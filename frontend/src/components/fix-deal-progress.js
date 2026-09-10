@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import * as PortOne from "@portone/browser-sdk/v2";
 import { CheckCircle, CreditCard, Wrench } from "@phosphor-icons/react";
 
 const STATUS_LABEL = {
@@ -12,7 +13,7 @@ const STATUS_LABEL = {
   CANCELED: "거래 취소됨",
 };
 
-export default function FixDealProgress({ fixDealId, postId, isRequester, isRepairer, estimatedPrice, repairerEmail }) {
+export default function FixDealProgress({ fixDealId, postId, isRequester, isRepairer, estimatedPrice, repairerEmail, userEmail }) {
   const [deal, setDeal] = useState(null);
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -75,6 +76,60 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
       refresh();
     } catch {
       setError("서버에 연결할 수 없습니다.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function startPayment() {
+    setActionLoading(true);
+    setError("");
+    try {
+      const paymentId = `payment-${crypto.randomUUID()}`;
+
+      const paymentResult = await PortOne.requestPayment({
+        storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID,
+        channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY,
+        paymentId,
+        orderName: "동네수리 - 수리 대금 안전결제",
+        totalAmount: estimatedPrice ?? 0,
+        currency: "CURRENCY_KRW",
+        payMethod: "CARD",
+        isEscrow: true, // 안전거래(에스크로)
+        customer: userEmail ? { email: userEmail } : undefined,
+        // 웹훅이 프론트 응답보다 먼저 도착하거나, 프론트 응답을 못 받는 경우에도
+        // 백엔드가 이 값으로 결제-거래를 연결할 수 있도록 실어 보낸다.
+        customData: JSON.stringify({ postId, payerEmail: userEmail, payeeEmail: repairerEmail }),
+      });
+      console.log("PortOne 결제 응답:", paymentResult);
+
+      // 사용자가 결제창을 닫았거나 결제가 실패한 경우
+      if (paymentResult?.code != null) {
+        setError(paymentResult.message ?? "결제가 취소되었거나 실패했습니다.");
+        return;
+      }
+
+      // 결제창에서의 성공 응답은 참고용일 뿐, 실제 완료 처리는 백엔드가
+      // PortOne 서버에 재조회해 검증한 뒤에만 이루어진다.
+      const confirmRes = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          payeeEmail: repairerEmail,
+          amount: estimatedPrice ?? 0,
+          paymentId,
+        }),
+      });
+      const confirmData = await confirmRes.json().catch(() => ({}));
+      if (!confirmRes.ok) {
+        setError(confirmData.error ?? "결제 확인에 실패했습니다. 잠시 후 다시 확인해주세요.");
+        return;
+      }
+
+      refresh();
+    } catch {
+      setError("결제 진행 중 문제가 발생했습니다.");
     } finally {
       setActionLoading(false);
     }
@@ -177,18 +232,12 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
         {status === "REPAIR_DONE" && isRequester && !paid && (
           <button
             type="button"
-            onClick={() =>
-              runAction("/api/payments", "POST", {
-                postId,
-                payeeEmail: repairerEmail,
-                amount: estimatedPrice ?? 0,
-              })
-            }
+            onClick={startPayment}
             disabled={actionLoading}
             className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
           >
             <CreditCard size={16} weight="bold" />
-            {actionLoading ? "결제 중..." : `결제하기 (${(estimatedPrice ?? 0).toLocaleString()}원)`}
+            {actionLoading ? "결제 확인 중..." : `안전결제 하기 (${(estimatedPrice ?? 0).toLocaleString()}원)`}
           </button>
         )}
         {status === "REPAIR_DONE" && isRequester && paid && (
