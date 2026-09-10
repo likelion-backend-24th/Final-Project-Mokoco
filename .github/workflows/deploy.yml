@@ -16,8 +16,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+          cache: 'gradle'
 
-      # 0. Node.js 세팅 (프론트엔드 고속 빌드를 위함)
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -25,7 +25,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      # 1. 각 서비스별 application-secret.yml 파일 동적 생성
+      # 1. 시크릿 파일 생성
       - name: Create application-secret.yml files
         run: |
           mkdir -p backend/user-service/src/main/resources
@@ -34,7 +34,7 @@ jobs:
           mkdir -p backend/post-service/src/main/resources
           echo "${{ secrets.POST_SERVICE_SECRET_YML }}" > backend/post-service/src/main/resources/application-secret.yml
 
-      # 2. 백엔드 서비스들 그레이들 빌드 (jar 생성)
+      # 2. GitHub Actions에서 백엔드 jar 빌드
       - name: Build Backend Services
         run: |
           cd backend/api-gateway && chmod +x gradlew && ./gradlew bootJar -x test
@@ -42,15 +42,14 @@ jobs:
           cd ../post-service && chmod +x gradlew && ./gradlew bootJar -x test
           cd ../payment-service && chmod +x gradlew && ./gradlew bootJar -x test
 
-      # 2-1. 프론트엔드(Next.js) 사전 빌드 (EC2 부담 최소화)
+      # 3. GitHub Actions에서 프론트엔드 빌드 (포트 번호 비워서 상대 경로 처리)
       - name: Build Frontend
         run: |
           cd frontend
           npm ci
-          # 빌드 타임 환경 변수 주입
-          NEXT_PUBLIC_BACKEND_API_URL="http://18.212.91.33:8000" npm run build
+          NEXT_PUBLIC_BACKEND_API_URL="" npm run build
 
-      # 3. 빌드된 결과물과 프로젝트 전체 파일을 EC2로 전송
+      # 4. EC2로 전송 후 `--build` 없이 기존 이미지 기반으로 재시작
       - name: Copy files to EC2 via SSH
         uses: appleboy/scp-action@master
         with:
@@ -60,7 +59,6 @@ jobs:
           source: "."
           target: "/home/ubuntu/mokoco"
 
-      # 4. EC2에서 Docker Compose 재실행
       - name: Run docker compose on EC2
         uses: appleboy/ssh-action@master
         with:
@@ -69,4 +67,5 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ubuntu/mokoco
+            # EC2에서는 빌드하지 않고 이미 빌드된 jar와 프론트엔드 결과물을 컨테이너에 띄우기만 함 (--no-build 또는 일반 up)
             docker compose up -d --build
