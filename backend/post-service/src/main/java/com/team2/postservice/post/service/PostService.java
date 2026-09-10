@@ -1,14 +1,15 @@
 package com.team2.postservice.post.service;
 
-import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.RegionResponse;
-import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.common.exception.CustomException;
 import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.post.dto.PostRequestDto;
+import com.team2.postservice.post.dto.NearbyRepairRequest;
+import org.springframework.data.domain.PageRequest;
 import com.team2.postservice.post.dto.PostResponseDto;
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.entity.PostCategory;
+import com.team2.postservice.post.entity.RegionScope;
 import com.team2.postservice.post.entity.PostImage;
 import com.team2.postservice.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,14 +29,12 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final FileStorageService fileStorageService;
-    private final UserClient userClient; // 💡 OpenFeign 클라이언트 주입
+    private final PostViewerService postViewerService;
 
     @Transactional
     public Long createPost(PostRequestDto.Create request, List<MultipartFile> images, String authorEmail) {
         // 💡 User-Service에서 이메일로 최신 지역 정보를 Feign을 통해 조회
-        RegionResponse response = userClient.getRegionByEmail(authorEmail);
-
-        System.out.println("조회된 지역 이름: " + response.regionName());
+        RegionResponse response = postViewerService.requireRegion(authorEmail);
 
         Post post = Post.builder()
                 .title(request.title())
@@ -43,6 +42,7 @@ public class PostService {
                 .category(request.category())
                 .authorEmail(authorEmail)
                 .regionName(response.regionName())
+                .regionCode(response.regionCode())
                 .build();
 
         attachImages(post, images);
@@ -50,32 +50,32 @@ public class PostService {
         return postRepository.save(post).getId();
     }
 
-    public List<PostResponseDto.Detail> getAllPosts(PostCategory category, String regionName) {
-        List<Post> posts;
-
-        boolean hasRegion = regionName != null && !regionName.isBlank();
-        boolean hasCategory = category != null && category != PostCategory.ALL;
-
-        Sort sort = Sort.by(Sort.Direction.DESC, "id");
-
-        if (hasRegion && hasCategory) {
-            posts = postRepository.findByRegionNameAndCategory(regionName, category, sort);
-        } else if (hasRegion) {
-            posts = postRepository.findByRegionName(regionName, sort);
-        } else if (hasCategory) {
-            posts = postRepository.findByCategory(category, sort);
-        } else {
-            posts = postRepository.findAll(sort);
-        }
-
-        return posts.stream()
-                .map(PostResponseDto.Detail::from)
-                .toList();
+    public NearbyRepairRequest.Result getNearbyPosts(
+            String authorization, PostCategory category, int page, int size, RegionScope regionScope) {
+        String email = authorization == null || authorization.isBlank()
+                ? null : postViewerService.requireEmail(authorization);
+        if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE)
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        var region = email == null ? null : postViewerService.requireRegion(email);
+        var pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Direction.DESC, "createdAt", "id"));
+        return NearbyRepairRequest.Result.from(
+                postRepository.findNearby(region == null ? null : regionScope.queryPattern(region.regionCode()),
+                        category == PostCategory.ALL ? null : category, pageable), regionScope, region);
     }
 
     public PostResponseDto.Detail getPost(Long id) {
         Post post = getPostOrThrow(id);
+        if (!post.isPubliclyVisible()) throw new CustomException(ErrorCode.POST_NOT_FOUND);
         return PostResponseDto.Detail.from(post);
+    }
+
+    @Transactional
+    public void changeVisibility(Long id, boolean publiclyVisible, String authorization) {
+        String email = postViewerService.requireEmail(authorization);
+        Post post = getPostOrThrow(id);
+        validateAuthor(post, email, ErrorCode.UNAUTHORIZED_POST_UPDATE);
+        post.changeVisibility(publiclyVisible);
     }
 
     @Transactional

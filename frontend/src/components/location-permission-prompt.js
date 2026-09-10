@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   CheckCircle,
   Crosshair,
@@ -15,9 +17,9 @@ import {
   formatRegionName,
   isAutomaticLocationAccurate,
 } from "@/lib/region";
-import { backendUrl } from "@/lib/backend"; // 백엔드 URL 유틸 임포트 추가
 
 export default function LocationPermissionPrompt({ userEmail }) {
+  const router = useRouter();
   const [state, setState] = useState("checking");
   const [message, setMessage] = useState("");
   const [regionName, setRegionName] = useState("");
@@ -30,7 +32,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
     async function checkRegion() {
       try {
         // credentials: "include" 추가하여 쿠키 동반 전송
-        const response = await fetch(backendUrl("/api/users/me/region"), { 
+        const response = await fetch("/api/users/me/region", {
           cache: "no-store",
           credentials: "include" 
         });
@@ -120,7 +122,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
 
     try {
       // credentials: "include" 추가하여 쿠키 동반 전송
-      const response = await fetch(backendUrl("/api/users/me/region"), {
+      const response = await fetch("/api/users/me/region", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ latitude: position.latitude, longitude: position.longitude }),
@@ -137,6 +139,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
       setRegionName(payload.regionName);
       window.sessionStorage.removeItem(dismissalKey);
       setState("success");
+      router.refresh();
     } catch {
       setMessage("지역 정보 서버와 통신할 수 없습니다.");
       setState(position.source === "manual" ? "manual-selected" : "confirm");
@@ -155,7 +158,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
       <section className="region-status-bar" aria-label="현재 설정 지역">
         <div><MapPin size={22} weight="fill" /><strong>{locationLabel}</strong></div>
         <button type="button" onClick={() => setState("prompt")}>{regionName ? "지역 변경" : "지역 설정"}</button>
-        <a href="/posts/new">수리 요청하기</a>
+        <Link href="/posts/new">수리 요청하기</Link>
       </section>
 
       {modalVisible && <div className="location-modal-backdrop">

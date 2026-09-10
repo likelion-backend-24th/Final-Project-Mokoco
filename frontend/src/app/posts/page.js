@@ -5,7 +5,11 @@ import {
   Drop, Hammer, WashingMachine, DoorOpen, Toolbox, MapPin 
 } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
+import LocationPermissionPrompt from "@/components/location-permission-prompt";
 import { backendUrl } from "@/lib/backend";
+import { getNearbyPosts } from "@/lib/nearby-posts";
+import RegionScopeFilter from "@/components/region-scope-filter";
+import { normalizeRegionScope, regionListHref } from "@/lib/region-scope";
 
 const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "수리 완료" };
 
@@ -19,20 +23,6 @@ const categories = [
   { value: "LIVING_ETC", label: "생활·기타", icon: Toolbox },
 ];
 
-async function getPosts(category) {
-  try {
-    const url = category && category !== "ALL" 
-      ? backendUrl(`/posts?category=${category}`) 
-      : backendUrl("/posts");
-      
-    const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(5000) });
-    if (!response.ok) return { posts: [], error: "수리 요청을 불러오지 못했습니다." };
-    const posts = await response.json();
-    return Array.isArray(posts) ? { posts, error: null } : { posts: [], error: "백엔드 응답 형식이 올바르지 않습니다." };
-  } catch {
-    return { posts: [], error: "백엔드 서버에 연결할 수 없습니다. 서버 실행 상태를 확인해주세요." };
-  }
-}
 
 function formatRelativeDate(value) {
   if (!value) return "시간 정보 없음";
@@ -49,7 +39,7 @@ function EmptyState({ error, postHref }) {
   return (
     <div className="reference-empty-state" role="status">
       {error ? <Wrench size={58} weight="duotone" /> : <ClipboardText size={58} weight="duotone" />}
-      <h3>{error ? "데이터 연결을 확인해주세요" : "아직 등록된 수리 요청이 없어요"}</h3>
+      <h3>{error ? "수리 요청을 확인해주세요" : "아직 등록된 수리 요청이 없어요"}</h3>
       <p>{error ?? "첫 번째 수리 요청을 올려보세요!"}</p>
       <Link href={postHref} className="compact-primary-button">수리 요청하기</Link>
     </div>
@@ -59,16 +49,19 @@ function EmptyState({ error, postHref }) {
 export default async function PostsPage({ searchParams }) {
   const resolvedSearchParams = await searchParams;
   const currentCategory = resolvedSearchParams?.category || "ALL";
+  const regionScope = normalizeRegionScope(resolvedSearchParams?.regionScope);
 
   const cookieStore = await cookies();
   const userEmail = cookieStore.get("user_email")?.value ?? null;
-  const { posts, error } = await getPosts(currentCategory);
+  const page = resolvedSearchParams?.page ?? "0";
+  const { posts, error, pagination } = await getNearbyPosts(cookieStore.get("access_token")?.value, currentCategory, page, 20, regionScope);
   const postHref = userEmail ? "/posts/new" : "/login";
 
   return (
     <div className="min-h-screen bg-[#f7f9fc]">
       <SiteHeader userEmail={userEmail} />
       <main className="page-shell auth-main">
+        {cookieStore.get("access_token")?.value && <LocationPermissionPrompt userEmail={userEmail} />}
         <div className="section-heading">
           <div>
             <p className="section-kicker">REPAIR POSTS</p>
@@ -80,13 +73,16 @@ export default async function PostsPage({ searchParams }) {
           </Link>
         </div>
 
+        {cookieStore.get("access_token")?.value
+          ? <RegionScopeFilter regionScope={regionScope} regionFilter={pagination?.regionFilter} category={currentCategory} />
+          : <p className="mb-5 text-sm text-slate-500">전체 지역의 수리 요청입니다. 로그인하면 내 활동 지역으로 좁혀볼 수 있어요.</p>}
         <div className="category-filter-row mb-6 overflow-x-auto pb-2" aria-label="수리 분야 필터">
           {categories.map(({ value, label, icon: Icon }) => {
             const isActive = currentCategory === value;
             return (
               <Link
                 key={value}
-                href={value === "ALL" ? "/posts" : `/posts?category=${value}`}
+                href={regionListHref({ category: value, regionScope })}
                 className={`category-filter shrink-0 inline-flex items-center gap-2 ${isActive ? "category-filter-active" : ""}`}
               >
                 <Icon size={20} weight="duotone" />
@@ -101,7 +97,7 @@ export default async function PostsPage({ searchParams }) {
         ) : (
           <div className="post-list">
             {posts.map((post) => {
-              const firstImage = post.images && post.images.length > 0 ? (typeof post.images[0] === "string" ? post.images[0] : post.images[0].imageUrl) : null;
+              const firstImage = post.thumbnailUrl;
 
               return (
                 <Link key={post.id} href={`/posts/${post.id}`} className="post-row flex items-start gap-4">
@@ -149,6 +145,11 @@ export default async function PostsPage({ searchParams }) {
             })}
           </div>
         )}
+        {pagination && <nav className="flex justify-center items-center gap-4 mt-6" aria-label="수리 요청 페이지">
+          {!pagination.first && <Link href={regionListHref({ category: currentCategory, regionScope, page: pagination.number - 1 })}>이전</Link>}
+          <span>{pagination.number + 1}페이지 · 총 {pagination.totalElements}건</span>
+          {!pagination.last && <Link href={regionListHref({ category: currentCategory, regionScope, page: pagination.number + 1 })}>다음</Link>}
+        </nav>}
       </main>
     </div>
   );

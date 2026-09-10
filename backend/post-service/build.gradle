@@ -60,3 +60,32 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+sourceSets {
+    integrationTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+// Build the actual sibling service; do not replace User/Location with a mock.
+tasks.register('prepareNearbyUserService', GradleBuild) {
+    dir = file('../user-service')
+    tasks = ['nearbyE2eClasspath']
+    startParameter.initScripts = [file('src/integrationTest/user-service.init.gradle')]
+}
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs Repair and User/Location over HTTP with isolated H2 databases.'
+    group = 'verification'
+    dependsOn tasks.named('prepareNearbyUserService')
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    useJUnitPlatform()
+    systemProperty 'nearby.userClasspathFile', file('../user-service/build/nearby-e2e-classpath.txt').absolutePath
+    shouldRunAfter tasks.named('test')
+}

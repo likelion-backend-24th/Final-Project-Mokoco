@@ -1,0 +1,10 @@
+allprojects {
+    afterEvaluate {
+        tasks.register('nearbyE2eClasspath') {
+            dependsOn tasks.named('classes')
+            doLast {
+                layout.buildDirectory.file('nearby-e2e-classpath.txt').get().asFile.text = sourceSets.main.runtimeClasspath.asPath
+            }
+        }
+    }
+}

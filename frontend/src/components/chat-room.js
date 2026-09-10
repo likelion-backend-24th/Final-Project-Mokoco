@@ -163,6 +163,7 @@ export default function ChatRoom({ roomId }) {
         </div>;
       })}<div ref={bottom} />
     </div>
+    <Link href={`/chat-rooms/${roomId}/contract`} className="conversation-banner" style={{ fontWeight: 600 }}>수리 계약서 작성 · 서명 · 작업 진행 →</Link>
 
     <footer className="conversation-footer">
       <div className="conversation-composer">

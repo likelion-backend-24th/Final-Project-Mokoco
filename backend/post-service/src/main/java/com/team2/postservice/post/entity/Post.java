@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "posts")
+@Table(name = "posts", indexes = @Index(name = "idx_posts_nearby", columnList = "regionCode,publiclyVisible,status,createdAt,id"))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
@@ -36,6 +36,12 @@ public class Post {
     @Column(nullable = false, length = 100)
     private String regionName; // 지역 이름 필드
 
+    @Column(length = 20)
+    private String regionCode;
+
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean publiclyVisible = true;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PostCategory category;
@@ -55,11 +61,12 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Post(String title, String content, String authorEmail, String regionName, PostCategory category) {
+    public Post(String title, String content, String authorEmail, String regionName, String regionCode, PostCategory category) {
         this.title = title;
         this.content = content;
         this.authorEmail = authorEmail;
         this.regionName = regionName; // 빌더에 지역 이름 추가
+        this.regionCode = regionCode;
         this.category = category;
         this.status = PostStatus.WAITING;
     }
@@ -72,6 +79,14 @@ public class Post {
 
     public void updateStatusToMatched() {
         this.status = PostStatus.MATCHED;
+    }
+
+    public void changeVisibility(boolean publiclyVisible) {
+        this.publiclyVisible = publiclyVisible;
+    }
+
+    public boolean isAcceptingProposals() {
+        return publiclyVisible && status == PostStatus.WAITING;
     }
 
     public PostImage addImage(String imageUrl, String storedFileName) {

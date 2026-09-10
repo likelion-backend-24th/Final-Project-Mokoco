@@ -69,3 +69,7 @@ Thumbs.db
 **/uploads/
 .npm-cache/
 **/private-chat-files/
+
+# Backend secret configuration
+/backend/**/application-secret.yml
+/backend/**/application-secret.yaml
