@@ -114,6 +114,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
   }
 
   async function savePosition() {
+    console.log("요청 URL:", backendUrl("/api/users/me/region"));
     if (!position) return;
     setMessage("");
     setState("saving");
