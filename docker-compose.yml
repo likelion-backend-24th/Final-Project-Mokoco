@@ -8,12 +8,28 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root1234
-      # MYSQL_DATABASE: mokocodb # 이 줄은 삭제 또는 주석 처리
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - mokoco-net
+
+  # --------------------
+  # Nginx (Reverse Proxy)
+  # --------------------
+  nginx:
+    image: nginx:alpine
+    container_name: mokoco-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - api-gateway
     networks:
       - mokoco-net
 
@@ -26,11 +42,9 @@ services:
       dockerfile: Dockerfile
     container_name: mokoco-api-gateway
     restart: always
-    ports:
-      - "8000:8000"
+    # Nginx가 80번을 받아서 내부 네트워크로 토스하므로 외부 ports 매핑은 제거합니다.
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      # 필요한 환경 변수 (DB 연결이나 서비스 디스커버리 등) 추가
     depends_on:
       - mysql
     networks:
@@ -45,7 +59,6 @@ services:
       dockerfile: Dockerfile
     container_name: mokoco-user-service
     restart: always
-    # 내부 포트이므로 외부 포트 매핑(ports)은 생략합니다.
     environment:
       - SPRING_PROFILES_ACTIVE=prod
     depends_on:
@@ -72,18 +85,18 @@ services:
   # --------------------
   # Backend: Payment Service
   # --------------------
-  # payment-service:
-  #   build:
-  #     context: ./backend/payment-service
-  #     dockerfile: Dockerfile
-  #   container_name: mokoco-payment-service
-  #   restart: always
-  #   environment:
-  #     - SPRING_PROFILES_ACTIVE=prod
-  #   depends_on:
-  #     - mysql
-  #   networks:
-  #     - mokoco-net
+  payment-service:
+    build:
+      context: ./backend/payment-service
+      dockerfile: Dockerfile
+    container_name: mokoco-payment-service
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      - mysql
+    networks:
+      - mokoco-net
 
   # --------------------
   # Frontend (Next.js)
@@ -93,14 +106,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_BACKEND_API_URL=http://18.212.91.33:8000
+        - NEXT_PUBLIC_BACKEND_API_URL=http://18.212.91.33.nip.io/api
     container_name: mokoco-frontend
     restart: always
-    ports:
-      - "3000:3000"
+    # Nginx가 80번을 대신 받으므로 3000포트 매핑은 제거합니다.
     environment:
       - NODE_ENV=production
-      # 프론트엔드에서 API Gateway를 호출할 때 사용할 주소 설정 (예: http://api-gateway:8000 또는 EC2 퍼블릭 IP)
     depends_on:
       - api-gateway
     networks:
