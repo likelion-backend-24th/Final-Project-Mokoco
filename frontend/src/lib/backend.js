@@ -1,4 +1,4 @@
-const baseUrl = process.env.BACKEND_API_URL ?? "http://localhost:8000";
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL ?? "http://localhost:8000";
 
 export function backendUrl(path) { return new URL(path, `${baseUrl.replace(/\/$/, "")}/`).toString(); }
 export async function readBackendPayload(response) {
