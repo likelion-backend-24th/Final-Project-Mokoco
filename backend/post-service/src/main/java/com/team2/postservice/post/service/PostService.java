@@ -12,6 +12,7 @@ import com.team2.postservice.post.entity.PostCategory;
 import com.team2.postservice.post.entity.PostImage;
 import com.team2.postservice.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -32,17 +34,23 @@ public class PostService {
 
     @Transactional
     public Long createPost(PostRequestDto.Create request, List<MultipartFile> images, String authorEmail) {
-        // 💡 User-Service에서 이메일로 최신 지역 정보를 Feign을 통해 조회
-        RegionResponse response = userClient.getRegionByEmail(authorEmail);
-
-        System.out.println("조회된 지역 이름: " + response.regionName());
+        // User-Service에서 작성자 지역 정보를 Feign으로 조회. 실패하거나 지역 미설정이면 기본값으로 등록.
+        String regionName = "지역 미설정";
+        try {
+            RegionResponse response = userClient.getRegionByEmail(authorEmail);
+            if (response != null && response.regionName() != null && !response.regionName().isBlank()) {
+                regionName = response.regionName();
+            }
+        } catch (Exception e) {
+            log.warn("작성자 지역 조회 실패 (email={}) - '지역 미설정'으로 등록합니다", authorEmail, e);
+        }
 
         Post post = Post.builder()
                 .title(request.title())
                 .content(request.content())
                 .category(request.category())
                 .authorEmail(authorEmail)
-                .regionName(response.regionName())
+                .regionName(regionName)
                 .build();
 
         attachImages(post, images);

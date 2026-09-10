@@ -37,7 +37,7 @@ file:
 
 services:
   user-service:
-    url: http://localhost:8081
+    url: http://mokoco-user-service:8081
 internal:
   service-key: ${INTERNAL_SERVICE_KEY}
 
