@@ -1,6 +1,6 @@
 package com.team2.userservice.region.service;
 
-import com.team2.userservice.region.client.VWorldClient;
+import com.team2.userservice.region.client.KakaoLocalClient;
 import com.team2.userservice.region.dto.RegionInfo;
 import com.team2.userservice.region.dto.RegionRequest;
 import com.team2.userservice.region.dto.RegionResponse;
@@ -29,7 +29,7 @@ class RegionServiceTest {
     private RegionRepository regionRepository;
 
     @Mock
-    private VWorldClient vWorldClient;
+    private KakaoLocalClient kakaoLocalClient;
 
     @InjectMocks
     private RegionService regionService;
@@ -61,7 +61,7 @@ class RegionServiceTest {
                         .dong("서초4동")
                         .build();
 
-        given(vWorldClient.getRegionInfo(
+        given(kakaoLocalClient.getRegionInfo(
                 request.latitude(),
                 request.longitude()
         )).willReturn(regionInfo);

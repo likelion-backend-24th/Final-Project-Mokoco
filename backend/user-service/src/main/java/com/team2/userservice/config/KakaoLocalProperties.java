@@ -2,14 +2,15 @@ package com.team2.userservice.config;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConfigurationProperties(prefix = "vworld")
+@ConfigurationProperties(prefix = "kakao")
 @Getter
 @Setter
-public class VWorldProperties {
-    private String apiKey;
+public class KakaoLocalProperties {
+
+    /** Kakao Developers 앱의 REST API 키 (OAuth client-id 와 동일한 값). */
+    private String restApiKey;
 }

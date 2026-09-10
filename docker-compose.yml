@@ -126,7 +126,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_BACKEND_API_URL=http://18.212.91.33.nip.io/api
+        - NEXT_PUBLIC_BACKEND_API_URL=http://32.199.114.190.nip.io/api
     container_name: mokoco-frontend
     restart: always
     # Nginx가 80번을 대신 받으므로 3000포트 매핑은 제거합니다.

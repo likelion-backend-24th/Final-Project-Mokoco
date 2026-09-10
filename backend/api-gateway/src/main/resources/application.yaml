@@ -11,8 +11,8 @@ spring:
           '[/**]':
             allowed-origins:
               - "http://localhost:3000"
-              - "http://18.212.91.33:3000"
-              - "http://18.212.91.33.nip.io:3000"
+              - "http://32.199.114.190:3000"
+              - "http://32.199.114.190.nip.io:3000"
             allowed-methods:
               - GET
               - POST

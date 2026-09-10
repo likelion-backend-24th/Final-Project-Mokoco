@@ -2,7 +2,7 @@ package com.team2.userservice.region.service;
 
 import com.team2.userservice.common.exception.CustomException;
 import com.team2.userservice.common.exception.ErrorCode;
-import com.team2.userservice.region.client.VWorldClient;
+import com.team2.userservice.region.client.KakaoLocalClient;
 import com.team2.userservice.region.dto.RegionRequest;
 import com.team2.userservice.region.dto.RegionInfo;
 import com.team2.userservice.region.dto.RegionResponse;
@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RegionService {
 
     private final RegionRepository regionRepository;
-    private final VWorldClient vWorldClient;
+    private final KakaoLocalClient kakaoLocalClient;
     private final UserRepository userRepository;
 
     @Transactional
@@ -28,7 +28,7 @@ public class RegionService {
             String email,
             RegionRequest request
     ) {
-        RegionInfo info = vWorldClient.getRegionInfo(
+        RegionInfo info = kakaoLocalClient.getRegionInfo(
                 request.latitude(),
                 request.longitude()
         );

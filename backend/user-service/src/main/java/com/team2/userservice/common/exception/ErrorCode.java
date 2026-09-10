@@ -17,7 +17,8 @@ public enum ErrorCode {
     INVALID_TOKEN_VALUE(HttpStatus.BAD_REQUEST, "토큰 정보가 일치하지 않습니다."),
 
     // Region
-    REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "지역 정보를 찾을 수 없습니다.");
+    REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "지역 정보를 찾을 수 없습니다."),
+    REGION_LOOKUP_FAILED(HttpStatus.BAD_GATEWAY, "지역 정보 조회에 실패했습니다. 잠시 후 다시 시도해주세요.");
 
     private final HttpStatus status;
     private final String message;

@@ -1,5 +1,5 @@
 const rawBase = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-const baseUrl = (rawBase && rawBase.trim()) ? rawBase : "http://18.212.91.33";
+const baseUrl = (rawBase && rawBase.trim()) ? rawBase : "http://32.199.114.190";
 
 export function backendUrl(path) { 
   return new URL(path, `${baseUrl.replace(/\/$/, "")}/`).toString(); 

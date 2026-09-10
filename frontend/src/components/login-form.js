@@ -34,7 +34,7 @@ export default function LoginForm({ registered = false }) {
   }
 
   const handleSocialLogin = (provider) => {
-  const domain = provider === "google" ? "18.212.91.33.nip.io" : "18.212.91.33";
+  const domain = provider === "google" ? "32.199.114.190.nip.io" : "32.199.114.190";
   window.location.href = `http://${domain}/oauth2/authorization/${provider}`;
 };
 

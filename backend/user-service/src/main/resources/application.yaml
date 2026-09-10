@@ -29,7 +29,7 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
-            redirect-uri: "http://18.212.91.33.nip.io/login/oauth2/code/google"
+            redirect-uri: "http://32.199.114.190.nip.io/login/oauth2/code/google"
             scope:
               - email
               - profile
@@ -50,3 +50,8 @@ spring:
             user-name-attribute: id
 internal:
   service-key: ${INTERNAL_SERVICE_KEY}
+
+# Kakao Local API (좌표 -> 행정구역 변환). REST API 키는 Kakao OAuth client-id 와 동일한 값.
+# 비어 있으면 지역 저장이 502(REGION_LOOKUP_FAILED)로 실패하지만 서비스 기동에는 영향 없음.
+kakao:
+  rest-api-key: ${KAKAO_REST_API_KEY:}
