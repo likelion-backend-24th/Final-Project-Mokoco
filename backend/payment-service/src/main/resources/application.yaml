@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: payment-service
+  profiles:
+    include: secret
 
   jpa:
     hibernate:
@@ -25,3 +27,6 @@ spring:
 
 post-service:
   base-url: http://localhost:8082
+
+portone:
+  base-url: https://api.portone.io

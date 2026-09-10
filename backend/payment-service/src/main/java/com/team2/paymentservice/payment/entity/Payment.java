@@ -25,11 +25,14 @@ public class Payment {
     @Column(nullable = false, unique = true)
     private Long postId;
 
-    @Column(nullable = false)
-    private String payerEmail; // 의뢰자 (결제자)
+    @Column(nullable = false, unique = true)
+    private String portonePaymentId;
 
     @Column(nullable = false)
-    private String payeeEmail; // 수리자 (정산 대상)
+    private String payerEmail; // 의뢰자
+
+    @Column(nullable = false)
+    private String payeeEmail; // 수리자
 
     @Column(nullable = false)
     private Integer amount;
@@ -38,7 +41,7 @@ public class Payment {
     private Integer feeAmount;
 
     @Column(nullable = false)
-    private Integer netAmount; // 수리자 정산액 (amount - feeAmount)
+    private Integer netAmount; // 수리자 정산액
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -50,8 +53,9 @@ public class Payment {
     private LocalDateTime paidAt;
 
     @Builder
-    public Payment(Long postId, String payerEmail, String payeeEmail, Integer amount) {
+    public Payment(Long postId, String portonePaymentId, String payerEmail, String payeeEmail, Integer amount) {
         this.postId = postId;
+        this.portonePaymentId = portonePaymentId;
         this.payerEmail = payerEmail;
         this.payeeEmail = payeeEmail;
         this.amount = amount;
