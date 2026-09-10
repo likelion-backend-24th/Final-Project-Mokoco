@@ -64,7 +64,7 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
     try {
       let response;
       if (isEdit) {
-        // 수정: 백엔드 PATCH 는 JSON(title/content/category)만 받는다. 이미지 편집은 별도 엔드포인트.
+        // 수정: 백엔드 PATCH 는 JSON(title/content/category)만 받는다. 이미지는 아래에서 별도 엔드포인트로.
         response = await fetch(backendUrl(`/api/posts/${postId}`), {
           method: "PATCH",
           headers: { "Content-Type": "application/json", ...authHeaders },
@@ -91,6 +91,23 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
         } catch { /* 본문 없음 */ }
         setMessage(msg);
         return;
+      }
+
+      // 수정 화면에서 새로 첨부한 사진이 있으면 이미지 추가 엔드포인트로 별도 업로드
+      if (isEdit && selectedFiles.length > 0) {
+        const imgForm = new FormData();
+        selectedFiles.forEach((file) => imgForm.append("images", file));
+        const imgRes = await fetch(backendUrl(`/api/posts/${postId}/images`), {
+          method: "POST",
+          headers: authHeaders,
+          credentials: "include",
+          body: imgForm,
+        });
+        if (!imgRes.ok) {
+          setMessage("글 내용은 수정됐지만 사진 추가에 실패했습니다.");
+          setSubmitting(false);
+          return;
+        }
       }
 
       // PATCH 는 본문 없이 200(Void), POST 는 새 글 id 반환
