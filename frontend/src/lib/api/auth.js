@@ -1,7 +1,9 @@
 import { useAuthStore } from "@/store/authStore";
 
 export async function loginUser(email, password) {
-  const response = await fetch("/api/auth/signin", {
+  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "";
+  
+  const response = await fetch(`${apiUrl}/api/auth/signin`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -35,7 +37,7 @@ export async function loginUser(email, password) {
       localStorage.setItem("refresh_token", data.refreshToken);
     }
 
-    // Zustand 스토어 업데이트 (쿠키는 이미 Next.js API Route 서버에서 구워짐)
+    // Zustand 스토어 업데이트
     useAuthStore.getState().setLogin(
       data.accessToken, 
       userEmail, 
@@ -49,19 +51,16 @@ export async function loginUser(email, password) {
 
 export async function logoutUser() {
   try {
-    await fetch("/api/auth/logout", { method: "POST" });
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "";
+    await fetch(`${apiUrl}/api/auth/logout`, { method: "POST" });
   } catch (e) {
     console.error("로그아웃 통신 실패", e);
   } finally {
     if (typeof window !== "undefined") {
       localStorage.removeItem("refresh_token");
-      // 만약 zustand persist를 쓰고 있다면 해당 키도 여기서 지워야 함
-      // localStorage.removeItem("auth-storage"); 
     }
     
     useAuthStore.getState().setLogout();
-    
-    // 캐시를 완전히 날리고 홈이나 로그인으로 강제 이동
     window.location.href = "/";
   }
 }
