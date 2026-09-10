@@ -73,7 +73,7 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
     });
 
     try {
-      const response = await fetch(isEdit ? backendUrl(`/posts/${postId}`) : backendUrl("/posts"), {
+      const response = await fetch(isEdit ? backendUrl(`/api/posts/${postId}`) : backendUrl("/api/posts"), {
         method: isEdit ? "PATCH" : "POST",
         headers: {
           "X-User-Email": userEmail ?? "",

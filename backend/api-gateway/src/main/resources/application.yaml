@@ -27,12 +27,29 @@ spring:
           predicates:
             - Path=/api/auth/**, /api/users/**, /oauth2/**, /login/oauth2/**
 
-        - id: post-service
+        # 프론트(브라우저)가 보내는 /api/* — /api 를 떼고 post-service 로 (컨트롤러는 /posts, /fix-deals)
+        - id: post-service-api
           uri: http://mokoco-post-service:8082
           predicates:
-            - Path=/posts/**, /api/chat-rooms/**, /fix-deals/**
+            - Path=/api/posts/**, /api/fix-deals/**
+          filters:
+            - StripPrefix=1
+
+        # 채팅 컨트롤러는 이미 /api/chat-rooms 매핑이라 접두어 유지
+        - id: post-service-chat
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/api/chat-rooms/**
+
+        # SSR(Next 서버)이 게이트웨이로 직접 부르는 접두어 없는 경로
+        - id: post-service-direct
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/posts/**, /fix-deals/**, /images/**
 
         - id: payment-service
           uri: http://mokoco-payment-service:8083
           predicates:
-            - Path=/payments/**
+            - Path=/api/payments/**
+          filters:
+            - StripPrefix=1
