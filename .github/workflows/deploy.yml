@@ -94,4 +94,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ubuntu/mokoco
-            docker compose up -d --build
+            docker compose up -d --build --remove-orphans
+            # 컨테이너가 재생성되면 IP가 바뀌므로 nginx가 설정을 다시 읽고 업스트림을 재해석하도록 재시작
+            docker compose restart nginx
+            docker compose ps

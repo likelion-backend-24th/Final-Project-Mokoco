@@ -6,6 +6,11 @@ services:
     image: mysql:8.0
     container_name: mokoco-mysql
     restart: always
+    # 1GB RAM 인스턴스에서 MySQL 메모리 사용량을 낮춘다 (기본값이면 ~400MB 이상 점유)
+    command: >
+      --innodb-buffer-pool-size=128M
+      --performance-schema=OFF
+      --skip-name-resolve
     environment:
       MYSQL_ROOT_PASSWORD: root1234
     ports:
@@ -52,6 +57,8 @@ services:
     # Nginx가 80번을 받아서 내부 네트워크로 토스하므로 외부 ports 매핑은 제거합니다.
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      # 힙 상한 (1GB RAM 인스턴스에서 JVM 3개가 메모리를 다 먹지 않도록)
+      - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k
     depends_on:
       - mysql
     networks:
@@ -68,6 +75,7 @@ services:
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - JAVA_TOOL_OPTIONS=-Xmx200m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k
     depends_on:
       mysql:
         condition: service_healthy
@@ -85,6 +93,7 @@ services:
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - JAVA_TOOL_OPTIONS=-Xmx240m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k
     depends_on:
       mysql:
         condition: service_healthy
@@ -102,8 +111,10 @@ services:
   #   restart: always
   #   environment:
   #     - SPRING_PROFILES_ACTIVE=prod
+  #     - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k
   #   depends_on:
-  #     - mysql
+  #     mysql:
+  #       condition: service_healthy
   #   networks:
   #     - mokoco-net
 
