@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import {
-  ArrowRight, ClipboardText, DoorOpen, Drop, Hammer, HandHeart,
-  Lightbulb, MapTrifold, SquaresFour, Star, Toolbox, UserCircle,
+  ArrowRight, ClipboardText, DoorOpen, Drop, Hammer,
+  Lightbulb, SquaresFour, Toolbox, UserCircle,
   WashingMachine, Wrench,
 } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
 import LocationPermissionPrompt from "@/components/location-permission-prompt";
 import HomeChatList from "@/components/home-chat-list";
-import { backendUrl } from "@/lib/backend";
+import { getNearbyPosts } from "@/lib/nearby-posts";
+import RegionScopeFilter from "@/components/region-scope-filter";
+import { normalizeRegionScope, regionListHref } from "@/lib/region-scope";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -19,16 +21,6 @@ const categories = [
   [Hammer, "가구·설치"], [WashingMachine, "가전제품"], [DoorOpen, "문·창문"], [Toolbox, "생활·기타"],
 ];
 
-async function getPosts() {
-  try {
-    const response = await fetch(backendUrl("/posts"), { cache: "no-store", signal: AbortSignal.timeout(5000) });
-    if (!response.ok) return { posts: [], error: "수리 요청을 불러오지 못했습니다." };
-    const posts = await response.json();
-    return Array.isArray(posts) ? { posts, error: null } : { posts: [], error: "백엔드 응답 형식이 올바르지 않습니다." };
-  } catch {
-    return { posts: [], error: "백엔드 서버에 연결할 수 없습니다. 서버 실행 상태를 확인해주세요." };
-  }
-}
 
 function formatRelativeDate(value) {
   if (!value) return "시간 정보 없음";
@@ -66,7 +58,7 @@ function EmptyPosts({ error, postHref }) {
   return (
     <div className="reference-empty-state" role="status">
       {error ? <Wrench size={58} weight="duotone" /> : <ClipboardText size={58} weight="duotone" />}
-      <h3>{error ? "데이터 연결을 확인해주세요" : "아직 등록된 수리 요청이 없어요"}</h3>
+      <h3>{error ? "수리 요청을 확인해주세요" : "아직 등록된 수리 요청이 없어요"}</h3>
       <p>{error ?? "첫 번째 수리 요청을 올려보세요!"}</p>
       <Link href={postHref} className="compact-primary-button">수리 요청하기</Link>
     </div>
@@ -100,29 +92,26 @@ function Footer() {
   );
 }
 
-function UnifiedHome({ posts, error, userEmail, isAuthenticated }) {
-  const myPosts = isAuthenticated ? posts.filter((post) => post.authorEmail === userEmail) : [];
-  const inProgress = myPosts.filter((post) => post.status === "MATCHED").length;
-  const completed = myPosts.filter((post) => post.status === "COMPLETED").length;
-
+function UnifiedHome({ posts, error, userEmail, isAuthenticated, pagination, regionScope }) {
   return (
     <><main className="page-shell auth-main">
       {isAuthenticated && <LocationPermissionPrompt userEmail={userEmail} />}
+      {isAuthenticated && <RegionScopeFilter pathname="/" regionScope={regionScope} regionFilter={pagination?.regionFilter} />}
       <CategoryRow compact />
       <div className="auth-dashboard-grid">
         <div className="dashboard-column">
           <section id="posts" className="reference-card post-card">
             <div className="reference-card-heading">
               <h2>오늘의 수리 요청</h2>
-              <Link href="/posts">전체 보기 <ArrowRight size={14} /></Link>
+              <Link href={regionListHref({ regionScope })}>전체 보기 <ArrowRight size={14} /></Link>
             </div>
             <PostList posts={posts} error={error} postHref={isAuthenticated ? "/posts/new" : "/login"} />
           </section>
           <section className="reference-card">
-            <div className="reference-card-heading"><h2>우리 동네 요청 현황</h2></div>
+            <div className="reference-card-heading"><h2>{isAuthenticated ? "선택한 지역의 요청 현황" : "전체 수리 요청 현황"}</h2></div>
             <div className="neighborhood-summary">
               <Wrench size={38} weight="duotone" />
-              <div><strong>{error ? "확인 불가" : `${posts.length}건`}</strong><span>백엔드에서 조회된 전체 수리 요청</span></div>
+              <div><strong>{error ? "확인 불가" : `${pagination?.totalElements ?? 0}건`}</strong><span>{isAuthenticated ? "활동 지역에서 제안을 기다리는 공개 요청" : ""}</span></div>
             </div>
           </section>
         </div>
@@ -130,12 +119,8 @@ function UnifiedHome({ posts, error, userEmail, isAuthenticated }) {
           {isAuthenticated ? (
             <section className="reference-card activity-card">
               <h2>내 활동 요약</h2>
-              <dl>
-                <div><dt><ClipboardText size={20} weight="duotone" />내가 올린 요청</dt><dd>{myPosts.length}건</dd></div>
-                <div><dt><Wrench size={20} weight="duotone" />진행 중 요청</dt><dd>{inProgress}건</dd></div>
-                <div><dt><Star size={20} weight="duotone" />완료한 요청</dt><dd>{completed}건</dd></div>
-              </dl>
-              <Link href="#posts" className="wide-outline-button">내 활동 보기</Link>
+              <p>활동 지역의 공개 수리 요청을 확인하고 이웃에게 제안해보세요.</p>
+              <Link href={regionListHref({ regionScope })} className="wide-outline-button">주변 요청 보기</Link>
             </section>
           ) : (
             <section className="reference-card activity-card text-center py-8">
@@ -159,18 +144,19 @@ function UnifiedHome({ posts, error, userEmail, isAuthenticated }) {
   );
 }
 
-export default async function Home() {
+export default async function Home({ searchParams }) {
+  const regionScope = normalizeRegionScope((await searchParams)?.regionScope);
   const cookieStore = await cookies();
   const userEmail = cookieStore.get("user_email")?.value ?? null;
   const accessToken = cookieStore.get("access_token")?.value ?? null;
   
   const isAuthenticated = Boolean(userEmail && accessToken);
 
-  const { posts, error } = await getPosts();
+  const { posts, error, pagination } = await getNearbyPosts(accessToken, "ALL", 0, 5, regionScope);
   return (
     <div className="min-h-screen bg-[#f7f9fc]">
       <SiteHeader userEmail={isAuthenticated ? userEmail : null} />
-      <UnifiedHome posts={posts} error={error} userEmail={userEmail} isAuthenticated={isAuthenticated} />
+      <UnifiedHome regionScope={regionScope} pagination={pagination} posts={posts} error={error} userEmail={userEmail} isAuthenticated={isAuthenticated} />
     </div>
   );
 }
