@@ -40,7 +40,12 @@
 		reverse_proxy frontend:3000
 	}
 
-	# 나머지 /api/* (auth, users) 는 게이트웨이 -> user-service
+	# 토큰 재발급은 httpOnly refresh_token 쿠키를 서버에서 읽어야 하므로 Next BFF 경유
+	handle /api/auth/reissue {
+		reverse_proxy frontend:3000
+	}
+
+	# 나머지 /api/* (auth signin/logout, users) 는 게이트웨이 -> user-service
 	handle /api/* {
 		reverse_proxy api-gateway:8000
 	}
