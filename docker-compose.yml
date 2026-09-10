@@ -29,16 +29,20 @@ services:
       start_period: 40s
 
   # --------------------
-  # Nginx (Reverse Proxy)
+  # Caddy (Reverse Proxy + 자동 HTTPS)
   # --------------------
-  nginx:
-    image: nginx:alpine
-    container_name: mokoco-nginx
+  caddy:
+    image: caddy:2-alpine
+    container_name: mokoco-caddy
     restart: always
     ports:
       - "80:80"
+      - "443:443"
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile
+      # 발급받은 인증서/ACME 계정 저장. 이게 없으면 재배포 때마다 Let's Encrypt 한도(주 5회)에 걸린다.
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
       - frontend
       - api-gateway
@@ -126,14 +130,15 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_BACKEND_API_URL=http://32.199.114.190.nip.io/api
+        # 브라우저용 base URL. 빈 값이면 프론트는 같은 오리진(상대경로)으로 호출한다 (권장).
+        - NEXT_PUBLIC_BACKEND_API_URL=
     container_name: mokoco-frontend
     restart: always
-    # Nginx가 80번을 대신 받으므로 3000포트 매핑은 제거합니다.
+    # Caddy가 80/443을 대신 받으므로 3000포트 매핑은 제거합니다.
     environment:
       - NODE_ENV=production
       # SSR(Next 서버)에서 백엔드를 부를 때 쓰는 내부 주소.
-      # 공개 IP로 나가면 nginx가 다시 프론트로 돌려보내 프론트가 자기 자신을 재귀 호출 -> CPU/메모리 폭주.
+      # 공개 도메인으로 나가면 Caddy가 다시 프론트로 돌려보내 프론트가 자기 자신을 재귀 호출 -> CPU/메모리 폭주.
       - BACKEND_API_URL=http://mokoco-api-gateway:8000
     depends_on:
       - api-gateway
@@ -142,6 +147,8 @@ services:
 
 volumes:
   mysql_data:
+  caddy_data:
+  caddy_config:
 
 networks:
   mokoco-net:

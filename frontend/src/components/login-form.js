@@ -34,9 +34,9 @@ export default function LoginForm({ registered = false }) {
   }
 
   const handleSocialLogin = (provider) => {
-  const domain = provider === "google" ? "32.199.114.190.nip.io" : "32.199.114.190";
-  window.location.href = `http://${domain}/oauth2/authorization/${provider}`;
-};
+    // 같은 오리진으로 이동 -> Caddy가 user-service 로 프록시
+    window.location.href = `/oauth2/authorization/${provider}`;
+  };
 
   return (
     <section className="auth-card">

@@ -26,7 +26,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
-    private static final String BASE_URL = "http://32.199.114.190";
+    private static final String BASE_URL = "https://32.199.114.190.nip.io";
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;

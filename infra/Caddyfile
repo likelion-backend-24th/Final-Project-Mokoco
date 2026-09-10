@@ -1,11 +1,30 @@
-# Run: caddy run --config infra/Caddyfile
-# Trust Caddy's local CA before opening https://localhost:3443.
-https://localhost:3443 {
-    tls internal
-    handle /ws/chat {
-        reverse_proxy localhost:8082
-    }
-    handle {
-        reverse_proxy localhost:3000
-    }
+# 프로덕션 리버스 프록시 + 자동 HTTPS (Let's Encrypt)
+# 로컬에서 테스트하려면: caddy run --config infra/Caddyfile
+#
+# 32.199.114.190.nip.io -> 이 EC2 의 탄력적 IP 로 resolve 되는 도메인.
+# Caddy 가 80 포트로 ACME(HTTP-01) 인증을 받아 인증서를 자동 발급/갱신한다.
+# 인증서는 caddy_data 볼륨에 저장되므로 컨테이너를 재생성해도 유지된다. (docker compose down -v 금지!)
+
+32.199.114.190.nip.io {
+	encode gzip
+
+	# API 게이트웨이
+	handle /api/* {
+		reverse_proxy api-gateway:8000
+	}
+
+	# 소셜 로그인 진입/콜백만 user-service 로
+	handle /oauth2/authorization/* {
+		reverse_proxy user-service:8081
+	}
+	handle /login/oauth2/* {
+		reverse_proxy user-service:8081
+	}
+
+	# 그 외 전부 프론트엔드 (Next.js). WebSocket 업그레이드는 Caddy 가 자동 처리.
+	handle {
+		reverse_proxy frontend:3000
+	}
 }
+
+# http 로 들어오면 Caddy 가 자동으로 https 로 301 리다이렉트 (기본 동작)
