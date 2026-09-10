@@ -7,9 +7,31 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    outputs:
+      api-gateway: ${{ steps.filter.outputs.api-gateway }}
+      user-service: ${{ steps.filter.outputs.user-service }}
+      post-service: ${{ steps.filter.outputs.post-service }}
+      payment-service: ${{ steps.filter.outputs.payment-service }}
+      frontend: ${{ steps.filter.outputs.frontend }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Check file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api-gateway:
+              - 'backend/api-gateway/**'
+            user-service:
+              - 'backend/user-service/**'
+            post-service:
+              - 'backend/post-service/**'
+            payment-service:
+              - 'backend/payment-service/**'
+            frontend:
+              - 'frontend/**'
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -25,31 +47,36 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      # 1. 시크릿 파일 생성
-      - name: Create application-secret.yml files
+      - name: Create secret files
         run: |
           mkdir -p backend/user-service/src/main/resources
           echo "${{ secrets.USER_SERVICE_SECRET_YML }}" > backend/user-service/src/main/resources/application-secret.yml
-
           mkdir -p backend/post-service/src/main/resources
           echo "${{ secrets.POST_SERVICE_SECRET_YML }}" > backend/post-service/src/main/resources/application-secret.yml
 
-      # 2. GitHub Actions에서 백엔드 jar 빌드
-      - name: Build Backend Services
-        run: |
-          cd backend/api-gateway && chmod +x gradlew && ./gradlew bootJar -x test
-          cd ../user-service && chmod +x gradlew && ./gradlew bootJar -x test
-          cd ../post-service && chmod +x gradlew && ./gradlew bootJar -x test
-          cd ../payment-service && chmod +x gradlew && ./gradlew bootJar -x test
+      - name: Build API Gateway
+        if: steps.filter.outputs.api-gateway == 'true'
+        run: cd backend/api-gateway && chmod +x gradlew && ./gradlew bootJar -x test
 
-      # 3. GitHub Actions에서 프론트엔드 빌드 (포트 번호 비워서 상대 경로 처리)
+      - name: Build User Service
+        if: steps.filter.outputs.user-service == 'true'
+        run: cd backend/user-service && chmod +x gradlew && ./gradlew bootJar -x test
+
+      - name: Build Post Service
+        if: steps.filter.outputs.post-service == 'true'
+        run: cd backend/post-service && chmod +x gradlew && ./gradlew bootJar -x test
+
+      - name: Build Payment Service
+        if: steps.filter.outputs.payment-service == 'true'
+        run: cd backend/payment-service && chmod +x gradlew && ./gradlew bootJar -x test
+
       - name: Build Frontend
+        if: steps.filter.outputs.frontend == 'true'
         run: |
           cd frontend
           npm ci
           NEXT_PUBLIC_BACKEND_API_URL="" npm run build
 
-      # 4. EC2로 전송 후 `--build` 없이 기존 이미지 기반으로 재시작
       - name: Copy files to EC2 via SSH
         uses: appleboy/scp-action@master
         with:
@@ -67,5 +94,4 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ubuntu/mokoco
-            # EC2에서는 빌드하지 않고 이미 빌드된 jar와 프론트엔드 결과물을 컨테이너에 띄우기만 함 (--no-build 또는 일반 up)
             docker compose up -d --build
