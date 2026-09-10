@@ -15,7 +15,10 @@ import {
   formatRegionName,
   isAutomaticLocationAccurate,
 } from "@/lib/region";
-import { backendUrl } from "@/lib/backend"; // 백엔드 URL 유틸 임포트 추가
+// 지역 조회/저장은 백엔드를 직접 호출하지 않고 같은 오리진의 Next.js BFF 라우트를 통해 처리한다.
+// (src/app/api/users/me/region/route.js 가 쿠키의 access_token 을 읽어 Bearer 로 백엔드에 전달)
+// 직접 호출하면 CORS(프리플라이트) 차단 + Authorization 헤더 누락으로 저장이 실패한다.
+const REGION_ENDPOINT = "/api/users/me/region";
 
 export default function LocationPermissionPrompt({ userEmail }) {
   const [state, setState] = useState("checking");
@@ -29,11 +32,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
 
     async function checkRegion() {
       try {
-        // credentials: "include" 추가하여 쿠키 동반 전송
-        const response = await fetch(backendUrl("/api/users/me/region"), { 
-          cache: "no-store",
-          credentials: "include" 
-        });
+        const response = await fetch(REGION_ENDPOINT, { cache: "no-store" });
 
         if (response.ok) {
           const region = await response.json();
@@ -114,18 +113,15 @@ export default function LocationPermissionPrompt({ userEmail }) {
   }
 
   async function savePosition() {
-    console.log("요청 URL:", backendUrl("/api/users/me/region"));
     if (!position) return;
     setMessage("");
     setState("saving");
 
     try {
-      // credentials: "include" 추가하여 쿠키 동반 전송
-      const response = await fetch(backendUrl("/api/users/me/region"), {
+      const response = await fetch(REGION_ENDPOINT, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ latitude: position.latitude, longitude: position.longitude }),
-        credentials: "include",
       });
       const payload = await response.json();
 
