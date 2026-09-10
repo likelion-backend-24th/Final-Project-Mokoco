@@ -44,6 +44,11 @@
 		reverse_proxy api-gateway:8000
 	}
 
+	# STOMP WebSocket (채팅) -> post-service 직결. Caddy가 Upgrade 자동 처리.
+	handle /ws/chat {
+		reverse_proxy post-service:8082
+	}
+
 	# 소셜 로그인 진입/콜백
 	handle /oauth2/authorization/* {
 		reverse_proxy user-service:8081

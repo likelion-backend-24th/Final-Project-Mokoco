@@ -42,4 +42,5 @@ internal:
   service-key: ${INTERNAL_SERVICE_KEY}
 
 chat:
-  allowed-origins: ${CHAT_ALLOWED_ORIGINS:http://localhost:3000}
+  # WebSocket(STOMP) 핸드셰이크 Origin 허용 목록 (콤마 구분). prod 도메인 + 로컬 개발용.
+  allowed-origins: ${CHAT_ALLOWED_ORIGINS:https://32.199.114.190.nip.io,http://localhost:3000}
