@@ -54,43 +54,48 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
     const formElement = event.currentTarget;
     const title = formElement.elements.namedItem("title").value;
     const content = formElement.elements.namedItem("content").value;
+    const postDto = { title, content, category: selectedCategory };
 
-    const formData = new FormData();
-
-    const postDto = { 
-      title, 
-      content, 
-      category: selectedCategory
+    const authHeaders = {
+      "X-User-Email": userEmail ?? "",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     };
 
-    formData.append(
-      "post",
-      new Blob([JSON.stringify(postDto)], { type: "application/json" })
-    );
-
-    selectedFiles.forEach((file) => {
-      formData.append("images", file);
-    });
-
     try {
-      const response = await fetch(isEdit ? backendUrl(`/api/posts/${postId}`) : backendUrl("/api/posts"), {
-        method: isEdit ? "PATCH" : "POST",
-        headers: {
-          "X-User-Email": userEmail ?? "",
-          ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
-        },
-        credentials: "include",
-        body: formData,
-      });
-
-      const payload = await response.json();
+      let response;
+      if (isEdit) {
+        // 수정: 백엔드 PATCH 는 JSON(title/content/category)만 받는다. 이미지 편집은 별도 엔드포인트.
+        response = await fetch(backendUrl(`/api/posts/${postId}`), {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", ...authHeaders },
+          credentials: "include",
+          body: JSON.stringify(postDto),
+        });
+      } else {
+        const formData = new FormData();
+        formData.append("post", new Blob([JSON.stringify(postDto)], { type: "application/json" }));
+        selectedFiles.forEach((file) => formData.append("images", file));
+        response = await fetch(backendUrl("/api/posts"), {
+          method: "POST",
+          headers: authHeaders,
+          credentials: "include",
+          body: formData,
+        });
+      }
 
       if (!response.ok) {
-        setMessage(payload.message ?? "수리 요청을 등록하지 못했습니다.");
+        let msg = "수리 요청을 등록하지 못했습니다.";
+        try {
+          const p = await response.json();
+          msg = p.message ?? msg;
+        } catch { /* 본문 없음 */ }
+        setMessage(msg);
         return;
       }
 
-      router.push(isEdit ? `/posts/${postId}` : `/posts/${payload}`);
+      // PATCH 는 본문 없이 200(Void), POST 는 새 글 id 반환
+      const targetId = isEdit ? postId : await response.json();
+      router.push(`/posts/${targetId}`);
       router.refresh();
     } catch {
       setMessage("수리 요청 서버와 통신할 수 없습니다.");
