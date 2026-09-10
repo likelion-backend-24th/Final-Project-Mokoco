@@ -82,5 +82,8 @@ class RegionServiceTest {
 
         assertThat(response.regionCode())
                 .isEqualTo("1165053100");
+        assertThat(response.sido()).isEqualTo("서울특별시");
+        assertThat(response.sigungu()).isEqualTo("서초구");
+        assertThat(response.dong()).isEqualTo("서초4동");
     }
 }

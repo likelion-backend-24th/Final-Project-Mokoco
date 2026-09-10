@@ -5,6 +5,9 @@ import lombok.Builder;
 @Builder
 public record RegionResponse(
         String regionCode,
-        String regionName
+        String regionName,
+        String sido,
+        String sigungu,
+        String dong
 ) {
 }
