@@ -58,7 +58,9 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ message: "제목과 요청 내용을 모두 입력해주세요." }, { status: 400 });
   }
 
-  return forwardPost(id, "PATCH", { title, content });
+  const payload = { title, content };
+  if (typeof body.category === "string" && body.category) payload.category = body.category;
+  return forwardPost(id, "PATCH", payload);
 }
 
 export async function DELETE(_post, { params }) {
