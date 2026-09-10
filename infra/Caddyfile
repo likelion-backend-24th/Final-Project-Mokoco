@@ -8,12 +8,26 @@
 32.199.114.190.nip.io {
 	encode gzip
 
-	# API 게이트웨이
+	# post-service (게시글/거래/이미지/제안) — API 게이트웨이 우회 직결.
+	# Spring Cloud Gateway 가 multipart 파일 파트를 downstream 으로 제대로 전달하지 못하는 이슈 때문.
+	# 컨트롤러 매핑이 /posts, /fix-deals, /images 이므로 /api 접두어는 제거한다.
+	@postsvc path /api/posts /api/posts/* /api/fix-deals /api/fix-deals/* /api/images/* /api/proposals /api/proposals/*
+	handle @postsvc {
+		uri strip_prefix /api
+		reverse_proxy post-service:8082
+	}
+
+	# 채팅: 컨트롤러가 이미 /api/chat-rooms 매핑이라 접두어 유지, post-service 직결
+	handle /api/chat-rooms/* {
+		reverse_proxy post-service:8082
+	}
+
+	# 나머지 /api/* (auth, users) 는 게이트웨이 -> user-service
 	handle /api/* {
 		reverse_proxy api-gateway:8000
 	}
 
-	# 소셜 로그인 진입/콜백만 user-service 로
+	# 소셜 로그인 진입/콜백
 	handle /oauth2/authorization/* {
 		reverse_proxy user-service:8081
 	}
