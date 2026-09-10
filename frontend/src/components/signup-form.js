@@ -21,7 +21,8 @@ export default function SignupForm() {
     if (password !== formData.get("passwordConfirm")) { setMessage("비밀번호가 일치하지 않습니다."); return; }
     setLoading(true);
     try {
-      const response = await fetch("/api/auth/signup", {
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "";
+      const response = await fetch(`${apiUrl}/api/auth/signup`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: formData.get("name"), nickname: formData.get("nickname"), email: formData.get("email"), password, regionCode: null }),
       });
