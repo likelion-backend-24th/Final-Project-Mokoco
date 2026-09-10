@@ -132,6 +132,9 @@ services:
     # Nginx가 80번을 대신 받으므로 3000포트 매핑은 제거합니다.
     environment:
       - NODE_ENV=production
+      # SSR(Next 서버)에서 백엔드를 부를 때 쓰는 내부 주소.
+      # 공개 IP로 나가면 nginx가 다시 프론트로 돌려보내 프론트가 자기 자신을 재귀 호출 -> CPU/메모리 폭주.
+      - BACKEND_API_URL=http://mokoco-api-gateway:8000
     depends_on:
       - api-gateway
     networks:
