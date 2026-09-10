@@ -56,12 +56,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         }
 
         // 구글이면 nip.io 도메인, 카카오 등 그 외에는 기본 주소 사용
-        String baseUrl;
-        if ("google".equals(registrationId)) {
-            baseUrl = "http://18.212.91.33.nip.io:3000";
-        } else {
-            baseUrl = "http://18.212.91.33:3000";
-        }
+        String baseUrl = "http://18.212.91.33:3000";
 
         String targetUrl = UriComponentsBuilder.fromUriString(baseUrl + "/oauth2/redirect")
                 .queryParam("token", accessToken)
