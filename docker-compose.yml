@@ -92,6 +92,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_BACKEND_API_URL=http://18.212.91.33:8000
     container_name: mokoco-frontend
     restart: always
     ports:
