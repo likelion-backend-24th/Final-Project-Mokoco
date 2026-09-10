@@ -19,7 +19,9 @@ public class PostResponseDto {
             String regionName,
             List<String> images,
             String createdAt,
-            String updatedAt
+            String updatedAt,
+            String regionCode,
+            boolean publiclyVisible
     ) {
         public static Detail from(Post post) {
             return new Detail(
@@ -34,7 +36,8 @@ public class PostResponseDto {
                             .map(PostImage::getImageUrl)
                             .toList(),
                     post.getCreatedAt() != null ? post.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,
-                    post.getUpdatedAt() != null ? post.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null
+                    post.getUpdatedAt() != null ? post.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,
+                    post.getRegionCode(), post.isPubliclyVisible()
             );
         }
     }
