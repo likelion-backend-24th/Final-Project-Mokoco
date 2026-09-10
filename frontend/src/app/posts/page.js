@@ -5,7 +5,7 @@ import {
   Drop, Hammer, WashingMachine, DoorOpen, Toolbox, MapPin 
 } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
-import { backendUrl } from "@/lib/backend";
+import { backendUrl, imageSrc } from "@/lib/backend";
 
 const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "수리 완료" };
 
@@ -107,9 +107,9 @@ export default async function PostsPage({ searchParams }) {
                 <Link key={post.id} href={`/posts/${post.id}`} className="post-row flex items-start gap-4">
                   {firstImage ? (
                     <div className="post-icon shrink-0 overflow-hidden !p-0 border border-slate-200 mt-1">
-                      <img 
-                        src={backendUrl(firstImage)} 
-                        alt="수리 요청 썸네일" 
+                      <img
+                        src={imageSrc(firstImage)}
+                        alt="수리 요청 썸네일"
                         className="object-cover w-full h-full"
                       />
                     </div>

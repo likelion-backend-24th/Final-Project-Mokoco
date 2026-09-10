@@ -31,7 +31,8 @@ public class LocalFileStorageService implements FileStorageService {
 
             file.transferTo(destPath.toFile());
 
-            String imageUrl = "http://localhost:8082/images/" + storedFileName;
+            // 상대 경로로 저장한다. 브라우저는 같은 오리진(https)으로 요청 -> Caddy -> gateway(/api 제거) -> post-service /images/**
+            String imageUrl = "/api/images/" + storedFileName;
             return new StoredFile(imageUrl, storedFileName);
         } catch (IOException e) {
             throw new RuntimeException("파일 저장에 실패했습니다.", e);

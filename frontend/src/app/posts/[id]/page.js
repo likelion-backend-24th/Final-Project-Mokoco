@@ -6,7 +6,7 @@ import SiteHeader from "@/components/site-header";
 import PostActions from "@/components/post-actions";
 import RepairProposalForm from "@/components/proposal-form";
 import ProposalList from "@/components/proposal-list";
-import { backendUrl } from "@/lib/backend";
+import { backendUrl, imageSrc } from "@/lib/backend";
 
 const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "수리 완료" };
 
@@ -109,9 +109,9 @@ export default async function PostDetailPage({ params }) {
                     const imgUrl = typeof img === "string" ? img : img.imageUrl;
                     return (
                       <div key={index} className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
-                        <img 
-                          src={backendUrl(imgUrl)} 
-                          alt={`수리 요청 이미지 ${index + 1}`} 
+                        <img
+                          src={imageSrc(imgUrl)}
+                          alt={`수리 요청 이미지 ${index + 1}`}
                           className="object-cover w-full h-full"
                         />
                       </div>

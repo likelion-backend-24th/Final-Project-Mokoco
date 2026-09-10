@@ -98,6 +98,9 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - JAVA_TOOL_OPTIONS=-Xmx240m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k
+    volumes:
+      # 업로드된 게시글 이미지 영속화 (컨테이너는 CWD=/ 이므로 uploads -> /uploads)
+      - post_uploads:/uploads
     depends_on:
       mysql:
         condition: service_healthy
@@ -149,6 +152,7 @@ volumes:
   mysql_data:
   caddy_data:
   caddy_config:
+  post_uploads:
 
 networks:
   mokoco-net:

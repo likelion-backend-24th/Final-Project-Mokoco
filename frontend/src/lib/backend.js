@@ -18,6 +18,16 @@ export function backendUrl(path) {
   return base ? new URL(p, `${base.replace(/\/$/, "")}/`).toString() : p;
 }
 
+// 이미지 URL 정규화: 구버전 데이터(http://localhost:8082/images/...)와 신버전(/api/images/...) 모두
+// 브라우저가 로드할 수 있는 같은 오리진 상대경로로 변환한다. <img src> 에 사용.
+export function imageSrc(url) {
+  if (!url) return url;
+  const s = String(url);
+  const m = s.match(/\/images\/(.+)$/);
+  if (m) return `/api/images/${m[1]}`;
+  return s.startsWith("/") ? s : `/${s}`;
+}
+
 export async function readBackendPayload(response) {
   const contentType = response.headers.get("content-type") ?? "";
   return contentType.includes("application/json") ? response.json() : response.text();
