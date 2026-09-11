@@ -119,13 +119,11 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다: " + email));
 
-        // 2. 엔티티를 UserResponse DTO로 변환해서 반환
-        return UserResponse.builder()
-                .email(user.getEmail())
-                .name(user.getName())
-                // 필요한 다른 필드들도 여기에 매핑
-                .id(user.getId())
-                .nickname(user.getNickname())
-                .build();
+        // 2. 엔티티를 UserResponse DTO로 변환해서 반환 (id·nickname·region 포함 전체 매핑)
+        return new UserResponse(user);
+    }
+
+    public UserResponse findUserById(Long id) {
+        return new UserResponse(findById(id));
     }
 }

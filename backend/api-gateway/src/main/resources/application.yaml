@@ -9,7 +9,8 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowed-origins: "http://localhost:3000"
+            allowed-origins:
+            - "http://localhost:3000"
             allowed-methods:
               - GET
               - POST
@@ -17,7 +18,8 @@ spring:
               - PATCH
               - DELETE
               - OPTIONS
-            allowed-headers: "*"
+            allowed-headers:
+            - "*"
             allow-credentials: true
       routes:
         - id: user-service
@@ -28,7 +30,7 @@ spring:
         - id: post-service
           uri: http://localhost:8082
           predicates:
-            - Path=/posts/**, /api/chat-rooms/**, /fix-deals/**
+            - Path=/posts/**, /api/chat-rooms/**
 
         - id: payment-service
           uri: http://localhost:8083
