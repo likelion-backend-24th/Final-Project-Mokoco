@@ -101,6 +101,10 @@ services:
     volumes:
       # 업로드된 게시글 이미지 영속화 (컨테이너는 CWD=/ 이므로 uploads -> /uploads)
       - post_uploads:/uploads
+      # 채팅 첨부파일(chat.attachment-dir 기본값 ./private-chat-files -> CWD=/ 이므로 /private-chat-files) 영속화.
+      # 이게 없으면 DB의 메시지 기록(attachmentKey)은 남아있는데 실제 파일은 컨테이너 재생성 때마다 사라져서
+      # "나갔다 들어오면 사진이 안 보이는" 증상이 남.
+      - chat_attachments:/private-chat-files
     depends_on:
       mysql:
         condition: service_healthy
@@ -156,6 +160,7 @@ volumes:
   caddy_data:
   caddy_config:
   post_uploads:
+  chat_attachments:
 
 networks:
   mokoco-net:
