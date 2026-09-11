@@ -81,6 +81,10 @@ public class Post {
         this.status = PostStatus.MATCHED;
     }
 
+    public void updateStatusToCompleted() {
+        this.status = PostStatus.COMPLETED;
+    }
+
     public void changeVisibility(boolean publiclyVisible) {
         this.publiclyVisible = publiclyVisible;
     }

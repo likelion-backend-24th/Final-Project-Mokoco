@@ -12,7 +12,7 @@ import { normalizeRegionScope, regionListHref } from "@/lib/region-scope";
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "수리 완료" };
+const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "거래 완료" };
 
 function formatRelativeDate(value) {
   if (!value) return "시간 정보 없음";

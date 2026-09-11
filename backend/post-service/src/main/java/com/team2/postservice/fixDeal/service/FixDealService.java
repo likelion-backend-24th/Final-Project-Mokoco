@@ -11,6 +11,8 @@ import com.team2.postservice.fixDeal.dto.FixDealStatusResponse;
 import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
+import com.team2.postservice.post.entity.Post;
+import com.team2.postservice.post.repository.PostRepository;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class FixDealService {
 
     private final FixDealRepository fixDealRepository;
+    private final PostRepository postRepository;
     private final UserClient userClient;
     private final PaymentClient paymentClient;
 
@@ -117,6 +120,12 @@ public class FixDealService {
         }
 
         fixDeal.changeStatus(FixDealStatus.COMPLETED);
+
+        // 거래가 최종 완료됐으니 원글 상태도 같이 '거래 완료'로 넘긴다.
+        // (기존에는 여기서 글 상태를 안 건드려서, 거래는 끝났는데 글은 계속 '이웃과 연결됨'으로 남아있었음)
+        Post post = postRepository.findById(fixDeal.getPostId())
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+        post.updateStatusToCompleted();
     }
 
     public FixDealStatusResponse getStatusByPostId(Long postId) {

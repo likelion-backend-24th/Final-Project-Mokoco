@@ -11,7 +11,7 @@ import { getNearbyPosts } from "@/lib/nearby-posts";
 import RegionScopeFilter from "@/components/region-scope-filter";
 import { normalizeRegionScope, regionListHref } from "@/lib/region-scope";
 
-const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "수리 완료" };
+const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "거래 완료" };
 
 const categories = [
   { value: "ALL", label: "전체", icon: SquaresFour },

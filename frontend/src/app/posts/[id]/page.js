@@ -8,7 +8,7 @@ import RepairProposalForm from "@/components/proposal-form";
 import ProposalList from "@/components/proposal-list";
 import { backendUrl, imageSrc } from "@/lib/backend";
 
-const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "수리 완료" };
+const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "거래 완료" };
 
 async function getPost(id) {
   try {
