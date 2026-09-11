@@ -32,6 +32,10 @@ jobs:
               - 'backend/payment-service/**'
             frontend:
               - 'frontend/**'
+            compose:
+              - 'docker-compose.yml'
+              - 'infra/**'
+              - 'init.sql'
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -93,10 +97,20 @@ jobs:
           if [ "${{ steps.filter.outputs.payment-service }}" = "true" ]; then SERVICES="$SERVICES payment-service"; fi
           if [ "${{ steps.filter.outputs.frontend }}" = "true" ]; then SERVICES="$SERVICES frontend"; fi
           echo "list=$SERVICES" >> "$GITHUB_OUTPUT"
-          echo "changed services:${SERVICES:- (none — compose/infra 파일만 변경, 전체 대상으로 up)}"
+          echo "changed services:${SERVICES:- (없음)}"
+
+          # 서비스도 compose/infra 파일도 안 바뀌었으면(예: .github/workflows, README, docs만 수정)
+          # EC2에 새로 보낼 것도, 재배포할 것도 없으므로 뒤 scp/compose 스텝들을 통째로 건너뛴다.
+          if [ -z "$SERVICES" ] && [ "${{ steps.filter.outputs.compose }}" != "true" ]; then
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+            echo "→ 배포 대상 없음 (워크플로/문서 등 무관 파일만 변경) — scp/compose 스텝 스킵"
+          else
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          fi
 
       # docker-compose.yml / infra(Caddyfile) / init.sql 는 용량이 작고 자주 안 바뀌므로 매번 같이 보낸다.
       - name: Copy shared config files to EC2
+        if: steps.services.outputs.should_deploy == 'true'
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -156,6 +170,7 @@ jobs:
           target: "/home/ubuntu/mokoco"
 
       - name: Run docker compose on EC2
+        if: steps.services.outputs.should_deploy == 'true'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
