@@ -21,12 +21,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
                 and i.id = (select min(firstImage.id) from PostImage firstImage where firstImage.post = p)))
         from Post p
         where (:regionPattern is null or p.regionCode like :regionPattern) and p.publiclyVisible = true
-          and p.status = com.team2.postservice.post.entity.PostStatus.WAITING
           and (:category is null or p.category = :category)
         """, countQuery = """
         select count(p) from Post p
         where (:regionPattern is null or p.regionCode like :regionPattern) and p.publiclyVisible = true
-          and p.status = com.team2.postservice.post.entity.PostStatus.WAITING
           and (:category is null or p.category = :category)
         """)
     Page<NearbyRepairRequest> findNearby(
