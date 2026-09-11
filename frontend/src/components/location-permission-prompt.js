@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   CheckCircle,
   Crosshair,
@@ -21,6 +23,7 @@ import {
 const REGION_ENDPOINT = "/api/users/me/region";
 
 export default function LocationPermissionPrompt({ userEmail }) {
+  const router = useRouter();
   const [state, setState] = useState("checking");
   const [message, setMessage] = useState("");
   const [regionName, setRegionName] = useState("");
@@ -134,6 +137,8 @@ export default function LocationPermissionPrompt({ userEmail }) {
       setRegionName(payload.regionName);
       window.sessionStorage.removeItem(dismissalKey);
       setState("success");
+      // 근처 수리요청 목록이 새 지역 기준으로 다시 조회되도록 서버 컴포넌트 갱신
+      router.refresh();
     } catch {
       setMessage("지역 정보 서버와 통신할 수 없습니다.");
       setState(position.source === "manual" ? "manual-selected" : "confirm");
@@ -152,7 +157,7 @@ export default function LocationPermissionPrompt({ userEmail }) {
       <section className="region-status-bar" aria-label="현재 설정 지역">
         <div><MapPin size={22} weight="fill" /><strong>{locationLabel}</strong></div>
         <button type="button" onClick={() => setState("prompt")}>{regionName ? "지역 변경" : "지역 설정"}</button>
-        <a href="/posts/new">수리 요청하기</a>
+        <Link href="/posts/new">수리 요청하기</Link>
       </section>
 
       {modalVisible && <div className="location-modal-backdrop">

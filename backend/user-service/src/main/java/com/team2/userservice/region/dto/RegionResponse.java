@@ -6,7 +6,10 @@ import lombok.Builder;
 @Builder
 public record RegionResponse(
         String regionCode,
-        String regionName
+        String regionName,
+        String sido,
+        String sigungu,
+        String dong
 ) {
 
     public static RegionResponse from(Region region) {
@@ -15,6 +18,9 @@ public record RegionResponse(
         return RegionResponse.builder()
                 .regionCode(region.getRegionCode())
                 .regionName(fullName)
+                .sido(region.getSido())
+                .sigungu(region.getSigungu())
+                .dong(region.getDong())
                 .build();
     }
 }

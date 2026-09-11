@@ -33,6 +33,9 @@ public class ProposalService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
 
+        if (!post.isAcceptingProposals())
+            throw new CustomException(ErrorCode.POST_NOT_ACCEPTING_PROPOSALS);
+
         Proposal proposal = Proposal.builder()
                 .post(post)
                 .repairerEmail(repairerEmail)

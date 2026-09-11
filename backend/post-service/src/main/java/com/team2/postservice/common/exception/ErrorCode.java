@@ -7,6 +7,10 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     // Post
+    AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED", "로그인이 필요합니다."),
+    ACTIVITY_REGION_REQUIRED(HttpStatus.CONFLICT, "ACTIVITY_REGION_REQUIRED", "활동 지역을 먼저 설정해주세요."),
+    USER_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "USER_SERVICE_UNAVAILABLE", "사용자 또는 지역 정보를 확인할 수 없습니다."),
+    POST_NOT_ACCEPTING_PROPOSALS(HttpStatus.CONFLICT, "POST_NOT_ACCEPTING_PROPOSALS", "제안을 받을 수 없는 요청입니다."),
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "POST_NOT_FOUND", "게시글이 존재하지 않습니다."),
     UNAUTHORIZED_POST_UPDATE(HttpStatus.FORBIDDEN, "UNAUTHORIZED_POST_UPDATE", "작성자만 수정할 수 있습니다."),
     UNAUTHORIZED_POST_DELETE(HttpStatus.FORBIDDEN, "UNAUTHORIZED_POST_DELETE", "작성자만 삭제할 수 있습니다."),
