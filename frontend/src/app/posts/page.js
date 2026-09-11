@@ -62,16 +62,16 @@ export default async function PostsPage({ searchParams }) {
       <SiteHeader userEmail={userEmail} />
       <main className="page-shell auth-main">
         {accessToken && <LocationPermissionPrompt userEmail={userEmail} />}
+        {accessToken
+          ? <RegionScopeFilter regionScope={regionScope} regionFilter={pagination?.regionFilter} category={currentCategory} />
+          : <p className="mb-5 text-sm text-slate-500">전체 지역의 수리 요청입니다. 로그인하면 내 활동 지역으로 좁혀볼 수 있어요.</p>}
+
         <div className="section-heading">
           <div>
             <p className="section-kicker">REPAIR POSTS</p>
             <h2>수리 요청</h2>
           </div>
         </div>
-
-        {accessToken
-          ? <RegionScopeFilter regionScope={regionScope} regionFilter={pagination?.regionFilter} category={currentCategory} />
-          : <p className="mb-5 text-sm text-slate-500">전체 지역의 수리 요청입니다. 로그인하면 내 활동 지역으로 좁혀볼 수 있어요.</p>}
 
         <div className="category-filter-row mb-6 overflow-x-auto pb-2" aria-label="수리 분야 필터">
           {categories.map(({ value, label, icon: Icon }) => {
