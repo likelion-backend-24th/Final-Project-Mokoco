@@ -79,8 +79,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .page-shell { width: min(100% - 36px, 1180px); margin-inline: auto; }
 .site-header { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid #e8edf4; background: rgba(255,255,255,.97); backdrop-filter: blur(12px); }
 .header-inner { display: flex; height: 56px; align-items: center; justify-content: space-between; gap: 24px; }
-.desktop-nav { display: flex; align-self: stretch; align-items: center; gap: 34px; color: #475569; font-size: 14px; font-weight: 650; }
-.nav-link { display: grid; height: 100%; place-items: center; border-bottom: 3px solid transparent; }
+.desktop-nav { display: flex; align-self: stretch; align-items: center; gap: 4px; color: #475569; font-size: 14px; font-weight: 650; }
+/* 글자 길이만큼만 클릭 영역이 잡히던 것(짧은 "홈"이 특히 누르기 어려움)을 방지하려고
+   좌우 패딩을 줘서 탭마다 클릭 범위를 넓히고, 그만큼 gap을 줄여 전체 간격은 비슷하게 유지한다. */
+.nav-link { display: grid; height: 100%; place-items: center; padding: 0 14px; border-bottom: 3px solid transparent; }
 .nav-link-active { color: #1765f5; border-color: #1765f5; }
 .header-actions, .header-account { display: flex; align-items: center; gap: 10px; }
 .header-account { color: #334155; font-size: 13px; }
