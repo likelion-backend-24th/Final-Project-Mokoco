@@ -12,12 +12,15 @@ import com.team2.postservice.proposal.dto.ProposalRequestDto;
 import com.team2.postservice.proposal.dto.ProposalResponseDto;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
+import com.team2.postservice.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -27,6 +30,7 @@ public class ProposalService {
     private final PostRepository postRepository;
     private final FixDealRepository fixDealRepository;
     private final UserClient userClient;
+    private final NotificationService notificationService;
 
     @Transactional
     public Long createProposal(Long postId, ProposalRequestDto.Create request, String repairerEmail) {
@@ -43,7 +47,15 @@ public class ProposalService {
                 .content(request.content())
                 .build();
 
-        return proposalRepository.save(proposal).getId();
+        Proposal saved = proposalRepository.save(proposal);
+
+        try {
+            notificationService.notifyProposalReceived(post, saved);
+        } catch (Exception e) {
+            log.warn("제안 도착 알림 전송 실패 postId={}", postId, e);
+        }
+
+        return saved.getId();
     }
 
     @Transactional
@@ -81,6 +93,11 @@ public class ProposalService {
 
         fixDealRepository.save(fixDeal);
 
+        try {
+            notificationService.notifyProposalAdopted(post, proposal);
+        } catch (Exception e) {
+            log.warn("제안 채택 알림 전송 실패 proposalId={}", proposalId, e);
+        }
     }
 
     @Transactional(readOnly = true)

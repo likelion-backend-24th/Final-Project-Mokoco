@@ -1,4 +1,5 @@
 import AuthInitializer from "@/components/AuthInitializer";
+import NotificationProvider from "@/components/notification-provider";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
@@ -12,6 +13,7 @@ export default function RootLayout({ children }) {
     <html lang="ko">
       <body>
         <AuthInitializer />
+        <NotificationProvider />
         {children}
       </body>
     </html>
