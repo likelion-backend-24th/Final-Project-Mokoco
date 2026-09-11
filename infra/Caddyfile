@@ -46,7 +46,8 @@
 	handle /api/fix-deals/* {
 		reverse_proxy frontend:3000
 	}
-	handle /api/payments/* {
+	# payments* : 경로 없는 결제 확인 호출(POST /api/payments) 도 포함 (webhook 은 위에서 이미 직결 처리)
+	handle /api/payments* {
 		reverse_proxy frontend:3000
 	}
 	# chat-rooms* : 뒤 경로 없는 목록 호출(/api/chat-rooms?page=..) 도 포함하도록 슬래시 없는 와일드카드
