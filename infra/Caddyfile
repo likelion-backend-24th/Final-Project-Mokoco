@@ -58,8 +58,11 @@
 		reverse_proxy frontend:3000
 	}
 
-	# 토큰 재발급은 httpOnly refresh_token 쿠키를 서버에서 읽어야 하므로 Next BFF 경유
+	# 재발급/로그아웃은 httpOnly 쿠키를 서버(Next BFF)에서 읽고/지워야 하므로 BFF 경유
 	handle /api/auth/reissue {
+		reverse_proxy frontend:3000
+	}
+	handle /api/auth/logout {
 		reverse_proxy frontend:3000
 	}
 
