@@ -95,13 +95,64 @@ jobs:
           echo "list=$SERVICES" >> "$GITHUB_OUTPUT"
           echo "changed services:${SERVICES:- (none — compose/infra 파일만 변경, 전체 대상으로 up)}"
 
-      - name: Copy files to EC2 via SSH
+      # docker-compose.yml / infra(Caddyfile) / init.sql 는 용량이 작고 자주 안 바뀌므로 매번 같이 보낸다.
+      - name: Copy shared config files to EC2
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "."
+          source: "docker-compose.yml,infra,init.sql"
+          target: "/home/ubuntu/mokoco"
+
+      - name: Copy frontend to EC2
+        if: steps.filter.outputs.frontend == 'true'
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "frontend"
+          target: "/home/ubuntu/mokoco"
+
+      - name: Copy API Gateway to EC2
+        if: steps.filter.outputs.api-gateway == 'true'
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/api-gateway"
+          target: "/home/ubuntu/mokoco"
+
+      - name: Copy User Service to EC2
+        if: steps.filter.outputs.user-service == 'true'
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/user-service"
+          target: "/home/ubuntu/mokoco"
+
+      - name: Copy Post Service to EC2
+        if: steps.filter.outputs.post-service == 'true'
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/post-service"
+          target: "/home/ubuntu/mokoco"
+
+      - name: Copy Payment Service to EC2
+        if: steps.filter.outputs.payment-service == 'true'
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/payment-service"
           target: "/home/ubuntu/mokoco"
 
       - name: Run docker compose on EC2
