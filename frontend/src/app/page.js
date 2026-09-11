@@ -4,6 +4,7 @@ import { ArrowRight, ClipboardText, UserCircle, Wrench } from "@phosphor-icons/r
 import SiteHeader from "@/components/site-header";
 import LocationPermissionPrompt from "@/components/location-permission-prompt";
 import HomeChatList from "@/components/home-chat-list";
+import { imageSrc } from "@/lib/backend";
 import { getNearbyPosts } from "@/lib/nearby-posts";
 import RegionScopeFilter from "@/components/region-scope-filter";
 import { normalizeRegionScope, regionListHref } from "@/lib/region-scope";
@@ -50,7 +51,13 @@ function PostList({ posts, error, postHref }) {
     <div className="post-list">
       {posts.slice(0, 5).map((post) => (
         <Link key={post.id} href={`/posts/${post.id}`} className="post-row">
-          <div className="post-icon" aria-hidden="true"><Wrench size={27} weight="duotone" /></div>
+          {post.thumbnailUrl ? (
+            <div className="post-icon overflow-hidden !p-0 border border-slate-200">
+              <img src={imageSrc(post.thumbnailUrl)} alt="수리 요청 썸네일" className="object-cover w-full h-full" />
+            </div>
+          ) : (
+            <div className="post-icon" aria-hidden="true"><Wrench size={27} weight="duotone" /></div>
+          )}
           <div className="min-w-0 flex-1">
             <div className="post-title-line"><h3>{post.title || "제목 없는 수리 요청"}</h3><time>{formatRelativeDate(post.createdAt)}</time></div>
             <div className="post-meta"><span className={`status-badge status-${post.status?.toLowerCase()}`}>{statusLabel[post.status] ?? post.status ?? "상태 미정"}</span><span>{post.authorEmail || "작성자 정보 없음"}</span></div>
