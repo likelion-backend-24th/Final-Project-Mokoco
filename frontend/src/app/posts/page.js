@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import {
-  ClipboardText, Plus, Wrench, SquaresFour, Lightbulb,
+  ClipboardText, Wrench, SquaresFour, Lightbulb,
   Drop, Hammer, WashingMachine, DoorOpen, Toolbox, MapPin
 } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
@@ -67,10 +67,6 @@ export default async function PostsPage({ searchParams }) {
             <p className="section-kicker">REPAIR POSTS</p>
             <h2>수리 요청</h2>
           </div>
-          <Link href={postHref} className="compact-primary-button gap-1.5">
-            <Plus size={16} weight="bold" />
-            수리 요청 올리기
-          </Link>
         </div>
 
         {accessToken
