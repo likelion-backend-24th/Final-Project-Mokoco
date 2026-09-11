@@ -11,10 +11,11 @@
 	# 멀티파트 업로드 + 정적 이미지만 post-service 직결 (/api 제거).
 	# Spring Cloud Gateway 가 multipart 파일 파트를 제대로 전달 못 하고, Next BFF 로 재구성해 보내도 게이트웨이에서
 	# 같은 문제가 나므로, 파일이 오가는 경로만 post-service 로 바로 보낸다.
-	#   POST /api/posts            -> 글 작성(이미지 포함)
-	#   POST /api/posts/{id}/images -> 수정 시 이미지 추가
-	#   GET  /api/images/*          -> 저장된 이미지 서빙
-	@postsvc_direct path /api/posts /api/posts/*/images /api/images/*
+	#   POST   /api/posts                       -> 글 작성(이미지 포함)
+	#   POST   /api/posts/{id}/images           -> 수정 시 이미지 추가
+	#   DELETE /api/posts/{id}/images/{imageId} -> 이미지 삭제 (프론트가 헤더를 직접 실어 보냄)
+	#   GET    /api/images/*                    -> 저장된 이미지 서빙
+	@postsvc_direct path /api/posts /api/posts/*/images /api/posts/*/images/* /api/images/*
 	handle @postsvc_direct {
 		uri strip_prefix /api
 		reverse_proxy post-service:8082

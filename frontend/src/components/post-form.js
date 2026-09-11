@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Wrench, Upload, X } from "@phosphor-icons/react";
 import Link from "next/link";
-import { backendUrl } from "@/lib/backend";
+import { backendUrl, imageSrc } from "@/lib/backend";
 
 const categories = [
   { value: "ELECTRIC_LIGHT", label: "전기·조명" },
@@ -22,8 +22,14 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
   const [selectedFiles, setSelectedFiles] = useState([]);
   
   const [existingImages, setExistingImages] = useState(initialValue?.images || []);
+  const [removingImageId, setRemovingImageId] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(initialValue?.category || "ELECTRIC_LIGHT");
   const isEdit = Boolean(postId);
+
+  const authHeaders = {
+    "X-User-Email": userEmail ?? "",
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+  };
 
   const handleFileChange = (e) => {
     if (!e.target.files) return;
@@ -42,9 +48,27 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const removeExistingImage = (index) => {
-    setExistingImages((prev) => prev.filter((_, i) => i !== index));
-  };
+  async function removeExistingImage(image) {
+    if (!postId || removingImageId) return;
+    setRemovingImageId(image.id);
+    setMessage("");
+    try {
+      const res = await fetch(backendUrl(`/api/posts/${postId}/images/${image.id}`), {
+        method: "DELETE",
+        headers: authHeaders,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        setMessage("이미지를 삭제하지 못했습니다.");
+        return;
+      }
+      setExistingImages((prev) => prev.filter((img) => img.id !== image.id));
+    } catch {
+      setMessage("이미지를 삭제하지 못했습니다.");
+    } finally {
+      setRemovingImageId(null);
+    }
+  }
 
   async function submitPost(event) {
     event.preventDefault();
@@ -55,11 +79,6 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
     const title = formElement.elements.namedItem("title").value;
     const content = formElement.elements.namedItem("content").value;
     const postDto = { title, content, category: selectedCategory };
-
-    const authHeaders = {
-      "X-User-Email": userEmail ?? "",
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-    };
 
     try {
       let response;
@@ -173,6 +192,30 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
         {/* 파일 첨부 영역 */}
         <div className="form-field">
           <span>사진 첨부 (최대 5장)</span>
+
+          {isEdit && existingImages.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {existingImages.map((image) => (
+                <div key={image.id} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200">
+                  <img
+                    src={imageSrc(image.imageUrl)}
+                    alt="등록된 사진"
+                    className="h-full w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeExistingImage(image)}
+                    disabled={removingImageId === image.id}
+                    aria-label="사진 삭제"
+                    className="absolute -right-1 -top-1 rounded-full bg-white p-0.5 text-red-500 shadow disabled:opacity-50"
+                  >
+                    <X size={12} weight="bold" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <label className="flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-4 cursor-pointer hover:border-blue-500 transition">
             <Upload size={20} className="mr-2 text-slate-500" />
             <span className="text-sm text-slate-600">이미지 파일 업로드</span>
