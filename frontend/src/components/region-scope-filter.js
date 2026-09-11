@@ -6,7 +6,7 @@ export default function RegionScopeFilter({ regionScope = "SIDO", regionFilter, 
   return (
     <nav aria-label="지역 조회 범위" className="region-scope-nav">
       <div className="region-scope-heading">
-        <MapPin size={18} weight="duotone" />
+        <MapPin size={15} weight="duotone" />
         <span>지역 필터</span>
         <span className="region-scope-hint">활동 지역 기준으로 범위를 선택하세요</span>
       </div>
