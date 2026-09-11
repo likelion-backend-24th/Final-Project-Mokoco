@@ -56,12 +56,17 @@ public class PostService {
                 ? null : postViewerService.requireEmail(authorization);
         if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE)
             throw new CustomException(ErrorCode.INVALID_INPUT);
-        var region = email == null ? null : postViewerService.requireRegion(email);
+        // ALL(기본값)은 활동 지역 설정 여부와 무관하게 필터링 없이 전체를 보여준다.
+        // 다만 칩에 표시할 지역명은 있으면 보여주도록 best-effort로만 조회(없어도 에러 아님).
+        var region = email == null ? null
+                : regionScope == RegionScope.ALL ? postViewerService.tryRegion(email)
+                : postViewerService.requireRegion(email);
+        String regionPattern = regionScope == RegionScope.ALL ? null : regionScope.queryPattern(region.regionCode());
         var pageable = PageRequest.of(page, size,
                 Sort.by(Sort.Direction.DESC, "createdAt", "id"));
         return NearbyRepairRequest.Result.from(
-                postRepository.findNearby(region == null ? null : regionScope.queryPattern(region.regionCode()),
-                        category == PostCategory.ALL ? null : category, pageable), regionScope, region);
+                postRepository.findNearby(regionPattern, category == PostCategory.ALL ? null : category, pageable),
+                regionScope, region);
     }
 
     public PostResponseDto.Detail getPost(Long id) {

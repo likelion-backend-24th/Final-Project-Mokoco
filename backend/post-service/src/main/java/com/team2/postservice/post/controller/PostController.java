@@ -36,7 +36,7 @@ public class PostController {
     @GetMapping
     public ResponseEntity<NearbyRepairRequest.Result> getPosts(
             @RequestParam(required = false) PostCategory category,
-            @RequestParam(defaultValue = "SIDO") RegionScope regionScope,
+            @RequestParam(defaultValue = "ALL") RegionScope regionScope,
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {

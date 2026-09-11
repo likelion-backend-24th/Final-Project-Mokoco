@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { normalizeRegionScope, regionListHref } from "./region-scope.js";
 
-test("default and invalid URL scopes use the city/province scope", () => {
-  assert.equal(normalizeRegionScope(undefined), "SIDO");
-  assert.equal(normalizeRegionScope("unknown"), "SIDO");
+test("default and invalid URL scopes use no filter (ALL)", () => {
+  assert.equal(normalizeRegionScope(undefined), "ALL");
+  assert.equal(normalizeRegionScope("unknown"), "ALL");
   assert.equal(normalizeRegionScope("SIGUNGU"), "SIGUNGU");
 });
 

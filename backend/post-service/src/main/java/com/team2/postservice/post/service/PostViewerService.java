@@ -36,4 +36,14 @@ public class PostViewerService {
             throw new CustomException(ex.status() == 404 ? ErrorCode.ACTIVITY_REGION_REQUIRED : ErrorCode.USER_SERVICE_UNAVAILABLE);
         }
     }
+
+    /** requireRegion과 달리 활동 지역이 없어도 예외를 던지지 않고 null을 반환한다.
+     *  RegionScope.ALL(필터 미적용) 조회에서, 필터링에는 안 쓰더라도 칩에 표시할 지역명을 best-effort로 가져올 때 사용. */
+    public RegionResponse tryRegion(String email) {
+        try {
+            return requireRegion(email);
+        } catch (CustomException ex) {
+            return null;
+        }
+    }
 }

@@ -30,7 +30,7 @@ test("forwards verified-token input and paging parameters, preserves total count
     const query = new URL(url).searchParams;
     assert.equal(query.get("page"), "2");
     assert.equal(query.get("category"), "PLUMBING");
-    assert.equal(query.get("regionScope"), "SIDO");
+    assert.equal(query.get("regionScope"), "ALL");
     assert.equal(options.headers.Authorization, "Bearer test-token");
     assert.equal(options.cache, "no-store");
     return Response.json({ content: [{ id: 9 }], number: 2, totalElements: 41, last: true });
