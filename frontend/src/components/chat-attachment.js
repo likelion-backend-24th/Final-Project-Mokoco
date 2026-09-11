@@ -39,6 +39,9 @@ export default function ChatAttachment({ roomId, onSent }) {
     setProgress(0); setError("");
     const xhr = new XMLHttpRequest(); xhrRef.current = xhr;
     xhr.open("POST", `/api/chat-rooms/${roomId}/attachments`); xhr.timeout = 150000;
+    // 업로드는 post-service 직결(BFF 우회)이라 토큰을 직접 실어 보낸다.
+    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     xhr.upload.onprogress = event => { if (event.lengthComputable) setProgress(Math.round(event.loaded / event.total * 100)); };
     xhr.onload = () => {
       try {
