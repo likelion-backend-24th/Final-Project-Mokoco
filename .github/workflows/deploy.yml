@@ -54,6 +54,18 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
+      # Next.js 공식 권장 캐싱 방식: 웹팩 빌드 캐시(.next/cache)를 러너 간에 재사용해
+      # 소스가 바뀐 부분만 증분 컴파일하도록 한다 (매번 전체 재빌드 방지).
+      # key가 안 맞아도 restore-keys로 직전 캐시를 복원해 최소한 의존성 캐시는 재사용한다.
+      - name: Cache Next.js build cache
+        if: steps.filter.outputs.frontend == 'true'
+        uses: actions/cache@v4
+        with:
+          path: frontend/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('frontend/package-lock.json') }}-${{ hashFiles('frontend/src/**/*.js', 'frontend/src/**/*.jsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('frontend/package-lock.json') }}-
+
       - name: Create User Service secret file
         if: steps.filter.outputs.user-service == 'true'
         run: |
