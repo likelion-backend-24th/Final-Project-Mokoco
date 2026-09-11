@@ -155,6 +155,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                   isRepairer={Boolean(isMyProposal)}
                   estimatedPrice={proposal.estimatedPrice}
                   repairerEmail={proposal.repairerEmail}
+                  userEmail={userEmail}
                 />
               </>
             )}

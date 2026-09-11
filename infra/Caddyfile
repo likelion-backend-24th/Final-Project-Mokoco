@@ -20,6 +20,13 @@
 		reverse_proxy post-service:8082
 	}
 
+	# PortOne 웹훅: 포트원 서버가 서명 헤더와 함께 직접 호출 (쿠키 없음) -> payment-service 직결
+	@payment_webhook path /api/payments/webhook
+	handle @payment_webhook {
+		uri strip_prefix /api
+		reverse_proxy payment-service:8083
+	}
+
 	# 나머지 API 는 전부 Next BFF(route handler) 경유 — 쿠키의 access_token/user_email 을
 	# Authorization / X-User-Email 헤더로 주입한 뒤 백엔드로 포워딩한다.
 	# (프론트 컴포넌트들이 인증 헤더 없이 상대경로로 호출하는 BFF 우선 설계라, 직결하면 400/401)

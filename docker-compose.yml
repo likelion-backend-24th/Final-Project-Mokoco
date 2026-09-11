@@ -108,22 +108,22 @@ services:
       - mokoco-net
 
   # --------------------
-  # Backend: Payment Service
+  # Backend: Payment Service (PortOne 결제)
   # --------------------
-  # payment-service:
-  #   build:
-  #     context: ./backend/payment-service
-  #     dockerfile: Dockerfile
-  #   container_name: mokoco-payment-service
-  #   restart: always
-  #   environment:
-  #     - SPRING_PROFILES_ACTIVE=prod
-  #     - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k
-  #   depends_on:
-  #     mysql:
-  #       condition: service_healthy
-  #   networks:
-  #     - mokoco-net
+  payment-service:
+    build:
+      context: ./backend/payment-service
+      dockerfile: Dockerfile
+    container_name: mokoco-payment-service
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - mokoco-net
 
   # --------------------
   # Frontend (Next.js)
@@ -135,6 +135,9 @@ services:
       args:
         # 브라우저용 base URL. 빈 값이면 프론트는 같은 오리진(상대경로)으로 호출한다 (권장).
         - NEXT_PUBLIC_BACKEND_API_URL=
+        # PortOne 브라우저 SDK용 (공개 값 — 브라우저 번들에 포함됨). CI 빌드 인자로도 주입.
+        - NEXT_PUBLIC_PORTONE_STORE_ID=${NEXT_PUBLIC_PORTONE_STORE_ID:-}
+        - NEXT_PUBLIC_PORTONE_CHANNEL_KEY=${NEXT_PUBLIC_PORTONE_CHANNEL_KEY:-}
     container_name: mokoco-frontend
     restart: always
     # Caddy가 80/443을 대신 받으므로 3000포트 매핑은 제거합니다.

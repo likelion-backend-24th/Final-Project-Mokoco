@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import * as PortOne from "@portone/browser-sdk/v2";
 import { CheckCircle, CreditCard, Wrench } from "@phosphor-icons/react";
 
 const STATUS_LABEL = {
@@ -12,7 +13,15 @@ const STATUS_LABEL = {
   CANCELED: "거래 취소됨",
 };
 
-export default function FixDealProgress({ fixDealId, postId, isRequester, isRepairer, estimatedPrice, repairerEmail }) {
+const FEE_RATE = 0.1; // 백엔드 Payment.FEE_RATE와 동일하게 유지 (수리자 제안 금액의 10%)
+
+function calculateTotalWithFee(baseAmount) {
+  const base = baseAmount ?? 0;
+  const fee = Math.round(base * FEE_RATE);
+  return { base, fee, total: base + fee };
+}
+
+export default function FixDealProgress({ fixDealId, postId, isRequester, isRepairer, estimatedPrice, repairerEmail, userEmail }) {
   const [deal, setDeal] = useState(null);
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -75,6 +84,61 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
       refresh();
     } catch {
       setError("서버에 연결할 수 없습니다.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function startPayment() {
+    setActionLoading(true);
+    setError("");
+    try {
+      const paymentId = `payment-${crypto.randomUUID()}`;
+      const { base, total } = calculateTotalWithFee(estimatedPrice);
+
+      const paymentResult = await PortOne.requestPayment({
+        storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID,
+        channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY,
+        paymentId,
+        orderName: "동네수리 - 수리 대금 안전결제",
+        totalAmount: total, // 수리자 제안 금액 + 수수료 10%
+        currency: "CURRENCY_KRW",
+        payMethod: "CARD",
+        isEscrow: true, // 안전거래(에스크로)
+        customer: userEmail ? { email: userEmail } : undefined,
+        // 웹훅이 프론트 응답보다 먼저 도착하거나, 프론트 응답을 못 받는 경우에도
+        // 백엔드가 이 값으로 결제-거래를 연결하고 기준액을 복원할 수 있도록 실어 보낸다.
+        customData: JSON.stringify({ postId, payerEmail: userEmail, payeeEmail: repairerEmail, baseAmount: base }),
+      });
+
+      // 사용자가 결제창을 닫았거나 결제가 실패한 경우
+      if (paymentResult?.code != null) {
+        setError(paymentResult.message ?? "결제가 취소되었거나 실패했습니다.");
+        return;
+      }
+
+      // 결제창에서의 성공 응답은 참고용일 뿐, 실제 완료 처리는 백엔드가
+      // PortOne 서버에 재조회해 검증한 뒤에만 이루어진다.
+      const confirmRes = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          payeeEmail: repairerEmail,
+          amount: total,
+          baseAmount: base,
+          paymentId,
+        }),
+      });
+      const confirmData = await confirmRes.json().catch(() => ({}));
+      if (!confirmRes.ok) {
+        setError(confirmData.error ?? "결제 확인에 실패했습니다. 잠시 후 다시 확인해주세요.");
+        return;
+      }
+
+      refresh();
+    } catch {
+      setError("결제 진행 중 문제가 발생했습니다.");
     } finally {
       setActionLoading(false);
     }
@@ -177,37 +241,45 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
         {status === "REPAIR_DONE" && isRequester && !paid && (
           <button
             type="button"
-            onClick={() =>
-              runAction("/api/payments", "POST", {
-                postId,
-                payeeEmail: repairerEmail,
-                amount: estimatedPrice ?? 0,
-              })
-            }
+            onClick={startPayment}
             disabled={actionLoading}
             className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
           >
             <CreditCard size={16} weight="bold" />
-            {actionLoading ? "결제 중..." : `결제하기 (${(estimatedPrice ?? 0).toLocaleString()}원)`}
+            {actionLoading
+              ? "결제 확인 중..."
+              : `안전결제 하기 (${calculateTotalWithFee(estimatedPrice).total.toLocaleString()}원)`}
           </button>
         )}
+        {status === "REPAIR_DONE" && isRequester && !paid && (
+          <p className="w-full text-xs text-slate-400">
+            수리비 {calculateTotalWithFee(estimatedPrice).base.toLocaleString()}원 + 수수료(10%){" "}
+            {calculateTotalWithFee(estimatedPrice).fee.toLocaleString()}원
+          </p>
+        )}
         {status === "REPAIR_DONE" && isRequester && paid && (
-          <button
-            type="button"
-            onClick={() => runAction(`/api/fix-deals/${fixDealId}/complete`, "PATCH")}
-            disabled={actionLoading}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
-          >
-            <CheckCircle size={16} weight="bold" />
-            {actionLoading ? "처리 중..." : "수리완료 수락"}
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => runAction(`/api/fix-deals/${fixDealId}/complete`, "PATCH")}
+              disabled={actionLoading}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              <CheckCircle size={16} weight="bold" />
+              {actionLoading ? "처리 중..." : "수리완료 수락"}
+            </button>
+            <p className="w-full text-xs text-slate-400">
+              결제 총액 {payment.amount?.toLocaleString()}원 (수리비 {payment.netAmount?.toLocaleString()}원 + 수수료{" "}
+              {payment.feeAmount?.toLocaleString()}원)
+            </p>
+          </>
         )}
         {status === "REPAIR_DONE" && isRepairer && (
           <p className="text-xs text-slate-500">의뢰자의 결제와 완료 수락을 기다리는 중이에요.</p>
         )}
 
         {status === "COMPLETED" && (
-          <p className="text-xs font-semibold text-emerald-700">거래가 완료됐어요. 수고하셨습니다!</p>
+          <p className="text-xs font-semibold text-emerald-700">거래가 완료되었습니다.</p>
         )}
       </div>
     </div>

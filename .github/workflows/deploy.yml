@@ -53,6 +53,8 @@ jobs:
           echo "${{ secrets.USER_SERVICE_SECRET_YML }}" > backend/user-service/src/main/resources/application-secret.yml
           mkdir -p backend/post-service/src/main/resources
           echo "${{ secrets.POST_SERVICE_SECRET_YML }}" > backend/post-service/src/main/resources/application-secret.yml
+          mkdir -p backend/payment-service/src/main/resources
+          echo "${{ secrets.PAYMENT_SERVICE_SECRET_YML }}" > backend/payment-service/src/main/resources/application-secret.yaml
 
       - name: Build API Gateway
         if: steps.filter.outputs.api-gateway == 'true'
@@ -72,10 +74,14 @@ jobs:
 
       - name: Build Frontend
         if: steps.filter.outputs.frontend == 'true'
+        env:
+          NEXT_PUBLIC_BACKEND_API_URL: ""
+          NEXT_PUBLIC_PORTONE_STORE_ID: ${{ secrets.NEXT_PUBLIC_PORTONE_STORE_ID }}
+          NEXT_PUBLIC_PORTONE_CHANNEL_KEY: ${{ secrets.NEXT_PUBLIC_PORTONE_CHANNEL_KEY }}
         run: |
           cd frontend
           npm ci
-          NEXT_PUBLIC_BACKEND_API_URL="" npm run build
+          npm run build
 
       - name: Copy files to EC2 via SSH
         uses: appleboy/scp-action@master

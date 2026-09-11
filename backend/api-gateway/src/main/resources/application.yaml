@@ -47,9 +47,8 @@ spring:
           predicates:
             - Path=/posts/**, /fix-deals/**, /images/**
 
+        # Next BFF(/api/payments/*)가 접두어 없이 /payments 로 호출한다
         - id: payment-service
           uri: http://mokoco-payment-service:8083
           predicates:
-            - Path=/api/payments/**
-          filters:
-            - StripPrefix=1
+            - Path=/payments/**
