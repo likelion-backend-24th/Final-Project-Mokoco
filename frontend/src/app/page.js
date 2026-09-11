@@ -1,10 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import {
-  ArrowRight, ClipboardText, DoorOpen, Drop, Hammer,
-  Lightbulb, SquaresFour, Toolbox, UserCircle,
-  WashingMachine, Wrench,
-} from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, ClipboardText, UserCircle, Wrench } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
 import LocationPermissionPrompt from "@/components/location-permission-prompt";
 import HomeChatList from "@/components/home-chat-list";
@@ -16,11 +12,6 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "수리 완료" };
-const categories = [
-  [SquaresFour, "전체"], [Lightbulb, "전기·조명"], [Drop, "배관·설비"],
-  [Hammer, "가구·설치"], [WashingMachine, "가전제품"], [DoorOpen, "문·창문"], [Toolbox, "생활·기타"],
-];
-
 
 function formatRelativeDate(value) {
   if (!value) return "시간 정보 없음";
@@ -40,18 +31,6 @@ function formatRelativeDate(value) {
   if (minutes < 60) return `${minutes}분 전`;
   const hours = Math.floor(minutes / 60);
   return hours < 24 ? `${hours}시간 전` : `${Math.floor(hours / 24)}일 전`;
-}
-
-function CategoryRow({ compact = false }) {
-  return (
-    <div className={compact ? "category-filter-row" : "category-showcase"} aria-label="수리 분야">
-      {categories.map(([Icon, label], index) => (
-        <div key={label} className={`${compact ? "category-filter" : "category-tile"} ${index === 0 && compact ? "category-filter-active" : ""}`}>
-          <Icon size={compact ? 20 : 30} weight="duotone" /><span>{label}</span>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 function EmptyPosts({ error, postHref }) {
@@ -97,7 +76,6 @@ function UnifiedHome({ posts, error, userEmail, isAuthenticated, pagination, reg
     <><main className="page-shell auth-main">
       {isAuthenticated && <LocationPermissionPrompt userEmail={userEmail} />}
       {isAuthenticated && <RegionScopeFilter pathname="/" regionScope={regionScope} regionFilter={pagination?.regionFilter} />}
-      <CategoryRow compact />
       <div className="auth-dashboard-grid">
         <div className="dashboard-column">
           <section id="posts" className="reference-card post-card">
