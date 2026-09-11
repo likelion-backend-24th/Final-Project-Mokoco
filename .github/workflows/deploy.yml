@@ -119,14 +119,17 @@ jobs:
           source: "docker-compose.yml,infra,init.sql"
           target: "/home/ubuntu/mokoco"
 
-      - name: Copy frontend to EC2
+      # Dockerfile이 실제로 COPY하는 건 public/ , .next/standalone , .next/static 뿐이다.
+      # (output:'standalone' 빌드는 실사용 의존성을 standalone 안에 자체 포함하므로 node_modules는 불필요)
+      # frontend 폴더 전체를 보내면 node_modules(500MB+)까지 같이 실려가서 배포가 크게 느려진다.
+      - name: Copy frontend build output to EC2
         if: steps.filter.outputs.frontend == 'true'
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "frontend"
+          source: "frontend/Dockerfile,frontend/public,frontend/.next/standalone,frontend/.next/static"
           target: "/home/ubuntu/mokoco"
 
       - name: Copy API Gateway to EC2
