@@ -1,10 +1,12 @@
 package com.team2.postservice.proposal.service;
 
 import com.team2.postservice.client.UserClient;
+import com.team2.postservice.client.dto.RegionResponse;
 import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.common.exception.CustomException;
 import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.fixDeal.entity.FixDeal;
+import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.repository.PostRepository;
@@ -108,10 +110,38 @@ public class ProposalService {
         List<Proposal> proposals = proposalRepository.findByPost(post);
 
         return proposals.stream()
-                .map(proposal -> new ProposalResponseDto(proposal,
-                        proposal.isAdopted() ? fixDealRepository.findByProposalId(proposal.getId())
-                                .map(FixDeal::getId).orElse(null) : null))
+                .map(proposal -> {
+                    Long fixDealId = proposal.isAdopted() ? fixDealRepository.findByProposalId(proposal.getId())
+                            .map(FixDeal::getId).orElse(null) : null;
+                    RepairerSummary summary = repairerSummary(proposal.getRepairerEmail());
+                    return new ProposalResponseDto(proposal, fixDealId, summary.region(), summary.completedCount());
+                })
                 .toList();
+    }
+
+    private record RepairerSummary(String region, long completedCount) {}
+
+    // 수리공 지역/채택 횟수 조회 — 실패해도 제안 목록 자체는 보여야 하므로 개별로 감싸서 무해하게 실패시킨다.
+    private RepairerSummary repairerSummary(String repairerEmail) {
+        String region = null;
+        long completedCount = 0;
+        try {
+            RegionResponse regionResponse = userClient.getRegionByEmail(repairerEmail);
+            if (regionResponse != null && regionResponse.sido() != null) {
+                region = regionResponse.sigungu() != null
+                        ? regionResponse.sido() + " " + regionResponse.sigungu()
+                        : regionResponse.sido();
+            }
+        } catch (Exception ignored) {
+            // 활동 지역 미설정 등 — 위치 미노출로 처리
+        }
+        try {
+            Long repairerId = userClient.getUserByEmail(repairerEmail).id();
+            completedCount = fixDealRepository.countByRepairerIdAndStatus(repairerId, FixDealStatus.COMPLETED);
+        } catch (Exception ignored) {
+            // 유저 조회 실패 시 0건으로 처리
+        }
+        return new RepairerSummary(region, completedCount);
     }
 
     @Transactional

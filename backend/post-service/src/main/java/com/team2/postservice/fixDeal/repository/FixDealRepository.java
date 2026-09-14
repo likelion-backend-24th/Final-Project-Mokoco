@@ -18,4 +18,7 @@ public interface FixDealRepository extends JpaRepository<FixDeal, Long> {
     Optional<FixDeal> findByPostId(Long postId);
 
     boolean existsByProposalId(Long proposalId);
+
+    // 제안 카드에 "채택 N건" 노출용 — 그 수리공이 완료까지 마친 거래 건수
+    long countByRepairerIdAndStatus(Long repairerId, FixDealStatus status);
 }
