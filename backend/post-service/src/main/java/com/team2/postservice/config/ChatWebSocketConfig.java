@@ -23,8 +23,9 @@ public class ChatWebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws/chat").setAllowedOrigins(origins);
     }
     @Override public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic");
+        registry.enableSimpleBroker("/topic", "/queue");
         registry.setApplicationDestinationPrefixes("/app");
+        registry.setUserDestinationPrefix("/user");
         registry.setPreservePublishOrder(true);
     }
     @Override public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
@@ -46,8 +47,11 @@ public class ChatWebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     if (headers.getUser() == null) throw new MessagingException("Authentication required");
                     // Revalidate expiry/revocation on each operation, including long-lived connections.
                     users.verifyToken((String) headers.getSessionAttributes().get("accessToken"));
-                    String prefix = command == StompCommand.SEND ? "/app/chat/" : "/topic/chat/";
                     String destination = headers.getDestination();
+                    // 인증된 본인 개인 알림 큐 구독은 방 권한 검사 없이 허용
+                    if (command == StompCommand.SUBSCRIBE && "/user/queue/notifications".equals(destination))
+                        return message;
+                    String prefix = command == StompCommand.SEND ? "/app/chat/" : "/topic/chat/";
                     if (destination == null || !destination.matches(java.util.regex.Pattern.quote(prefix) + "[0-9]+"))
                         throw new MessagingException("Destination not allowed");
                     chat.authorize(Long.valueOf(destination.substring(prefix.length())), Long.valueOf(headers.getUser().getName()));

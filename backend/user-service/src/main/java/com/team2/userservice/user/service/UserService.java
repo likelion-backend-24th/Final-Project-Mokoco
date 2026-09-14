@@ -107,6 +107,11 @@ public class UserService {
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
+    // 알림 수신자(id로만 알고 있는 경우) 조회용 — post-service가 채팅 알림 보낼 때 사용
+    public UserResponse findUserById(Long id) {
+        return new UserResponse(findById(id));
+    }
+
     private String formatRegionName(Region region) {
         if (region == null) {
             return null;

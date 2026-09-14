@@ -42,6 +42,10 @@ public enum ErrorCode {
     UNAUTHORIZED_CHAT_ROOM_ACCESS(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED_CHAT_ROOM_ACCESS", "채팅방 접근 권한이 없습니다."),
     CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_ROOM_NOT_FOUND", "채팅방을 찾을 수 없습니다."),
 
+    // Notification
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_NOT_FOUND", "알림이 존재하지 않습니다."),
+    UNAUTHORIZED_NOTIFICATION_ACCESS(HttpStatus.FORBIDDEN, "UNAUTHORIZED_NOTIFICATION_ACCESS", "본인의 알림만 확인할 수 있습니다."),
+
     // Common
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "유효하지 않은 입력값입니다.");
 

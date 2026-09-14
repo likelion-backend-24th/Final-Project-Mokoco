@@ -58,6 +58,10 @@
 	handle /api/chat/* {
 		reverse_proxy frontend:3000
 	}
+	# notifications* : 목록 조회(/api/notifications) 같은 경로 없는 호출도 포함하도록 슬래시 없는 와일드카드
+	handle /api/notifications* {
+		reverse_proxy frontend:3000
+	}
 
 	# 재발급/로그아웃은 httpOnly 쿠키를 서버(Next BFF)에서 읽고/지워야 하므로 BFF 경유
 	handle /api/auth/reissue {

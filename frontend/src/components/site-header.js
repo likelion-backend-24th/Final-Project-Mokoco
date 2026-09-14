@@ -3,8 +3,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, UserCircle } from "@phosphor-icons/react/dist/ssr";
+import { UserCircle } from "@phosphor-icons/react/dist/ssr";
 import BrandLogo from "@/components/brand-logo";
+import NotificationBell from "@/components/notification-bell";
 import { useAuthStore } from "@/store/authStore";
 import { useEffect, useState } from "react";
 
@@ -49,7 +50,7 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
       </nav>
       {userEmail ? (
         <div className="header-account">
-          <span className="header-icon"><Bell size={20} /></span>
+          <NotificationBell />
           <UserCircle size={29} weight="duotone" className="text-blue-600" />
           <span className="header-email">{userEmail}</span>
           <form onSubmit={handleLogout}>
