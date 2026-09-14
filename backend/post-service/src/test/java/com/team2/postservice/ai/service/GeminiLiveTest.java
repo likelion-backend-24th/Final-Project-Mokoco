@@ -1,6 +1,12 @@
-package com.team2.postservice.ai;
+package com.team2.postservice.ai.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team2.postservice.ai.client.GeminiClient;
+import com.team2.postservice.ai.AiImages;
+import com.team2.postservice.ai.AiRateLimit;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.mock.web.MockMultipartFile;
@@ -13,7 +19,9 @@ import static org.mockito.Mockito.*;
 class GeminiLiveTest {
     final GeminiClient client = new GeminiClient(new ObjectMapper(),System.getenv("GEMINI_API_KEY"),"gemini-flash-lite-latest",true);
     @Test void imageAndStructuredPostOutput() throws Exception {
-        var parts = new AiImages().parts(List.of(new MockMultipartFile("images","blank.png","image/png",AiImagesTest.png(32,32))));
+        var png = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(32,32,BufferedImage.TYPE_INT_RGB),"png",png);
+        var parts = new AiImages().parts(List.of(new MockMultipartFile("images","blank.png","image/png",png.toByteArray())));
         parts.add(Map.of("text","이 사진에서 제품을 알 수 없으면 제품/모델을 null로 두세요. 제목은 '제품 확인 필요', 내용은 추가 사진 요청으로 작성하세요."));
         var result = client.generate(AiDraftService.COMMON, parts, AiDraftService.postSchema());
         AiDraftService.validatePost(result); assertThat(result.path("modelCandidate").isNull()).isTrue();

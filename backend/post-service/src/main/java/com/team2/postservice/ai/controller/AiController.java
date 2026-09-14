@@ -1,6 +1,9 @@
-package com.team2.postservice.ai;
+package com.team2.postservice.ai.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.team2.postservice.ai.service.AiDraftService;
+import com.team2.postservice.common.exception.AiException;
+import com.team2.postservice.ai.AiRequestTrace;
 import com.team2.postservice.client.UserClient;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -16,7 +19,7 @@ public class AiController {
     private final AiDraftService service;
     private final UserClient users;
     private ResponseEntity<JsonNode> result(JsonNode body) {
-        ((com.fasterxml.jackson.databind.node.ObjectNode)body).put("requestId",AiRequestTrace.requestId());
+        ((com.fasterxml.jackson.databind.node.ObjectNode)body).put("requestId", AiRequestTrace.requestId());
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(body);
     }
     public record ContractInput(Long baseId, @NotNull Map<String, String> currentTerms,

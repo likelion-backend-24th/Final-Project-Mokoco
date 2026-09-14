@@ -1,8 +1,11 @@
-package com.team2.postservice.ai;
+package com.team2.postservice.ai.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team2.postservice.ai.service.AiDraftService;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
+import com.team2.postservice.common.exception.AiErrors;
+import com.team2.postservice.common.exception.AiException;
 import org.junit.jupiter.api.*;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;

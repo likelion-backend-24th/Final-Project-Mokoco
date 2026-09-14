@@ -1,6 +1,7 @@
-package com.team2.postservice.ai;
+package com.team2.postservice.ai.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team2.postservice.common.exception.AiException;
 import org.junit.jupiter.api.*;
 import org.springframework.http.*;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -39,7 +40,7 @@ class GeminiClientTest {
     @Test void quotaDoesNotExposeProviderErrorOrRetry() {
         server.expect(anything()).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS).body("sensitive-provider-detail"));
         assertThatThrownBy(() -> client.generate("test",List.of(),Map.of())).isInstanceOfSatisfying(AiException.class, e -> {
-            assertThat(e.status).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE); assertThat(e.getMessage()).doesNotContain("sensitive-provider-detail");
+            assertThat(e.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE); assertThat(e.getMessage()).doesNotContain("sensitive-provider-detail");
         }); server.verify();
     }
     @Test void missingKeyDoesNotCallProvider() {

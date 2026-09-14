@@ -1,9 +1,13 @@
-package com.team2.postservice.ai;
+package com.team2.postservice.ai.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.team2.postservice.ai.client.GeminiClient;
+import com.team2.postservice.ai.AiImages;
+import com.team2.postservice.ai.AiRateLimit;
+import com.team2.postservice.common.exception.AiException;
 import org.junit.jupiter.api.*;
-import org.springframework.mock.web.MockMultipartFile;
+
 import java.util.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;

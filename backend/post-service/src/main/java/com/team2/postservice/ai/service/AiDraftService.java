@@ -1,6 +1,10 @@
-package com.team2.postservice.ai;
+package com.team2.postservice.ai.service;
 
 import com.fasterxml.jackson.databind.*;
+import com.team2.postservice.ai.AiImages;
+import com.team2.postservice.ai.AiRateLimit;
+import com.team2.postservice.ai.client.GeminiClient;
+import com.team2.postservice.common.exception.AiException;
 import com.team2.postservice.post.entity.PostCategory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

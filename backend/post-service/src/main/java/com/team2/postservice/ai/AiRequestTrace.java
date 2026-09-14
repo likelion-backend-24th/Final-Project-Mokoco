@@ -25,5 +25,5 @@ public class AiRequestTrace extends OncePerRequestFilter {
             MDC.remove("aiRequestId");
         }
     }
-    static String requestId() { return MDC.get("aiRequestId") == null ? UUID.randomUUID().toString() : MDC.get("aiRequestId"); }
+    public static String requestId() { return MDC.get("aiRequestId") == null ? UUID.randomUUID().toString() : MDC.get("aiRequestId"); }
 }

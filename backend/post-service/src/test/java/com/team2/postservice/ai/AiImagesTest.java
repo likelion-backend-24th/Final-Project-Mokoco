@@ -1,5 +1,6 @@
 package com.team2.postservice.ai;
 
+import com.team2.postservice.common.exception.AiException;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import javax.imageio.ImageIO;

@@ -1,7 +1,9 @@
-package com.team2.postservice.ai;
+package com.team2.postservice.ai.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team2.postservice.common.exception.AiException;
+import com.team2.postservice.ai.AiRequestTrace;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
