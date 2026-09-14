@@ -5,7 +5,6 @@ import com.team2.postservice.chatMessage.entity.*;
 import com.team2.postservice.chatMessage.repository.ChatMessageRepository;
 import com.team2.postservice.chatRoom.entity.ChatRoom;
 import com.team2.postservice.chatRoom.repository.ChatRoomRepository;
-import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,15 +26,14 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public Long counterpartId(Long roomId, Long userId) {
-        var deal = authorize(roomId, userId).getFixDeal();
-        return userId.equals(deal.getRequesterId()) ? deal.getRepairerId() : deal.getRequesterId();
+        var room = authorize(roomId, userId);
+        return userId.equals(room.getRequesterId()) ? room.getRepairerId() : room.getRequesterId();
     }
 
     @Transactional(readOnly = true)
     public ChatRoom authorize(Long roomId, Long userId) {
         var room = rooms.findById(roomId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        var deal = room.getFixDeal();
-        if (!userId.equals(deal.getRequesterId()) && !userId.equals(deal.getRepairerId()))
+        if (!userId.equals(room.getRequesterId()) && !userId.equals(room.getRepairerId()))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         return room;
     }
@@ -69,10 +67,9 @@ public class ChatService {
                 .messageType(MessageType.TEXT).createdAt(LocalDateTime.now()).build());
 
         try {
-            FixDeal deal = room.getFixDeal();
-            Long recipientId = userId.equals(deal.getRequesterId())
-                    ? deal.getRepairerId() : deal.getRequesterId();
-            notificationService.notifyChatMessage(recipientId, deal.getPostId(), room.getId(), trimmed);
+            Long recipientId = userId.equals(room.getRequesterId())
+                    ? room.getRepairerId() : room.getRequesterId();
+            notificationService.notifyChatMessage(recipientId, room.getPostId(), room.getId(), trimmed);
         } catch (Exception e) {
             log.warn("채팅 메시지 알림 전송 실패 roomId={}", roomId, e);
         }

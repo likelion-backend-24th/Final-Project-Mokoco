@@ -13,7 +13,7 @@ public record ChatRoomResponse(
     public static ChatRoomResponse from(ChatRoom chatRoom) {
         return new ChatRoomResponse(
                 chatRoom.getId(),
-                chatRoom.getFixDeal().getId(),
+                chatRoom.getFixDeal() != null ? chatRoom.getFixDeal().getId() : null,
                 chatRoom.getCreatedAt()
         );
     }

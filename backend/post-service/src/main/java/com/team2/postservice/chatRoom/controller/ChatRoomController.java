@@ -40,4 +40,21 @@ public class ChatRoomController {
                 chatRoomService.getChatRoom(fixDealId, email)
         );
     }
+
+    // 채택 전(제안 단계)부터 채팅을 열 수 있는 경로 — 요청자/수리공 누구나 개설 가능
+    @PostMapping("/proposals/{proposalId}")
+    public ResponseEntity<ChatRoomResponse> createChatRoomForProposal(
+            @PathVariable Long proposalId,
+            @RequestHeader("X-User-Email") String email
+    ) {
+        return ResponseEntity.ok(chatRoomService.createChatRoomForProposal(proposalId, email));
+    }
+
+    @GetMapping("/proposals/{proposalId}")
+    public ResponseEntity<ChatRoomResponse> getChatRoomForProposal(
+            @PathVariable Long proposalId,
+            @RequestHeader("X-User-Email") String email
+    ) {
+        return ResponseEntity.ok(chatRoomService.getChatRoomForProposal(proposalId, email));
+    }
 }

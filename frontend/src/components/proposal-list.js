@@ -160,7 +160,18 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
             
             <p className="text-sm text-slate-700 whitespace-pre-line mb-4">{proposal.content}</p>
             
-            <div className="flex justify-end gap-2">
+            <div className="flex items-center justify-end gap-2">
+              {/* 채택 전이고, 이 제안의 당사자(글쓴이 또는 이 제안을 보낸 수리공)만 미리 채팅 가능 */}
+              {!isAdopted && (isMine || isMyProposal) && (
+                <ProposalChatRoom
+                  key={`compact-${proposal.id}`}
+                  proposalId={proposal.id}
+                  isRequester={Boolean(isMine)}
+                  isRepairer={Boolean(isMyProposal)}
+                  compact
+                />
+              )}
+
               {/* 본인 제안이고 채택되지 않았을 때만 삭제 가능 */}
               {isMyProposal && !isAdopted && (
                 <button
@@ -187,7 +198,12 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
             </div>
             {isAdopted && (isMine || isMyProposal) && (
               <>
-                <ProposalChatRoom key={`${proposal.id}-${proposal.fixDealId}`} fixDealId={proposal.fixDealId} isRequester={Boolean(isMine)} />
+                <ProposalChatRoom
+                  key={`${proposal.id}-${proposal.fixDealId}`}
+                  proposalId={proposal.id}
+                  isRequester={Boolean(isMine)}
+                  isRepairer={Boolean(isMyProposal)}
+                />
                 <FixDealProgress
                   fixDealId={proposal.fixDealId}
                   postId={postId}
