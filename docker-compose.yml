@@ -61,8 +61,11 @@ services:
     # Nginx가 80번을 받아서 내부 네트워크로 토스하므로 외부 ports 매핑은 제거합니다.
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      # 컨테이너 기본 시간대가 UTC라 LocalDateTime.now() 로 찍는 생성시각이 실제(한국) 시간보다
+      # 9시간 느리게 저장/표시되던 문제 — 한국 사용자 대상 서비스라 컨테이너 자체를 KST로 고정.
+      - TZ=Asia/Seoul
       # 힙 상한 (1GB RAM 인스턴스에서 JVM 3개가 메모리를 다 먹지 않도록)
-      - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k
+      - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
     depends_on:
       - mysql
     networks:
@@ -79,7 +82,8 @@ services:
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - JAVA_TOOL_OPTIONS=-Xmx200m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k
+      - TZ=Asia/Seoul
+      - JAVA_TOOL_OPTIONS=-Xmx200m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
     depends_on:
       mysql:
         condition: service_healthy
@@ -97,7 +101,8 @@ services:
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - JAVA_TOOL_OPTIONS=-Xmx240m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k
+      - TZ=Asia/Seoul
+      - JAVA_TOOL_OPTIONS=-Xmx240m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
     volumes:
       # 업로드된 게시글 이미지 영속화 (컨테이너는 CWD=/ 이므로 uploads -> /uploads)
       - post_uploads:/uploads
@@ -122,7 +127,8 @@ services:
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k
+      - TZ=Asia/Seoul
+      - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
     depends_on:
       mysql:
         condition: service_healthy
