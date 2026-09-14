@@ -31,6 +31,7 @@ public class ProposalService {
     private final FixDealRepository fixDealRepository;
     private final UserClient userClient;
     private final NotificationService notificationService;
+    private final com.team2.postservice.chatRoom.repository.ChatRoomRepository rooms;
 
     @Transactional
     public Long createProposal(Long postId, ProposalRequestDto.Create request, String repairerEmail) {
@@ -60,14 +61,14 @@ public class ProposalService {
 
     @Transactional
     public void adoptProposal(Long postId, Long proposalId, String userEmail) {
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.lockById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
 
         if (!post.getAuthorEmail().equals(userEmail)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_PROPOSAL_ADOPT);
         }
 
-        Proposal proposal = proposalRepository.findById(proposalId)
+        Proposal proposal = proposalRepository.lockById(proposalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROPOSAL_NOT_FOUND));
 
         if (!proposal.getPost().getId().equals(postId)) {
@@ -91,7 +92,8 @@ public class ProposalService {
                 .repairerId(repairer.id())
                 .build();
 
-        fixDealRepository.save(fixDeal);
+        var savedDeal = fixDealRepository.save(fixDeal);
+        rooms.findByProposalId(proposalId).ifPresent(room -> room.attachDeal(savedDeal));
 
         try {
             notificationService.notifyProposalAdopted(post, proposal);
@@ -116,13 +118,17 @@ public class ProposalService {
 
     @Transactional
     public void deleteProposal(Long postId, Long proposalId, String userEmail) {
-        Proposal proposal = proposalRepository.findById(proposalId)
+        Proposal proposal = proposalRepository.lockById(proposalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
 
         if (!proposal.getRepairerEmail().equals(userEmail)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_PROPOSAL_DELETE);
         }
 
+        if (!proposal.getPost().getId().equals(postId)) throw new CustomException(ErrorCode.PROPOSAL_NOT_FOUND);
+        if (proposal.isAdopted() || rooms.existsByProposalId(proposalId))
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
+                    "채택되었거나 채팅방이 있는 견적은 삭제할 수 없습니다.");
         proposalRepository.delete(proposal);
     }
 }

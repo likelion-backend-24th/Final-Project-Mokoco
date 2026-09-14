@@ -13,6 +13,24 @@ public class ChatRoomController {
 
     private final ChatRoomService chatRoomService;
 
+    @PostMapping("/proposals/{proposalId}")
+    public ChatRoomResponse createForProposal(@PathVariable Long proposalId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.team2.postservice.common.security.LoginUser user) {
+        return chatRoomService.createForProposal(proposalId, user.id());
+    }
+
+    @GetMapping("/proposals/{proposalId}")
+    public ChatRoomResponse getForProposal(@PathVariable Long proposalId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.team2.postservice.common.security.LoginUser user) {
+        return chatRoomService.getForProposal(proposalId, user.id());
+    }
+
+    @GetMapping("/{roomId}/detail")
+    public ChatRoomResponse detail(@PathVariable Long roomId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.team2.postservice.common.security.LoginUser user) {
+        return chatRoomService.detail(roomId, user.id());
+    }
+
     @GetMapping
     public java.util.List<com.team2.postservice.chatRoom.dto.ChatRoomListItem> getMyRooms(
             @RequestHeader(value = "Authorization", required = false) String authorization,

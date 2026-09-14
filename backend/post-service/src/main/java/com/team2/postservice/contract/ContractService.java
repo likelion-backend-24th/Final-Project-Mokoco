@@ -35,8 +35,9 @@ public class ContractService {
         var room = (lock ? rooms.lockById(roomId) : rooms.findById(roomId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         var deal = room.getFixDeal();
-        if (!userId.equals(deal.getRequesterId()) && !userId.equals(deal.getRepairerId()))
+        if (!room.hasParticipant(userId))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (deal == null) throw conflict("견적 채택 후 계약서를 작성할 수 있습니다.");
         return room;
     }
     private Version view(RepairContract contract) {

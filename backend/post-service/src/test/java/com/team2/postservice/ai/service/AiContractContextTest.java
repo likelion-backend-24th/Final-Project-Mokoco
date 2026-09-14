@@ -35,6 +35,12 @@ class AiContractContextTest {
         when(proposal.getEstimatedPrice()).thenReturn(50000);
         when(proposals.findById(5L)).thenReturn(Optional.of(proposal));
     }
+    @Test void consultationCannotGenerateContract() {
+        when(rooms.findById(1L)).thenReturn(Optional.of(ChatRoom.builder().id(1L).proposalId(5L)
+                .postId(4L).requesterId(2L).repairerId(3L).build()));
+        assertThatThrownBy(() -> context.read(1L,2L,null)).isInstanceOfSatisfying(AiException.class,
+                failure -> assertThat(failure.getStatus()).isEqualTo(org.springframework.http.HttpStatus.CONFLICT));
+    }
     @Test void outsiderCannotReadSources() {
         room(); assertThatThrownBy(() -> context.read(1L,9L,null)).isInstanceOf(AiException.class);
         verifyNoInteractions(posts,proposals,messages);

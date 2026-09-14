@@ -19,8 +19,33 @@ public class ChatRoom {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "fix_deal_id", nullable = false, unique = true)
+    @JoinColumn(name = "fix_deal_id", unique = true)
     private FixDeal fixDeal;
+
+    // Nullable during migration of existing deal-based rooms.
+    @Column(name = "proposal_id", unique = true)
+    private Long proposalId;
+    private Long requesterId;
+    private Long repairerId;
+    private Long postId;
+
+    public Long getProposalId() { return proposalId != null ? proposalId : fixDeal == null ? null : fixDeal.getProposalId(); }
+    public Long getRequesterId() { return requesterId != null ? requesterId : fixDeal == null ? null : fixDeal.getRequesterId(); }
+    public Long getRepairerId() { return repairerId != null ? repairerId : fixDeal == null ? null : fixDeal.getRepairerId(); }
+    public Long getPostId() { return postId != null ? postId : fixDeal == null ? null : fixDeal.getPostId(); }
+    public boolean hasParticipant(Long userId) {
+        return userId != null && (userId.equals(getRequesterId()) || userId.equals(getRepairerId()));
+    }
+    public void attachDeal(FixDeal deal) {
+        if (!java.util.Objects.equals(getProposalId(), deal.getProposalId())
+                || !java.util.Objects.equals(getRequesterId(), deal.getRequesterId())
+                || !java.util.Objects.equals(getRepairerId(), deal.getRepairerId())
+                || !java.util.Objects.equals(getPostId(), deal.getPostId()))
+            throw new IllegalArgumentException("Deal does not match chat participants and proposal");
+        if (fixDeal != null && !java.util.Objects.equals(fixDeal.getId(), deal.getId()))
+            throw new IllegalStateException("Chat room already linked to a deal");
+        this.fixDeal = deal;
+    }
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

@@ -13,10 +13,10 @@ public class SecurityConfig {
 
     @Bean
     @org.springframework.core.annotation.Order(1)
-    public SecurityFilterChain aiSecurityFilterChain(HttpSecurity http,
+    public SecurityFilterChain authenticatedApiSecurityFilterChain(HttpSecurity http,
             com.team2.postservice.client.UserClient users, com.fasterxml.jackson.databind.ObjectMapper mapper) throws Exception {
         return http
-                .securityMatcher("/api/ai/**", "/api/chat-rooms/*/contract/ai-draft")
+                .securityMatcher("/api/ai/**", "/api/chat-rooms/*/contract/ai-draft", "/api/chat-rooms/proposals/*", "/api/chat-rooms/*/detail")
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
