@@ -11,16 +11,19 @@ export default function ContractAiAssist({ roomId, baseId, terms, fields, onAppl
   const [result, setResult] = useState(null), [instructions, setInstructions] = useState("");
   const [undo, setUndo] = useState({});
   const controller = useRef(null);
+  const inFlight = useRef(false);
   const latest = useRef({ terms, onApply, disabled });
   useLayoutEffect(() => { latest.current = { terms, onApply, disabled }; }, [terms, onApply, disabled]);
   useEffect(() => () => controller.current?.abort(), []);
-  const inputKey = JSON.stringify([terms, instructions]);
+  const inputKey = JSON.stringify([roomId, baseId, terms, instructions]);
   async function generate() {
-    setBusy(true); setError(""); setResult(null); setUndo({}); controller.current = new AbortController();
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setBusy(true); setError(""); setUndo({}); controller.current = new AbortController();
     try {
       const response = await fetch(`/api/chat-rooms/${roomId}/contract/ai-draft`, {
         method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.current.signal,
-        body: JSON.stringify({ baseId, currentTerms: Object.fromEntries(Object.entries(terms).map(([k,v]) => [k, v == null ? "" : String(v)])), instructions }),
+        body: JSON.stringify({ baseId, currentTerms: Object.fromEntries(Object.entries(result?.inputKey === inputKey ? result.requestTerms : terms).map(([k,v]) => [k, v == null ? "" : String(v)])), instructions }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "계약 초안을 만들지 못했습니다.");
@@ -32,13 +35,14 @@ export default function ContractAiAssist({ roomId, baseId, terms, fields, onAppl
         const value = data.suggestedTerms[field];
         if (value == null || value === "") continue;
         if (current.terms[field] !== terms[field]) { skipped.push(field); continue; }
-        previous[field] = { before: current.terms[field], applied: value };
+        previous[field] = undo[field]?.applied === current.terms[field]
+          ? { before: undo[field].before, applied: value } : { before: current.terms[field], applied: value };
         updated[field] = value; current.onApply(field, value);
       }
       setUndo(previous);
-      setResult({ data, skipped, inputKey: JSON.stringify([updated, instructions]) });
+      setResult({ data, skipped, requestTerms: result?.inputKey === inputKey ? result.requestTerms : terms, inputKey: JSON.stringify([roomId, baseId, updated, instructions]) });
     } catch (failure) { if (failure.name !== "AbortError") setError(failure.message); }
-    finally { setBusy(false); }
+    finally { inFlight.current = false; setBusy(false); }
   }
   return <section className="ai-assist" aria-label="AI 계약 초안">
     <h3>대화를 정리해 계약 초안 채우기</h3>

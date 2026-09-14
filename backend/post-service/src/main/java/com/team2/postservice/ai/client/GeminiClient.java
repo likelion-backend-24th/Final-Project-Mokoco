@@ -60,7 +60,7 @@ public class GeminiClient {
                         if (bytes.length > 131072) throw AiException.output();
                         JsonNode envelope = mapper.readTree(bytes);
                         String version = envelope.path("modelVersion").asText("unknown").replaceAll("[^a-zA-Z0-9._-]", "");
-                        log.info("AI provider request={} model={} version={} promptVersion=repair-assist-v1 tokens={}",
+                        log.info("AI provider request={} model={} version={} promptVersion=repair-assist-v2 tokens={}",
                                 AiRequestTrace.requestId(), model, version.substring(0, Math.min(version.length(),100)), envelope.path("usageMetadata").path("totalTokenCount").asLong(-1));
                         var candidate = envelope.path("candidates").path(0);
                         if (candidate.isMissingNode() || "SAFETY".equals(candidate.path("finishReason").asText()))

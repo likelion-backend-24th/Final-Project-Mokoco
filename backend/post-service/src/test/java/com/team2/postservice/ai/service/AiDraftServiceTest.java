@@ -18,7 +18,7 @@ class AiDraftServiceTest {
     final AiContractContext context = mock(AiContractContext.class);
     final AiImages images = mock(AiImages.class);
     final AiRateLimit limit = mock(AiRateLimit.class);
-    final AiDraftService service = new AiDraftService(gemini,images,limit,context,mapper);
+    final AiDraftService service = new AiDraftService(gemini,images,limit,context,mapper,new com.team2.postservice.ai.AiDraftCache());
     ObjectNode blankContract() {
         var node = mapper.createObjectNode(); var terms = node.putObject("suggestedTerms"); var sources = node.putObject("fieldSources");
         AiDraftService.TERMS.keySet().forEach(field -> { terms.putNull(field); sources.putObject(field).put("sourceId","SUGGESTED_CLAUSE").put("quote",""); });
@@ -71,5 +71,43 @@ class AiDraftServiceTest {
         var limiter = new AiRateLimit(1,2,2); limiter.acquire(1L);
         assertThatThrownBy(() -> limiter.acquire(1L)).isInstanceOf(AiException.class);
         limiter.acquire(2L); assertThatThrownBy(() -> limiter.acquire(3L)).isInstanceOf(AiException.class);
+    }
+    @Test void contractCacheStillChecksAuthorizationAndInvalidatesChangedConversation() {
+        var sources = new LinkedHashMap<>(Map.of("POST","repair","PROPOSAL_AMOUNT","50000"));
+        when(context.read(1L,2L,null)).thenAnswer(invocation -> new LinkedHashMap<>(sources));
+        when(gemini.generate(anyString(),anyList(),anyMap())).thenAnswer(invocation -> blankContract());
+        service.contract(2L,1L,null,Map.of(),"");
+        service.contract(2L,1L,null,Map.of(),"");
+        verify(gemini).generate(anyString(),anyList(),anyMap());
+        verify(limit).acquire(2L);
+        verify(context,times(2)).check(1L,2L,null);
+        sources.put("MESSAGE_9","[의뢰인] 도색 제외");
+        service.contract(2L,1L,null,Map.of(),"");
+        verify(gemini,times(2)).generate(anyString(),anyList(),anyMap());
+        when(context.read(1L,2L,null)).thenThrow(AiException.input("denied"));
+        assertThatThrownBy(() -> service.contract(2L,1L,null,Map.of(),"")).hasMessage("denied");
+        verify(gemini,times(2)).generate(anyString(),anyList(),anyMap());
+    }
+    @Test void serverFieldsAreAbsentFromProviderSchemaAndDatesComeFromInput() {
+        var schema = mapper.valueToTree(AiDraftService.contractSchema(Set.of("POST")));
+        for (String field : AiDraftService.SERVER_FIELDS) {
+            assertThat(schema.path("properties").path("suggestedTerms").path("properties").has(field)).isFalse();
+            assertThat(schema.path("properties").path("fieldSources").path("properties").has(field)).isFalse();
+        }
+        var result = blankContract();
+        AiDraftService.fillServerFields(result,Map.of("PROPOSAL_AMOUNT","50000"),Map.of("startDate","2026-10-01"));
+        assertThat(result.path("suggestedTerms").path("startDate").asText()).isEqualTo("2026-10-01");
+        assertThat(result.path("suggestedTerms").path("endDate").isNull()).isTrue();
+    }
+    @Test void photoContentsAndUserScopeDetermineCacheKey() throws Exception {
+        when(images.parts(anyList())).thenAnswer(invocation -> new ArrayList<>(List.of(Map.of("text","image-a"))));
+        when(gemini.generate(anyString(),anyList(),anyMap())).thenAnswer(invocation -> mapper.readTree(
+                "{\"suggestion\":{\"title\":\"수리\",\"content\":\"수리 요청\",\"category\":\"" + com.team2.postservice.post.entity.PostCategory.values()[0].name() + "\"}}"));
+        service.post(1L,List.of(),"","",""); service.post(1L,List.of(),"","","");
+        verify(gemini).generate(anyString(),anyList(),anyMap());
+        service.post(2L,List.of(),"","","");
+        when(images.parts(anyList())).thenAnswer(invocation -> new ArrayList<>(List.of(Map.of("text","image-b"))));
+        service.post(1L,List.of(),"","","");
+        verify(gemini,times(3)).generate(anyString(),anyList(),anyMap());
     }
 }
