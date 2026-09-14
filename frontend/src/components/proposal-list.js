@@ -90,30 +90,30 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
         return (
           <div
             key={proposal.id}
-            className={`rounded-2xl border p-5 transition ${
+            className={`rounded-2xl border-2 p-5 transition ${
               isAdopted
-                ? "border-emerald-500 bg-emerald-50/40 shadow-sm"
-                : "border-slate-100 bg-slate-50/50 hover:border-slate-200"
+                ? "border-emerald-400 bg-emerald-50 shadow-md"
+                : "border-slate-200 bg-white shadow-sm hover:border-blue-300 hover:shadow-md"
             }`}
           >
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-800">
+                <span className="text-base font-extrabold text-slate-900">
                   {proposal.repairerEmail || "수리공 이웃"}
                 </span>
                 {isAdopted && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white">
                     <CheckCircle size={14} weight="bold" /> 채택 완료
                   </span>
                 )}
               </div>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs font-medium text-slate-400">
                 {proposal.createdAt ? new Date(proposal.createdAt).toLocaleDateString() : ""}
               </span>
             </div>
 
             {(proposal.repairerRegion || proposal.repairerCompletedCount > 0) && (
-              <div className="mb-2 flex items-center gap-3 text-xs text-slate-500">
+              <div className="mb-3 flex items-center gap-3 text-xs font-semibold text-slate-500">
                 {proposal.repairerRegion && (
                   <span className="inline-flex items-center gap-1">
                     <MapPin size={12} weight="duotone" /> {proposal.repairerRegion}
@@ -128,14 +128,15 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
             )}
 
             {proposal.estimatedPrice !== undefined && proposal.estimatedPrice !== null && (
-              <div className="mb-2 text-sm font-bold text-blue-600">
-                희망 견적: {proposal.estimatedPrice.toLocaleString()}원
+              <div className="mb-3 inline-flex items-baseline gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5">
+                <span className="text-xs font-bold text-blue-500">희망 견적</span>
+                <span className="text-lg font-extrabold text-blue-700">{proposal.estimatedPrice.toLocaleString()}원</span>
               </div>
             )}
-            
-            <p className="text-sm text-slate-700 whitespace-pre-line mb-4">{proposal.content}</p>
-            
-            <div className="flex items-center justify-end gap-2">
+
+            <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line mb-4">{proposal.content}</p>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
               {/* 채택 전이고, 이 제안의 당사자(글쓴이 또는 이 제안을 보낸 수리공)만 미리 채팅 가능 */}
               {!isAdopted && (isMine || isMyProposal) && (
                 <ProposalChatRoom
