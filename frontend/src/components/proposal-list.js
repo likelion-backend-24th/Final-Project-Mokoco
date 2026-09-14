@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle, Trash, MapPin, Wrench, CaretDown, CaretUp } from "@phosphor-icons/react";
+import { CheckCircle, Trash, MapPin, Wrench } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import ProposalChatRoom from "@/components/proposal-chat-room";
 import FixDealProgress from "@/components/fix-deal-progress";
@@ -10,16 +10,12 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
   const [proposals, setProposals] = useState(initialProposals);
   const [previousProposals, setPreviousProposals] = useState(initialProposals);
   const [loadingId, setLoadingId] = useState(null);
-  // 채택된 제안이 이미 있으면(진행 중인 거래가 있으면) 바로 펼쳐서 보여주고,
-  // 아직 비교/검토 단계면 목록을 접어둔 채 개수만 보여준다.
-  const [expanded, setExpanded] = useState(() => initialProposals?.some((p) => p.isAdopted) ?? false);
   const router = useRouter();
 
   // 부모 컴포넌트에서 router.refresh()로 새로운 데이터가 내려올 때 상태 동기화
   if (previousProposals !== initialProposals) {
     setPreviousProposals(initialProposals);
     setProposals(initialProposals);
-    if (initialProposals?.some((p) => p.isAdopted)) setExpanded(true);
   }
 
   if (!proposals || proposals.length === 0) {
@@ -32,19 +28,6 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
 
   // 이미 채택된 제안이 하나라도 존재하는지 확인
   const hasAdopted = proposals.some((p) => p.isAdopted);
-
-  if (!expanded) {
-    return (
-      <button
-        type="button"
-        onClick={() => setExpanded(true)}
-        className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4 text-left transition hover:border-slate-300 hover:bg-slate-100"
-      >
-        <span className="text-sm font-bold text-slate-800">받은 제안 {proposals.length}개 보기</span>
-        <CaretDown size={18} weight="bold" className="text-slate-400" />
-      </button>
-    );
-  }
 
   // 채택된 제안(isAdopted === true)이 맨 위로 오도록 정렬
   const sortedProposals = [...proposals].sort((a, b) => {
@@ -100,14 +83,6 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
 
   return (
     <div className="space-y-4">
-      <button
-        type="button"
-        onClick={() => setExpanded(false)}
-        className="flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-slate-600"
-      >
-        <CaretUp size={14} weight="bold" />
-        접기
-      </button>
       {sortedProposals.map((proposal) => {
         const isMyProposal = userEmail && proposal.repairerEmail === userEmail;
         const isAdopted = proposal.isAdopted;
