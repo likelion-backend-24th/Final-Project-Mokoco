@@ -41,7 +41,9 @@ function formatDate(value) {
     date = new Date(value);
   }
   if (Number.isNaN(date.getTime())) return "시간 정보 없음";
-  return date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
+  // 이 페이지는 서버(프론트 컨테이너) 안에서 렌더링되는데, 컨테이너 기본 타임존이
+  // 브라우저(한국)와 다를 수 있어 timeZone을 명시적으로 고정한다.
+  return date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Seoul" });
 }
 
 export default async function PostDetailPage({ params }) {
