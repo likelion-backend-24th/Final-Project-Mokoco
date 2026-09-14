@@ -1,0 +1,22 @@
+// Root aggregation build for the Mokoco backend (composite build).
+// The real projects live under backend/*, each with its own build.gradle.
+
+def services = ['api-gateway', 'user-service', 'post-service', 'payment-service']
+
+tasks.register('buildAll') {
+    group = 'build'
+    description = 'Builds every backend service'
+    dependsOn services.collect { gradle.includedBuild(it).task(':build') }
+}
+
+tasks.register('testAll') {
+    group = 'verification'
+    description = 'Runs tests for every backend service'
+    dependsOn services.collect { gradle.includedBuild(it).task(':test') }
+}
+
+tasks.register('cleanAll') {
+    group = 'build'
+    description = 'Cleans every backend service'
+    dependsOn services.collect { gradle.includedBuild(it).task(':clean') }
+}
