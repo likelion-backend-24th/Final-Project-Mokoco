@@ -14,8 +14,7 @@ import static org.assertj.core.api.Assertions.*;
 class ChatServiceTest {
     final ChatRoomRepository rooms = mock(ChatRoomRepository.class);
     final ChatMessageRepository messages = mock(ChatMessageRepository.class);
-    final NotificationService notificationService = mock(NotificationService.class);
-    final ChatService service = new ChatService(rooms, messages, notificationService);
+    final ChatService service = new ChatService(rooms, messages);
 
     void room() {
         when(rooms.findById(1L)).thenReturn(Optional.of(ChatRoom.builder().id(1L)
