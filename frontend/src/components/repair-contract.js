@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import "./repair-contract.css";
+import ContractAiAssist from "./contract-ai-assist";
 
 const fields = [
   ["title", "계약 제목", "text", 120], ["scope", "작업 대상과 수리 범위", "area", 4000],
@@ -103,6 +104,9 @@ export default function RepairContract({ roomId }) {
         mutate("", editing);
       }}>
         <h2>{editing.baseId ? "계약 수정본" : "새 계약 초안"}</h2><p>모든 항목을 작성해주세요. 해당 사항이 없으면 ‘없음’을 입력하세요.</p>
+        <ContractAiAssist key={`${roomId}-${editing.baseId ?? "new"}`} roomId={roomId} baseId={editing.baseId} terms={editing.terms} fields={fields}
+          disabled={busy || overview.dealStatus !== "MATCHED" || latest?.status === "SIGNED" || (latest?.id ?? null) !== editing.baseId}
+          onApply={(field, value) => setEditing(current => current ? { ...current, terms: { ...current.terms, [field]: value } } : current)} />
         {fields.map(([key, label, type, max]) => <label key={key}>{label}
           {type === "area" ? <textarea required maxLength={max} rows={3} value={editing.terms[key]} onChange={e => setEditing({ ...editing, terms: { ...editing.terms, [key]: e.target.value } })} />
             : <input required type={type} maxLength={max} min={type === "number" ? "0.01" : undefined} max={type === "number" ? "9999999999.99" : undefined} step={type === "number" ? "0.01" : undefined} value={editing.terms[key]} onChange={e => setEditing({ ...editing, terms: { ...editing.terms, [key]: e.target.value } })} />}

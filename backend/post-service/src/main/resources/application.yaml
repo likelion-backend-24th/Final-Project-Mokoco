@@ -43,3 +43,13 @@ internal:
 
 chat:
   allowed-origins: ${CHAT_ALLOWED_ORIGINS:http://localhost:3000}
+
+ai:
+  enabled: ${AI_ASSIST_ENABLED:true}
+  gemini:
+    api-key: ${GEMINI_API_KEY:${GOOGLE_API_KEY:}}
+    model: ${GEMINI_MODEL:gemini-flash-lite-latest}
+  limit:
+    per-minute: ${AI_REQUESTS_PER_MINUTE:3}
+    per-day: ${AI_REQUESTS_PER_DAY:20}
+    global-per-day: ${AI_GLOBAL_REQUESTS_PER_DAY:500}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Wrench, Upload, X } from "@phosphor-icons/react";
 import Link from "next/link";
 import { backendUrl } from "@/lib/backend";
+import PostAiAssist from "./post-ai-assist";
 
 const categories = [
   { value: "ELECTRIC_LIGHT", label: "전기·조명" },
@@ -20,6 +21,8 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [title, setTitle] = useState(initialValue?.title || "");
+  const [content, setContent] = useState(initialValue?.content || "");
   
   const [existingImages, setExistingImages] = useState(initialValue?.images || []);
   const [selectedCategory, setSelectedCategory] = useState(initialValue?.category || "ELECTRIC_LIGHT");
@@ -128,7 +131,7 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
           <input 
             name="title" 
             type="text" 
-            defaultValue={initialValue?.title || ""} 
+            value={title} onChange={e => setTitle(e.target.value)} maxLength={100}
             placeholder="제목을 입력해주세요" 
             required
             className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
@@ -141,7 +144,7 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
           <textarea 
             name="content" 
             rows={6}
-            defaultValue={initialValue?.content || ""} 
+            value={content} onChange={e => setContent(e.target.value)}
             placeholder="어떤 도움이 필요한지 자세히 적어주세요" 
             required
             className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
@@ -169,6 +172,9 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
             ))}
           </div>
         </div>
+
+        <PostAiAssist files={selectedFiles} values={{ title, content, category: selectedCategory }} categories={categories}
+          onApply={(field, value) => { if (field === "title") setTitle(value); else if (field === "content") setContent(value); else if (field === "category") setSelectedCategory(value); }} />
 
         {/* 💡 에러 메시지를 파란색 등록 버튼 바로 위로 이동 */}
         {message && (

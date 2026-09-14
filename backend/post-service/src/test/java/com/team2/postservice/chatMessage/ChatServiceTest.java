@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.*;
 class ChatServiceTest {
     final ChatRoomRepository rooms = mock(ChatRoomRepository.class);
     final ChatMessageRepository messages = mock(ChatMessageRepository.class);
-    final ChatService service = new ChatService(rooms, messages);
+    final ChatService service = new ChatService(rooms, messages, mock(com.team2.postservice.notification.service.NotificationService.class));
 
     void room() {
         when(rooms.findById(1L)).thenReturn(Optional.of(ChatRoom.builder().id(1L)
