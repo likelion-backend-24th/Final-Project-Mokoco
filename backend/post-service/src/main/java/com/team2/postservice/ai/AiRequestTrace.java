@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 @Component
+@org.springframework.core.annotation.Order(org.springframework.core.Ordered.HIGHEST_PRECEDENCE)
 public class AiRequestTrace extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(AiRequestTrace.class);
     @Override protected boolean shouldNotFilter(HttpServletRequest request) {
