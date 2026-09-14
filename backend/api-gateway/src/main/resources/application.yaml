@@ -45,7 +45,7 @@ spring:
         - id: post-service-direct
           uri: http://mokoco-post-service:8082
           predicates:
-            - Path=/posts/**, /fix-deals/**, /images/**
+            - Path=/posts/**, /fix-deals/**, /images/**, /notifications/**
 
         # Next BFF(/api/payments/*)가 접두어 없이 /payments 로 호출한다
         - id: payment-service
