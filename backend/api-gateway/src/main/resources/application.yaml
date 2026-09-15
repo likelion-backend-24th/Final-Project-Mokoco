@@ -10,7 +10,7 @@ spring:
         cors-configurations:
           '[/**]':
             allowed-origins:
-            - "http://localhost:3000"
+              - "http://localhost:3000"
             allowed-methods:
               - GET
               - POST
@@ -19,7 +19,7 @@ spring:
               - DELETE
               - OPTIONS
             allowed-headers:
-            - "*"
+              - "*"
             allow-credentials: true
       routes:
         - id: user-service
