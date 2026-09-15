@@ -34,6 +34,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("category") PostCategory category,
             Pageable pageable);
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Post p where p.id = :id")
+    Optional<Post> lockById(@Param("id") Long id);
+
     @Override
     @EntityGraph(attributePaths = "images")
     Optional<Post> findById(Long id);

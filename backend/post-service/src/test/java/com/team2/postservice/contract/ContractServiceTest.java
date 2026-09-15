@@ -26,6 +26,15 @@ class ContractServiceTest {
         var deal = em.persist(FixDeal.builder().postId(1L).proposalId(1L).requesterId(10L).repairerId(20L).build());
         roomId = em.persist(ChatRoom.builder().fixDeal(deal).build()).getId();
     }
+    @Test void consultationRoomRejectsContractsUntilAdoption() {
+        Long consultation = em.persist(ChatRoom.builder().proposalId(999L).postId(1L).requesterId(10L).repairerId(20L).build()).getId();
+        assertThatThrownBy(() -> service.get(consultation, 10L)).isInstanceOfSatisfying(ResponseStatusException.class,
+                failure -> assertThat(failure.getStatusCode().value()).isEqualTo(409));
+        assertThatThrownBy(() -> service.draft(consultation, 20L, null, terms("수리"))).isInstanceOfSatisfying(ResponseStatusException.class,
+                failure -> assertThat(failure.getStatusCode().value()).isEqualTo(409));
+        assertThatThrownBy(() -> service.get(consultation, 99L)).isInstanceOfSatisfying(ResponseStatusException.class,
+                failure -> assertThat(failure.getStatusCode().value()).isEqualTo(403));
+    }
     ContractTerms terms(String scope) {
         return new ContractTerms("가구 수리", scope, "도색 제외", "부품비 포함", new BigDecimal("50000"), "검수 후 지급",
                 LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 2), "방문 작업", "흔들림 없음", "30일 재수리", "착수 전 취소 가능", "추가 비용 사전 승인");

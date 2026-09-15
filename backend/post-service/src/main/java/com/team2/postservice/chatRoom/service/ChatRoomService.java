@@ -8,7 +8,6 @@ import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.common.exception.CustomException;
 import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.fixDeal.entity.FixDeal;
-import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +20,7 @@ public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final FixDealRepository fixDealRepository;
     private final UserClient userClient;
+    private final com.team2.postservice.proposal.repository.ProposalRepository proposals;
 
     public java.util.List<com.team2.postservice.chatRoom.dto.ChatRoomListItem> getMyRooms(
             String authorization, int page, int size) {
@@ -42,31 +42,54 @@ public class ChatRoomService {
     }
 
     @Transactional
-    public ChatRoomResponse createChatRoom(Long fixDealId, String userEmail){
-
-        UserClientResponse user = userClient.getUserByEmail(userEmail);
-
-        FixDeal fixDeal = fixDealRepository.findById(fixDealId)
+    public ChatRoomResponse createChatRoom(Long fixDealId, String userEmail) {
+        var user = userClient.getUserByEmail(userEmail);
+        var deal = fixDealRepository.findById(fixDealId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
+        return createForProposal(deal.getProposalId(), user.id());
+    }
 
-        if(!fixDeal.getRequesterId().equals(user.id())){
-            throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_CREATE);
-        }
-
-        if(fixDeal.getStatus() != FixDealStatus.MATCHED){
+    @Transactional
+    public ChatRoomResponse createForProposal(Long proposalId, Long userId) {
+        // The proposal row serializes first creation and adoption across server instances.
+        var proposal = proposals.lockById(proposalId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROPOSAL_NOT_FOUND));
+        var requester = userClient.getUserByEmail(proposal.getPost().getAuthorEmail());
+        var repairer = userClient.getUserByEmail(proposal.getRepairerEmail());
+        if (!userId.equals(requester.id()) && !userId.equals(repairer.id()))
+            throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_ACCESS);
+        if (requester.id().equals(repairer.id()))
             throw new CustomException(ErrorCode.CHAT_ROOM_NOT_AVAILABLE);
-        }
+        var existing = findProposalRoom(proposalId);
+        if (existing.isPresent()) return ChatRoomResponse.from(existing.get());
+        var deal = fixDealRepository.findByProposalId(proposalId).orElse(null);
+        var room = ChatRoom.builder().proposalId(proposalId).postId(proposal.getPost().getId())
+                .requesterId(requester.id()).repairerId(repairer.id()).build();
+        if (deal != null) room.attachDeal(deal);
+        return ChatRoomResponse.from(chatRoomRepository.saveAndFlush(room));
+    }
 
-        if (chatRoomRepository.existsByFixDealId(fixDealId)) {
-            throw new CustomException(ErrorCode.CHAT_ROOM_ALREADY_EXISTS);
-        }
+    public ChatRoomResponse getForProposal(Long proposalId, Long userId) {
+        var proposal = proposals.findById(proposalId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROPOSAL_NOT_FOUND));
+        var requester = userClient.getUserByEmail(proposal.getPost().getAuthorEmail());
+        var repairer = userClient.getUserByEmail(proposal.getRepairerEmail());
+        if (!userId.equals(requester.id()) && !userId.equals(repairer.id()))
+            throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_ACCESS);
+        return ChatRoomResponse.from(findProposalRoom(proposalId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CHAT_ROOM_NOT_FOUND)));
+    }
 
-        ChatRoom chatRoom = ChatRoom.builder()
-                .fixDeal(fixDeal)
-                .build();
+    private java.util.Optional<ChatRoom> findProposalRoom(Long proposalId) {
+        return chatRoomRepository.findByProposalId(proposalId).or(() ->
+                fixDealRepository.findByProposalId(proposalId).flatMap(deal -> chatRoomRepository.findByFixDealId(deal.getId())));
+    }
 
-        return ChatRoomResponse.from(chatRoomRepository.save(chatRoom));
-
+    public ChatRoomResponse detail(Long roomId, Long userId) {
+        var room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+        if (!room.hasParticipant(userId)) throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_ACCESS);
+        return ChatRoomResponse.from(room);
     }
 
     @Transactional(readOnly = true)

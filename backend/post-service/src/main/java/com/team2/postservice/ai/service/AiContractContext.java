@@ -35,8 +35,9 @@ public class AiContractContext {
     private com.team2.postservice.chatRoom.entity.ChatRoom checkedRoom(Long roomId, Long userId, Long baseId) {
         var room = rooms.findById(roomId).orElseThrow(() -> new AiException(HttpStatus.NOT_FOUND, "ROOM_NOT_FOUND", "채팅방을 찾을 수 없습니다."));
         var deal = room.getFixDeal();
-        if (!userId.equals(deal.getRequesterId()) && !userId.equals(deal.getRepairerId()))
+        if (!room.hasParticipant(userId))
             throw new AiException(HttpStatus.FORBIDDEN, "NOT_PARTICIPANT", "이 거래의 참여자만 사용할 수 있습니다.");
+        if (deal == null) throw new AiException(HttpStatus.CONFLICT, "PROPOSAL_NOT_ADOPTED", "견적 채택 후 계약 초안을 작성할 수 있습니다.");
         var latest = contracts.findFirstByChatRoomIdOrderByRevisionDesc(roomId).orElse(null);
         if (deal.getStatus() != FixDealStatus.MATCHED || deal.getRequesterId().equals(deal.getRepairerId())
                 || !Objects.equals(baseId, latest == null ? null : latest.getId())

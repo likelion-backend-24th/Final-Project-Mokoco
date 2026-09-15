@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.*;
 class ChatRoomListServiceTest {
     final ChatRoomRepository rooms = mock(ChatRoomRepository.class);
     final UserClient users = mock(UserClient.class);
-    final ChatRoomService service = new ChatRoomService(rooms, mock(FixDealRepository.class), users);
+    final ChatRoomService service = new ChatRoomService(rooms, mock(FixDealRepository.class), users, mock(com.team2.postservice.proposal.repository.ProposalRepository.class));
 
     @Test void usesVerifiedUserId() {
         when(users.verifyToken("token")).thenReturn(new UserClientResponse(7L, "user@example.com", "user", "region"));

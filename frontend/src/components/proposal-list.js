@@ -72,7 +72,8 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
         setProposals(proposals.filter((p) => p.id !== proposalId));
         router.refresh();
       } else {
-        alert("제안 삭제에 실패했습니다.");
+        const payload = await response.json().catch(() => ({}));
+        alert(payload.error || payload.message || "채팅방이 있거나 채택된 견적은 삭제할 수 없습니다.");
       }
     } catch {
       alert("서버 연결에 실패했습니다.");
@@ -145,9 +146,9 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 </button>
               )}
             </div>
+            {(isMine || isMyProposal) && <ProposalChatRoom key={proposal.id} proposalId={proposal.id} />}
             {isAdopted && (isMine || isMyProposal) && (
               <>
-                <ProposalChatRoom key={`${proposal.id}-${proposal.fixDealId}`} fixDealId={proposal.fixDealId} isRequester={Boolean(isMine)} />
                 <FixDealProgress
                   fixDealId={proposal.fixDealId}
                   postId={postId}
