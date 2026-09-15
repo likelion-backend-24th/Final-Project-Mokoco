@@ -12,6 +12,7 @@ import com.team2.postservice.post.entity.PostCategory;
 import com.team2.postservice.post.entity.RegionScope;
 import com.team2.postservice.post.entity.PostImage;
 import com.team2.postservice.post.repository.PostRepository;
+import com.team2.postservice.proposal.repository.ProposalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final FileStorageService fileStorageService;
     private final PostViewerService postViewerService;
+    private final ProposalRepository proposalRepository;
 
     @Transactional
     public Long createPost(PostRequestDto.Create request, List<MultipartFile> images, String authorEmail) {
@@ -110,6 +112,14 @@ public class PostService {
         List<String> storedFileNames = post.getImages().stream()
                 .map(PostImage::getStoredFileName)
                 .toList();
+
+        // proposals.post_id -> posts.id 외래키 때문에, 제안이 하나라도 달려있으면 글 삭제가
+        // DataIntegrityViolationException으로 막힌다. post_images는 JPA cascade(orphanRemoval)로
+        // 알아서 지워지지만 Proposal은 Post와 JPA 연관관계가 없어서 직접 지워줘야 한다.
+        // (fix_deals/notifications/chat_rooms 등은 postId를 갖고 있어도 실제 DB 외래키가 없어
+        //  글을 지워도 에러는 안 나지만, 이미 거래가 진행 중인 글을 지우면 그쪽엔 참조가 붕 뜬 채로 남는다 —
+        //  아직은 허용된 동작이라 별도 처리는 안 함.)
+        proposalRepository.deleteAll(proposalRepository.findByPost(post));
 
         postRepository.delete(post);
         storedFileNames.forEach(fileStorageService::delete);
