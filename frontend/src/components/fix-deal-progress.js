@@ -117,6 +117,8 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
         // 웹훅이 프론트 응답보다 먼저 도착하거나, 프론트 응답을 못 받는 경우에도
         // 백엔드가 이 값으로 결제-거래를 연결하고 기준액을 복원할 수 있도록 실어 보낸다.
         customData: JSON.stringify({ postId, payerEmail: userEmail, payeeEmail: repairerEmail, baseAmount: base }),
+        // 포트원 콘솔에 웹훅 URL을 등록하는 대신, 결제 요청마다 받을 웹훅 주소를 직접 실어 보낸다.
+        noticeUrls: [`${window.location.origin}/api/payments/webhook`],
       });
 
       // 사용자가 결제창을 닫았거나 결제가 실패한 경우
