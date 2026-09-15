@@ -52,6 +52,12 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
         } else {
           setPayment(null);
         }
+
+        if (data.status === "COMPLETED") {
+          const reviewRes = await fetch(`/api/reviews/exists?postId=${postId}`, { signal: controller.signal, cache: "no-store" });
+          const reviewData = reviewRes.ok ? await reviewRes.json() : null;
+          setReviewSubmitted(Boolean(reviewData?.exists));
+        }
       })
       .catch((failure) => {
         if (!controller.signal.aborted) setError(failure.message ?? "서버에 연결할 수 없습니다.");
@@ -287,7 +293,10 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
           <ReviewForm postId={postId} onSubmitted={() => setReviewSubmitted(true)} />
         )}
         {status === "COMPLETED" && isRequester && reviewSubmitted && (
-          <p className="w-full text-xs text-slate-400">후기를 남겨주셔서 감사해요.</p>
+          <div className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+            <CheckCircle size={16} weight="fill" />
+            후기 작성 완료
+          </div>
         )}
       </div>
     </div>
