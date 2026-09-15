@@ -71,6 +71,10 @@
 	handle /api/reports* {
 		reverse_proxy frontend:3000
 	}
+	# 후기(평점) 조회/작성
+	handle /api/reviews* {
+		reverse_proxy frontend:3000
+	}
 	# 로그인한 본인 프로필(role/status 포함) — 관리자 메뉴 노출 여부 판단용
 	handle /api/users/me {
 		reverse_proxy frontend:3000

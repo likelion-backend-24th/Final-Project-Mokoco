@@ -54,6 +54,14 @@ public enum ErrorCode {
     REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "REPORT_NOT_FOUND", "신고 내역이 존재하지 않습니다."),
     INVALID_REPORT_TARGET(HttpStatus.BAD_REQUEST, "INVALID_REPORT_TARGET", "신고 대상 정보가 올바르지 않습니다."),
 
+    // Review
+    FIX_DEAL_NOT_FOUND_FOR_REVIEW(HttpStatus.NOT_FOUND, "FIX_DEAL_NOT_FOUND_FOR_REVIEW", "후기를 작성할 거래를 찾을 수 없습니다."),
+    UNAUTHORIZED_REVIEW_CREATE(HttpStatus.FORBIDDEN, "UNAUTHORIZED_REVIEW_CREATE", "의뢰자 본인만 후기를 작성할 수 있습니다."),
+    TRANSACTION_NOT_COMPLETED(HttpStatus.CONFLICT, "TRANSACTION_NOT_COMPLETED", "완료된 거래에만 후기를 작성할 수 있습니다."),
+    REVIEW_DEADLINE_EXPIRED(HttpStatus.CONFLICT, "REVIEW_DEADLINE_EXPIRED", "후기 작성 기한(완료 후 3일)이 지났습니다."),
+    DUPLICATE_REVIEW(HttpStatus.CONFLICT, "DUPLICATE_REVIEW", "이미 후기를 작성한 거래입니다."),
+    INVALID_RATING(HttpStatus.BAD_REQUEST, "INVALID_RATING", "평점은 1~5 사이의 정수여야 합니다."),
+
     // Common
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "유효하지 않은 입력값입니다.");
 

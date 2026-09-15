@@ -5,6 +5,7 @@ import { CheckCircle, Trash, MapPin, Wrench } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import ProposalChatRoom from "@/components/proposal-chat-room";
 import FixDealProgress from "@/components/fix-deal-progress";
+import RatingBadge from "@/components/rating-badge";
 
 export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail }) {
   const [proposals, setProposals] = useState(initialProposals);
@@ -101,6 +102,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 <span className="text-base font-extrabold text-slate-900">
                   {proposal.repairerEmail || "수리공 이웃"}
                 </span>
+                <RatingBadge email={proposal.repairerEmail} />
                 {isAdopted && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white">
                     <CheckCircle size={14} weight="bold" /> 채택 완료
