@@ -1,13 +1,18 @@
 package com.team2.postservice.review.controller;
 
 import com.team2.postservice.review.dto.ReviewRequestDto;
+import com.team2.postservice.review.dto.ReviewResponseDto;
 import com.team2.postservice.review.dto.UserReviewsResponseDto;
 import com.team2.postservice.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/reviews")
@@ -18,10 +23,11 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    @PostMapping
-    public ResponseEntity<Long> createReview(@RequestBody ReviewRequestDto.Create request,
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Long> createReview(@RequestPart("review") ReviewRequestDto.Create request,
+                                              @RequestPart(value = "images", required = false) List<MultipartFile> images,
                                               @RequestHeader("X-User-Email") String reviewerEmail) {
-        Long reviewId = reviewService.createReview(request, reviewerEmail);
+        Long reviewId = reviewService.createReview(request, images, reviewerEmail);
         return ResponseEntity.ok(reviewId);
     }
 
@@ -36,8 +42,18 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getUserReviews(revieweeEmail, pageable));
     }
 
+    @GetMapping("/{reviewId}")
+    public ResponseEntity<ReviewResponseDto> getReview(@PathVariable Long reviewId) {
+        return ResponseEntity.ok(reviewService.getReview(reviewId));
+    }
+
     @GetMapping("/exists")
     public ResponseEntity<Boolean> existsByPostId(@RequestParam Long postId) {
         return ResponseEntity.ok(reviewService.existsByPostId(postId));
+    }
+
+    @GetMapping("/by-post")
+    public ResponseEntity<ReviewResponseDto> getReviewByPostId(@RequestParam Long postId) {
+        return ResponseEntity.ok(reviewService.getReviewByPostId(postId));
     }
 }
