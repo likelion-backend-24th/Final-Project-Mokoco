@@ -56,6 +56,10 @@ public enum ErrorCode {
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW_NOT_FOUND", "후기를 찾을 수 없습니다."),
     INVALID_RATING(HttpStatus.BAD_REQUEST, "INVALID_RATING", "평점은 1~5 사이의 정수여야 합니다."),
 
+    // Resume
+    DUPLICATE_RESUME(HttpStatus.CONFLICT, "DUPLICATE_RESUME", "이미 작성된 이력서가 있습니다. 수정을 이용해주세요."),
+    RESUME_NOT_FOUND(HttpStatus.NOT_FOUND, "RESUME_NOT_FOUND", "이력서를 찾을 수 없습니다."),
+
     // Common
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "유효하지 않은 입력값입니다.");
 

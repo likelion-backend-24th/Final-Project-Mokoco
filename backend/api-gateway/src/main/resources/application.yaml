@@ -30,7 +30,7 @@ spring:
         - id: post-service
           uri: http://localhost:8082
           predicates:
-            - Path=/posts/**, /api/chat-rooms/**, /fix-deals/**, /notifications/**, /reviews/**, /api/ai/**, /profile/**
+            - Path=/posts/**, /api/chat-rooms/**, /fix-deals/**, /notifications/**, /reviews/**, /api/ai/**, /profile/**, /resumes/**
 
         - id: payment-service
           uri: http://localhost:8083
