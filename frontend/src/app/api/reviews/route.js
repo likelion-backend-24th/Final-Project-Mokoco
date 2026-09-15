@@ -28,27 +28,38 @@ export async function POST(request) {
   const email = (await cookies()).get("user_email")?.value;
   if (!email) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
-  let body;
+  let incoming;
   try {
-    body = await request.json();
+    incoming = await request.formData();
   } catch {
     return Response.json({ error: "요청 형식이 올바르지 않습니다." }, { status: 400 });
+  }
+
+  const postId = incoming.get("postId");
+  const rating = incoming.get("rating");
+  const content = incoming.get("content");
+
+  // 백엔드는 review(JSON 파트) + images(파일 파트들)로 구성된 멀티파트를 기대한다.
+  const outgoing = new FormData();
+  outgoing.append(
+    "review",
+    new Blob([JSON.stringify({ postId: Number(postId), rating: Number(rating), content })], {
+      type: "application/json",
+    }),
+  );
+  for (const file of incoming.getAll("images")) {
+    if (file instanceof File && file.size > 0) {
+      outgoing.append("images", file, file.name);
+    }
   }
 
   try {
     const response = await fetch(backendUrl("/reviews"), {
       method: "POST",
-      headers: {
-        "X-User-Email": email,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        postId: body.postId,
-        rating: body.rating,
-        content: body.content,
-      }),
+      headers: { "X-User-Email": email },
+      body: outgoing,
       cache: "no-store",
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(15000),
     });
     const payload = await readBackendPayload(response);
     if (!response.ok) {

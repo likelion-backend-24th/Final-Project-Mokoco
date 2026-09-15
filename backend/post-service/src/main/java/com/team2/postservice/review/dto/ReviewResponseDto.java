@@ -3,6 +3,7 @@ package com.team2.postservice.review.dto;
 import com.team2.postservice.review.entity.Review;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record ReviewResponseDto(
         Long id,
@@ -11,6 +12,7 @@ public record ReviewResponseDto(
         String revieweeEmail,
         Integer rating,
         String content,
+        List<String> imageUrls,
         LocalDateTime createdAt
 ) {
     public static ReviewResponseDto from(Review review) {
@@ -21,6 +23,10 @@ public record ReviewResponseDto(
                 review.getRevieweeEmail(),
                 review.getRating(),
                 review.getContent(),
+                review.getImages().stream()
+                        .sorted((a, b) -> a.getSortOrder().compareTo(b.getSortOrder()))
+                        .map(image -> image.getImageUrl())
+                        .toList(),
                 review.getCreatedAt()
         );
     }
