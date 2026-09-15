@@ -26,6 +26,7 @@ export default function ChatRoom({ roomId }) {
   const [error, setError] = useState("");
   const [userId, setUserId] = useState(null);
   const [counterpart, setCounterpart] = useState(null);
+  const [detail, setDetail] = useState(null);
   const nickname = counterpart?.roomId === roomId ? counterpart.nickname : "";
   const [more, setMore] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -106,6 +107,19 @@ export default function ChatRoom({ roomId }) {
 
   useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length]);
 
+  useEffect(() => {
+    let active = true;
+    function loadDetail() {
+      fetch(`/api/chat-rooms/${roomId}/detail`, { cache: "no-store" })
+        .then(async response => { const data = await response.json(); if (!response.ok) throw new Error(data.error); return data; })
+        .then(data => { if (active) setDetail({ roomId, ...data }); })
+        .catch(() => {});
+    }
+    loadDetail();
+    window.addEventListener("focus", loadDetail);
+    return () => { active = false; window.removeEventListener("focus", loadDetail); };
+  }, [roomId]);
+
   function send(event) {
     event.preventDefault();
     if (!text.trim() || !clientRef.current?.connected) return;
@@ -163,7 +177,9 @@ export default function ChatRoom({ roomId }) {
         </div>;
       })}<div ref={bottom} />
     </div>
-    <Link href={`/chat-rooms/${roomId}/contract`} className="conversation-banner" style={{ fontWeight: 600 }}>수리 계약서 작성 · 서명 · 작업 진행 →</Link>
+    {detail?.roomId === roomId && (detail.fixDealId
+      ? <Link href={`/chat-rooms/${roomId}/contract`} className="conversation-banner" style={{ fontWeight: 600 }}>수리 계약서 작성 · 서명 · 작업 진행 →</Link>
+      : <p className="conversation-banner">견적 상담 중입니다. 이 견적이 채택되면 계약서를 작성할 수 있습니다.</p>)}
 
     <footer className="conversation-footer">
       <div className="conversation-composer">

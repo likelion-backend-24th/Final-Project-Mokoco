@@ -95,48 +95,62 @@ public class ChatRoomService {
     }
 
     // 제안이 채택되기 전이라도 요청자/수리공 둘 중 누구나 채팅방을 열 수 있다(둘 다 방 생성 가능).
+    // proposalId는 Proposal 행을 잠가서(lockById) 동시에 방을 만들려는 요청/채택 처리와의 경합을 막는다.
     @Transactional
-    public ChatRoomResponse createChatRoomForProposal(Long proposalId, String userEmail) {
-        Proposal proposal = proposalRepository.findById(proposalId)
+    public ChatRoomResponse createForProposal(Long proposalId, Long userId) {
+        Proposal proposal = proposalRepository.lockById(proposalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROPOSAL_NOT_FOUND));
-
-        boolean isRequester = proposal.getPost().getAuthorEmail().equals(userEmail);
-        boolean isRepairer = proposal.getRepairerEmail().equals(userEmail);
-        if (!isRequester && !isRepairer) {
-            throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_CREATE);
-        }
-
-        if (findExistingRoom(proposal).isPresent()) {
-            throw new CustomException(ErrorCode.CHAT_ROOM_ALREADY_EXISTS);
-        }
 
         UserClientResponse requester = userClient.getUserByEmail(proposal.getPost().getAuthorEmail());
         UserClientResponse repairer = userClient.getUserByEmail(proposal.getRepairerEmail());
+        if (!userId.equals(requester.id()) && !userId.equals(repairer.id())) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_ACCESS);
+        }
+        if (requester.id().equals(repairer.id())) {
+            throw new CustomException(ErrorCode.CHAT_ROOM_NOT_AVAILABLE);
+        }
 
+        var existing = findExistingRoom(proposal);
+        if (existing.isPresent()) return ChatRoomResponse.from(existing.get());
+
+        // 이미 채택돼 FixDeal이 존재하는데(예전 방식으로 채택은 됐지만 방이 없던 경우) 방을 새로 만드는 것이면,
+        // 바로 그 거래를 이어붙여서 만든다.
+        FixDeal deal = fixDealRepository.findByProposalId(proposalId).orElse(null);
         ChatRoom chatRoom = ChatRoom.builder()
                 .proposalId(proposal.getId())
                 .postId(proposal.getPost().getId())
                 .requesterId(requester.id())
                 .repairerId(repairer.id())
                 .build();
+        if (deal != null) chatRoom.attachDeal(deal);
 
-        return ChatRoomResponse.from(chatRoomRepository.save(chatRoom));
+        return ChatRoomResponse.from(chatRoomRepository.saveAndFlush(chatRoom));
     }
 
     @Transactional(readOnly = true)
-    public ChatRoomResponse getChatRoomForProposal(Long proposalId, String userEmail) {
+    public ChatRoomResponse getForProposal(Long proposalId, Long userId) {
         Proposal proposal = proposalRepository.findById(proposalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROPOSAL_NOT_FOUND));
 
-        boolean participant = proposal.getPost().getAuthorEmail().equals(userEmail)
-                || proposal.getRepairerEmail().equals(userEmail);
-        if (!participant) {
+        UserClientResponse requester = userClient.getUserByEmail(proposal.getPost().getAuthorEmail());
+        UserClientResponse repairer = userClient.getUserByEmail(proposal.getRepairerEmail());
+        if (!userId.equals(requester.id()) && !userId.equals(repairer.id())) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_ACCESS);
         }
 
         return findExistingRoom(proposal)
                 .map(ChatRoomResponse::from)
                 .orElseThrow(() -> new CustomException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public ChatRoomResponse detail(Long roomId, Long userId) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+        if (!room.hasParticipant(userId)) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_ACCESS);
+        }
+        return ChatRoomResponse.from(room);
     }
 
     // 제안 기준으로 먼저 찾고, 없으면 (채택 이후 예전 방식대로 fixDealId 경유로 만들어진) 레거시 방도 찾아본다.

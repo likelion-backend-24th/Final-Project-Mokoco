@@ -41,20 +41,32 @@ public class ChatRoomController {
         );
     }
 
-    // 채택 전(제안 단계)부터 채팅을 열 수 있는 경로 — 요청자/수리공 누구나 개설 가능
+    // 채택 전(제안 단계)부터 채팅을 열 수 있는 경로 — 요청자/수리공 누구나 개설 가능.
+    // Authorization: Bearer로 직접 인증(SecurityConfig의 별도 필터 체인, LoginUser 주입).
     @PostMapping("/proposals/{proposalId}")
-    public ResponseEntity<ChatRoomResponse> createChatRoomForProposal(
+    public ChatRoomResponse createForProposal(
             @PathVariable Long proposalId,
-            @RequestHeader("X-User-Email") String email
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+                    com.team2.postservice.common.security.LoginUser user
     ) {
-        return ResponseEntity.ok(chatRoomService.createChatRoomForProposal(proposalId, email));
+        return chatRoomService.createForProposal(proposalId, user.id());
     }
 
     @GetMapping("/proposals/{proposalId}")
-    public ResponseEntity<ChatRoomResponse> getChatRoomForProposal(
+    public ChatRoomResponse getForProposal(
             @PathVariable Long proposalId,
-            @RequestHeader("X-User-Email") String email
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+                    com.team2.postservice.common.security.LoginUser user
     ) {
-        return ResponseEntity.ok(chatRoomService.getChatRoomForProposal(proposalId, email));
+        return chatRoomService.getForProposal(proposalId, user.id());
+    }
+
+    @GetMapping("/{roomId}/detail")
+    public ChatRoomResponse detail(
+            @PathVariable Long roomId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal
+                    com.team2.postservice.common.security.LoginUser user
+    ) {
+        return chatRoomService.detail(roomId, user.id());
     }
 }

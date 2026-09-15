@@ -33,7 +33,7 @@ public class ChatService {
     @Transactional(readOnly = true)
     public ChatRoom authorize(Long roomId, Long userId) {
         var room = rooms.findById(roomId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (!userId.equals(room.getRequesterId()) && !userId.equals(room.getRepairerId()))
+        if (!room.hasParticipant(userId))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         return room;
     }

@@ -36,4 +36,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @EntityGraph(attributePaths = "images")
     Optional<Post> findById(Long id);
 
+    // 제안 채택 시 동시 요청(여러 견적 동시 채택 시도 등)을 막기 위한 비관적 락 조회
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Post p where p.id = :id")
+    Optional<Post> lockById(@Param("id") Long id);
+
 }

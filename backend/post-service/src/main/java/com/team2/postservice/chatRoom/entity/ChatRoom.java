@@ -25,26 +25,46 @@ public class ChatRoom {
     private FixDeal fixDeal;
 
     // 채택 전부터 채팅을 열 수 있도록 방을 제안(Proposal) 기준으로 식별한다.
-    @Column(unique = true)
+    @Column(name = "proposal_id", unique = true)
     private Long proposalId;
 
-    private Long postId;
     private Long requesterId;
     private Long repairerId;
+    private Long postId;
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // fixDeal 관계 대신 직접 들고 있는 필드를 우선 쓰고, 레거시(채택 시점에 생성된) 방은 fixDeal로 폴백한다.
-    public Long getPostId() {
-        return postId != null ? postId : (fixDeal != null ? fixDeal.getPostId() : null);
+    // 직접 들고 있는 필드를 우선 쓰고, 레거시(채택 시점에 생성된) 방은 fixDeal로 폴백한다.
+    public Long getProposalId() {
+        return proposalId != null ? proposalId : (fixDeal == null ? null : fixDeal.getProposalId());
     }
 
     public Long getRequesterId() {
-        return requesterId != null ? requesterId : (fixDeal != null ? fixDeal.getRequesterId() : null);
+        return requesterId != null ? requesterId : (fixDeal == null ? null : fixDeal.getRequesterId());
     }
 
     public Long getRepairerId() {
-        return repairerId != null ? repairerId : (fixDeal != null ? fixDeal.getRepairerId() : null);
+        return repairerId != null ? repairerId : (fixDeal == null ? null : fixDeal.getRepairerId());
+    }
+
+    public Long getPostId() {
+        return postId != null ? postId : (fixDeal == null ? null : fixDeal.getPostId());
+    }
+
+    public boolean hasParticipant(Long userId) {
+        return userId != null && (userId.equals(getRequesterId()) || userId.equals(getRepairerId()));
+    }
+
+    // 제안이 채택돼 FixDeal이 생기면, 이미 열려있던(채택 전) 채팅방에 그 거래를 이어붙인다.
+    public void attachDeal(FixDeal deal) {
+        if (!java.util.Objects.equals(getProposalId(), deal.getProposalId())
+                || !java.util.Objects.equals(getRequesterId(), deal.getRequesterId())
+                || !java.util.Objects.equals(getRepairerId(), deal.getRepairerId())
+                || !java.util.Objects.equals(getPostId(), deal.getPostId()))
+            throw new IllegalArgumentException("Deal does not match chat participants and proposal");
+        if (fixDeal != null && !java.util.Objects.equals(fixDeal.getId(), deal.getId()))
+            throw new IllegalStateException("Chat room already linked to a deal");
+        this.fixDeal = deal;
     }
 }

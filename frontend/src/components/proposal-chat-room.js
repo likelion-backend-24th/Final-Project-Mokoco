@@ -4,14 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChatCircle } from "@phosphor-icons/react";
 
-// isRequester/isRepairer 둘 중 하나만 true면 되고(둘 다 채팅방을 열 수 있음), compact면
-// 제안 카드용 작은 버튼 한 줄만 렌더링한다(채택 전 목록에서 쓰는 용도).
-export default function ProposalChatRoom({ proposalId, isRequester, isRepairer, compact = false }) {
+// compact면 제안 카드용 작은 버튼 한 줄만 렌더링한다(채택 전 목록에서 쓰는 용도).
+// 채팅방 생성/조회 권한은 백엔드가 로그인 사용자 기준으로 검증한다.
+export default function ProposalChatRoom({ proposalId, compact = false }) {
   const [room, setRoom] = useState(null);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const router = useRouter();
-  const canOpen = Boolean(isRequester || isRepairer);
   const endpoint = `/api/chat-rooms/proposals/${proposalId}`;
 
   useEffect(() => {
@@ -38,7 +37,7 @@ export default function ProposalChatRoom({ proposalId, isRequester, isRepairer, 
       // Check again before creating: another tab may already have opened the room.
       let response = await fetch(endpoint, { cache: "no-store" });
       let data = await response.json();
-      if (response.status === 404 && data.code === "CHAT_ROOM_NOT_FOUND" && canOpen) {
+      if (response.status === 404 && data.code === "CHAT_ROOM_NOT_FOUND") {
         response = await fetch(endpoint, { method: "POST" });
         data = await response.json();
         if (data.code === "CHAT_ROOM_ALREADY_EXISTS") {

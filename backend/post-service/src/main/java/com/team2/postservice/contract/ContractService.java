@@ -34,12 +34,11 @@ public class ContractService {
     private ChatRoom participant(Long roomId, Long userId, boolean lock) {
         var room = (lock ? rooms.lockById(roomId) : rooms.findById(roomId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!room.hasParticipant(userId))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         // 채택 전(제안 단계) 채팅방은 FixDeal이 아직 없다 — 계약은 채택 후에만 가능하다.
         if (room.getFixDeal() == null)
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "제안이 채택된 이후에 계약을 작성할 수 있습니다.");
-        var deal = room.getFixDeal();
-        if (!userId.equals(deal.getRequesterId()) && !userId.equals(deal.getRepairerId()))
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            throw conflict("견적 채택 후 계약서를 작성할 수 있습니다.");
         return room;
     }
     private Version view(RepairContract contract) {

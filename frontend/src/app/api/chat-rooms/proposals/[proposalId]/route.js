@@ -6,12 +6,12 @@ async function forward(method, { params }) {
   if (!/^\d+$/.test(proposalId)) {
     return Response.json({ error: "잘못된 제안 번호입니다." }, { status: 400 });
   }
-  const email = (await cookies()).get("user_email")?.value;
-  if (!email) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  const token = (await cookies()).get("access_token")?.value;
+  if (!token) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
   try {
     const response = await fetch(backendUrl(`/api/chat-rooms/proposals/${proposalId}`), {
       method,
-      headers: { "X-User-Email": email },
+      headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
       signal: AbortSignal.timeout(10000),
     });

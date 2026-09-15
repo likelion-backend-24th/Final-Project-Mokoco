@@ -144,8 +144,6 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 <ProposalChatRoom
                   key={`compact-${proposal.id}`}
                   proposalId={proposal.id}
-                  isRequester={Boolean(isMine)}
-                  isRepairer={Boolean(isMyProposal)}
                   compact
                 />
               )}
@@ -179,8 +177,6 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 <ProposalChatRoom
                   key={`${proposal.id}-${proposal.fixDealId}`}
                   proposalId={proposal.id}
-                  isRequester={Boolean(isMine)}
-                  isRepairer={Boolean(isMyProposal)}
                 />
                 <FixDealProgress
                   fixDealId={proposal.fixDealId}
