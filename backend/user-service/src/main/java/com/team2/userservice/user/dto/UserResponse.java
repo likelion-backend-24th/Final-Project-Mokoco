@@ -1,5 +1,6 @@
 package com.team2.userservice.user.dto;
 
+import com.team2.userservice.user.entity.AccountStatus;
 import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
 import lombok.Builder;
@@ -15,6 +16,7 @@ public class UserResponse {
     private String name;
     private String nickname;
     private Role role;
+    private AccountStatus status;
     private String regionCode;
     private String regionName; // 화면에 보여줄 읽기 쉬운 동네 이름
 
@@ -24,6 +26,7 @@ public class UserResponse {
         this.name = user.getName();
         this.nickname = user.getNickname();
         this.role = user.getRole();
+        this.status = user.getStatus();
 
         if (user.getRegion() != null) {
             this.regionCode = user.getRegion().getRegionCode();

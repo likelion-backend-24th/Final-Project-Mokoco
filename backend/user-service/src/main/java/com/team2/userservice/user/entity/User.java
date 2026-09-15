@@ -39,6 +39,10 @@ public class User {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private AccountStatus status = AccountStatus.ACTIVE;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "region_id")
     private Region region; // 문자열 대신 Region 엔티티 연관관계 매핑
@@ -76,6 +80,22 @@ public class User {
 
     public void updateRegion(Region region) {
         this.region = region;
+    }
+
+    public void changeRole(Role role) {
+        this.role = role;
+    }
+
+    public void suspend() {
+        this.status = AccountStatus.SUSPENDED;
+    }
+
+    public void activate() {
+        this.status = AccountStatus.ACTIVE;
+    }
+
+    public boolean isSuspended() {
+        return this.status == AccountStatus.SUSPENDED;
     }
 
     public String getRegionCode() {

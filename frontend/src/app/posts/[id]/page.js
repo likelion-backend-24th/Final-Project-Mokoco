@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle, Wrench, MapPin } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
 import PostActions from "@/components/post-actions";
+import AdminPostDelete from "@/components/admin-post-delete";
 import RepairProposalForm from "@/components/proposal-form";
 import ProposalList from "@/components/proposal-list";
 import { backendUrl, imageSrc } from "@/lib/backend";
@@ -31,6 +32,22 @@ async function getProposals(id) {
   }
 }
 
+async function getIsAdmin(token) {
+  if (!token) return false;
+  try {
+    const response = await fetch(backendUrl("/api/users/me"), {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) return false;
+    const me = await response.json();
+    return me?.role === "ADMIN";
+  } catch {
+    return false;
+  }
+}
+
 function formatDate(value) {
   if (!value) return "시간 정보 없음";
   let date;
@@ -50,10 +67,12 @@ export default async function PostDetailPage({ params }) {
   const { id } = await params;
   const cookieStore = await cookies();
   const userEmail = cookieStore.get("user_email")?.value ?? null;
-  
-  const [{ post, error }, proposals] = await Promise.all([
+  const accessToken = cookieStore.get("access_token")?.value ?? null;
+
+  const [{ post, error }, proposals, isAdmin] = await Promise.all([
     getPost(id),
     getProposals(id),
+    getIsAdmin(accessToken),
   ]);
 
   if (!post && !error) {
@@ -95,6 +114,7 @@ export default async function PostDetailPage({ params }) {
                   <h1 className="mt-3 text-[28px] font-extrabold tracking-[-0.03em] text-slate-950">{post.title}</h1>
                 </div>
                 {isMine && <PostActions postId={post.id} />}
+                {isAdmin && !isMine && <AdminPostDelete postId={post.id} />}
               </div>
 
               <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">

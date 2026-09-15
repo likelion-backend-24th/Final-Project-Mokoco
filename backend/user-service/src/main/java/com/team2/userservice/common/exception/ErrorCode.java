@@ -10,6 +10,10 @@ public enum ErrorCode {
     DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "이미 존재하는 이메일입니다."),
     USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "존재하지 않는 회원입니다."),
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "비밀번호가 일치하지 않습니다."),
+    ACCOUNT_SUSPENDED(HttpStatus.FORBIDDEN, "정지된 계정입니다. 고객센터에 문의해주세요."),
+
+    // Admin
+    FORBIDDEN_NOT_ADMIN(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다."),
 
     // Token / Auth
     INVALID_REFRESH_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않은 Refresh Token입니다."),

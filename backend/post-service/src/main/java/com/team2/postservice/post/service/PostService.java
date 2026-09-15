@@ -95,7 +95,18 @@ public class PostService {
     public void deletePost(Long id, String userEmail) {
         Post post = getPostOrThrow(id);
         validateAuthor(post, userEmail, ErrorCode.UNAUTHORIZED_POST_DELETE);
+        deletePostInternal(post);
+    }
 
+    // 관리자는 작성자가 아니어도 삭제 가능 — authorization은 requireAdmin에서 매 요청 다시 검증한다.
+    @Transactional
+    public void deletePostAsAdmin(Long id, String authorization) {
+        postViewerService.requireAdmin(authorization);
+        Post post = getPostOrThrow(id);
+        deletePostInternal(post);
+    }
+
+    private void deletePostInternal(Post post) {
         List<String> storedFileNames = post.getImages().stream()
                 .map(PostImage::getStoredFileName)
                 .toList();

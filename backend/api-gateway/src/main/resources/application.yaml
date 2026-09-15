@@ -25,7 +25,7 @@ spring:
         - id: user-service
           uri: http://mokoco-user-service:8081
           predicates:
-            - Path=/api/auth/**, /api/users/**, /oauth2/**, /login/oauth2/**
+            - Path=/api/auth/**, /api/users/**, /oauth2/**, /login/oauth2/**, /api/admin/users/**
 
         # 프론트(브라우저)가 보내는 /api/* — /api 를 떼고 post-service 로 (컨트롤러는 /posts, /fix-deals)
         - id: post-service-api
@@ -46,6 +46,12 @@ spring:
           uri: http://mokoco-post-service:8082
           predicates:
             - Path=/posts/**, /fix-deals/**, /images/**, /notifications/**
+
+        # 관리자용 글 삭제 — 컨트롤러가 이미 /api/admin/posts 매핑이라 접두어 유지
+        - id: post-service-admin
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/api/admin/posts/**
 
         # Next BFF(/api/payments/*)가 접두어 없이 /payments 로 호출한다
         - id: payment-service

@@ -46,6 +46,9 @@ public enum ErrorCode {
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_NOT_FOUND", "알림이 존재하지 않습니다."),
     UNAUTHORIZED_NOTIFICATION_ACCESS(HttpStatus.FORBIDDEN, "UNAUTHORIZED_NOTIFICATION_ACCESS", "본인의 알림만 확인할 수 있습니다."),
 
+    // Admin
+    UNAUTHORIZED_ADMIN_ACTION(HttpStatus.FORBIDDEN, "UNAUTHORIZED_ADMIN_ACTION", "관리자만 접근할 수 있습니다."),
+
     // Common
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "유효하지 않은 입력값입니다.");
 

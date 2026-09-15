@@ -65,6 +65,10 @@ public class UserService {
             throw new CustomException(ErrorCode.INVALID_PASSWORD);
         }
 
+        if (user.isSuspended()) {
+            throw new CustomException(ErrorCode.ACCOUNT_SUSPENDED);
+        }
+
         String accessToken = jwtTokenProvider.createAccessToken(user.getEmail(), user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
 
@@ -124,13 +128,34 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다: " + email));
 
-        // 2. 엔티티를 UserResponse DTO로 변환해서 반환
-        return UserResponse.builder()
-                .email(user.getEmail())
-                .name(user.getName())
-                // 필요한 다른 필드들도 여기에 매핑
-                .id(user.getId())
-                .nickname(user.getNickname())
-                .build();
+        // 2. 엔티티를 UserResponse DTO로 변환해서 반환 (id·role·status·지역 포함 전체 매핑 —
+        //    role/status는 다른 서비스가 verify-token 응답으로 권한 판단에 쓰므로 누락되면 안 됨)
+        return new UserResponse(user);
+    }
+
+    // ── 관리자 기능 ──────────────────────────────────────────────────
+
+    private User requireAdmin(String requesterEmail) {
+        User requester = userRepository.findByEmail(requesterEmail)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if (requester.getRole() != Role.ADMIN) {
+            throw new CustomException(ErrorCode.FORBIDDEN_NOT_ADMIN);
+        }
+        return requester;
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<UserResponse> listUsers(String requesterEmail) {
+        requireAdmin(requesterEmail);
+        return userRepository.findAll().stream().map(UserResponse::new).toList();
+    }
+
+    @Transactional
+    public UserResponse changeUserRole(String requesterEmail, Long targetUserId, Role newRole) {
+        requireAdmin(requesterEmail);
+        User target = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        target.changeRole(newRole);
+        return new UserResponse(target);
     }
 }
