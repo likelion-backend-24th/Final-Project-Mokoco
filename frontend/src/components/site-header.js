@@ -13,17 +13,29 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
   const pathname = usePathname();
   const { userEmail: storeEmail, initAuth, setLogout } = useAuthStore();
   const [mounted, setMounted] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     initAuth();
   }, [initAuth]);
 
-  const cookieEmail = typeof document !== "undefined" 
-    ? document.cookie.match(/user_email=([^;]+)/)?.[1] ? decodeURIComponent(document.cookie.match(/user_email=([^;]+)/)[1]) : null 
+  const cookieEmail = typeof document !== "undefined"
+    ? document.cookie.match(/user_email=([^;]+)/)?.[1] ? decodeURIComponent(document.cookie.match(/user_email=([^;]+)/)[1]) : null
     : null;
 
   const userEmail = serverUserEmail || storeEmail || cookieEmail;
+
+  // 관리자 메뉴 노출 여부 — 페이지마다 role을 넘겨받을 필요 없이 헤더가 직접 확인한다.
+  useEffect(() => {
+    if (!userEmail) { setIsAdmin(false); return; }
+    let active = true;
+    fetch("/api/users/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((me) => { if (active) setIsAdmin(me?.role === "ADMIN"); })
+      .catch(() => { if (active) setIsAdmin(false); });
+    return () => { active = false; };
+  }, [userEmail]);
 
   const handleLogout = async (e) => {
     e.preventDefault();
@@ -47,6 +59,9 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
       <nav className="desktop-nav" aria-label="주요 메뉴">
         <Link href="/" className={`nav-link ${pathname === "/" ? "nav-link-active" : ""}`}>홈</Link>
         <Link href="/posts" className={`nav-link ${pathname.startsWith("/posts") ? "nav-link-active" : ""}`}>수리 요청</Link>
+        {isAdmin && (
+          <Link href="/admin" className={`nav-link ${pathname.startsWith("/admin") ? "nav-link-active" : ""}`}>관리자</Link>
+        )}
       </nav>
       {userEmail ? (
         <div className="header-account">
