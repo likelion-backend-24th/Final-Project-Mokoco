@@ -47,11 +47,17 @@ spring:
           predicates:
             - Path=/posts/**, /fix-deals/**, /images/**, /notifications/**
 
-        # 관리자용 글 삭제 — 컨트롤러가 이미 /api/admin/posts 매핑이라 접두어 유지
+        # 관리자용 글 삭제/신고 처리 — 컨트롤러가 이미 /api/admin/* 매핑이라 접두어 유지
         - id: post-service-admin
           uri: http://mokoco-post-service:8082
           predicates:
-            - Path=/api/admin/posts/**
+            - Path=/api/admin/posts/**, /api/admin/reports/**
+
+        # 신고 접수 — 컨트롤러가 이미 /api/reports 매핑이라 접두어 유지
+        - id: post-service-reports
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/api/reports/**
 
         # Next BFF(/api/payments/*)가 접두어 없이 /payments 로 호출한다
         - id: payment-service

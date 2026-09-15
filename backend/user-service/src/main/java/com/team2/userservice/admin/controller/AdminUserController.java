@@ -1,6 +1,7 @@
 package com.team2.userservice.admin.controller;
 
 import com.team2.userservice.admin.dto.RoleChangeRequest;
+import com.team2.userservice.admin.dto.StatusChangeRequest;
 import com.team2.userservice.user.dto.UserResponse;
 import com.team2.userservice.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -31,5 +32,14 @@ public class AdminUserController {
             @RequestBody RoleChangeRequest request
     ) {
         return ResponseEntity.ok(userService.changeUserRole(email, id, request.role()));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<UserResponse> changeStatus(
+            @AuthenticationPrincipal String email,
+            @PathVariable Long id,
+            @RequestBody StatusChangeRequest request
+    ) {
+        return ResponseEntity.ok(userService.changeUserStatus(email, id, request.status()));
     }
 }

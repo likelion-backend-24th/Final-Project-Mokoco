@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ShieldCheck, ArrowsLeftRight } from "@phosphor-icons/react";
+import { ShieldCheck, ArrowsLeftRight, ProhibitInset, ArrowCounterClockwise } from "@phosphor-icons/react";
 
 export default function AdminUserTable({ initialUsers, currentUserEmail }) {
   const [users, setUsers] = useState(initialUsers);
@@ -22,6 +22,28 @@ export default function AdminUserTable({ initialUsers, currentUserEmail }) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "권한 변경에 실패했습니다.");
       setUsers((current) => current.map((u) => (u.id === user.id ? { ...u, role: nextRole } : u)));
+    } catch (failure) {
+      setError(failure.message);
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
+  async function toggleStatus(user) {
+    const nextStatus = user.status === "SUSPENDED" ? "ACTIVE" : "SUSPENDED";
+    const verb = nextStatus === "SUSPENDED" ? "정지" : "정지 해제";
+    if (!confirm(`${user.email} 계정을 ${verb}하시겠습니까?`)) return;
+    setLoadingId(user.id);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "상태 변경에 실패했습니다.");
+      setUsers((current) => current.map((u) => (u.id === user.id ? { ...u, status: nextStatus } : u)));
     } catch (failure) {
       setError(failure.message);
     } finally {
@@ -74,17 +96,31 @@ export default function AdminUserTable({ initialUsers, currentUserEmail }) {
                   <td className="py-3 pr-4 text-xs text-slate-400">
                     {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : ""}
                   </td>
-                  <td className="py-3 pr-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => toggleRole(user)}
-                      disabled={isSelf || loadingId !== null}
-                      title={isSelf ? "본인 권한은 여기서 변경할 수 없습니다." : undefined}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-300 transition disabled:opacity-40"
-                    >
-                      <ArrowsLeftRight size={14} weight="bold" />
-                      {loadingId === user.id ? "변경 중..." : isAdmin ? "USER로 변경" : "ADMIN으로 변경"}
-                    </button>
+                  <td className="py-3 pr-4">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleRole(user)}
+                        disabled={isSelf || loadingId !== null}
+                        title={isSelf ? "본인 권한은 여기서 변경할 수 없습니다." : undefined}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-300 transition disabled:opacity-40"
+                      >
+                        <ArrowsLeftRight size={14} weight="bold" />
+                        {loadingId === user.id ? "변경 중..." : isAdmin ? "USER로" : "ADMIN으로"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleStatus(user)}
+                        disabled={isSelf || loadingId !== null}
+                        title={isSelf ? "본인 계정은 여기서 정지할 수 없습니다." : undefined}
+                        className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition disabled:opacity-40 ${
+                          user.status === "SUSPENDED" ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-red-100 text-red-700 hover:bg-red-200"
+                        }`}
+                      >
+                        {user.status === "SUSPENDED" ? <ArrowCounterClockwise size={14} weight="bold" /> : <ProhibitInset size={14} weight="bold" />}
+                        {loadingId === user.id ? "처리 중..." : user.status === "SUSPENDED" ? "정지 해제" : "정지"}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

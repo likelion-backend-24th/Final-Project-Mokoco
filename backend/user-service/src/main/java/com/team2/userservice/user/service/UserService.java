@@ -10,6 +10,7 @@ import com.team2.userservice.user.dto.TokenResponse;
 import com.team2.userservice.user.dto.UserLoginRequest;
 import com.team2.userservice.user.dto.UserSignUpRequest;
 import com.team2.userservice.user.dto.*;
+import com.team2.userservice.user.entity.AccountStatus;
 import com.team2.userservice.user.entity.RefreshToken;
 import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
@@ -156,6 +157,19 @@ public class UserService {
         User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         target.changeRole(newRole);
+        return new UserResponse(target);
+    }
+
+    @Transactional
+    public UserResponse changeUserStatus(String requesterEmail, Long targetUserId, AccountStatus newStatus) {
+        requireAdmin(requesterEmail);
+        User target = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if (newStatus == AccountStatus.SUSPENDED) {
+            target.suspend();
+        } else {
+            target.activate();
+        }
         return new UserResponse(target);
     }
 }

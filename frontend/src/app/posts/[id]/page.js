@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle, Wrench, MapPin } from "@phosphor-icons/react/di
 import SiteHeader from "@/components/site-header";
 import PostActions from "@/components/post-actions";
 import AdminPostDelete from "@/components/admin-post-delete";
+import ReportButton from "@/components/report-button";
 import RepairProposalForm from "@/components/proposal-form";
 import ProposalList from "@/components/proposal-list";
 import { backendUrl, imageSrc } from "@/lib/backend";
@@ -139,6 +140,12 @@ export default async function PostDetailPage({ params }) {
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {!isMine && userEmail && (
+                <div className="mt-6 flex justify-end">
+                  <ReportButton postId={post.id} authorEmail={post.authorEmail} />
                 </div>
               )}
 

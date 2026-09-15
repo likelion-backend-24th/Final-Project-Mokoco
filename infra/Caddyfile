@@ -62,9 +62,13 @@
 	handle /api/notifications* {
 		reverse_proxy frontend:3000
 	}
-	# 관리자 기능(유저 role 변경, 글 삭제) — 백엔드가 Authorization: Bearer로 직접 검증하므로
-	# BFF가 httpOnly access_token 쿠키를 읽어 헤더로 실어 보내야 한다.
+	# 관리자 기능(유저 role/상태 변경, 글 삭제, 신고 처리) — 백엔드가 Authorization: Bearer로
+	# 직접 검증하므로 BFF가 httpOnly access_token 쿠키를 읽어 헤더로 실어 보내야 한다.
 	handle /api/admin* {
+		reverse_proxy frontend:3000
+	}
+	# 신고 접수 (일반 유저)
+	handle /api/reports* {
 		reverse_proxy frontend:3000
 	}
 	# 로그인한 본인 프로필(role/status 포함) — 관리자 메뉴 노출 여부 판단용

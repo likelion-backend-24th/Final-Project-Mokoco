@@ -49,6 +49,10 @@ public enum ErrorCode {
     // Admin
     UNAUTHORIZED_ADMIN_ACTION(HttpStatus.FORBIDDEN, "UNAUTHORIZED_ADMIN_ACTION", "관리자만 접근할 수 있습니다."),
 
+    // Report
+    REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "REPORT_NOT_FOUND", "신고 내역이 존재하지 않습니다."),
+    INVALID_REPORT_TARGET(HttpStatus.BAD_REQUEST, "INVALID_REPORT_TARGET", "신고 대상 정보가 올바르지 않습니다."),
+
     // Common
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "유효하지 않은 입력값입니다.");
 
