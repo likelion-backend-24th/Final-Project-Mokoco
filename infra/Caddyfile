@@ -79,6 +79,11 @@
 	handle /api/users/me {
 		reverse_proxy frontend:3000
 	}
+	# AI 작성 도움(사진 분석) — 백엔드가 Authorization: Bearer로 직접 검증하므로
+	# BFF가 httpOnly access_token 쿠키를 읽어 헤더로 실어 보내야 한다.
+	handle /api/ai/* {
+		reverse_proxy frontend:3000
+	}
 
 	# 재발급/로그아웃은 httpOnly 쿠키를 서버(Next BFF)에서 읽고/지워야 하므로 BFF 경유
 	handle /api/auth/reissue {
