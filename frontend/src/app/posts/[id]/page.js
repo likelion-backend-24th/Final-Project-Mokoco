@@ -131,16 +131,11 @@ export default async function PostDetailPage({ params }) {
                   {post.images.map((img, index) => {
                     const imgUrl = typeof img === "string" ? img : img.imageUrl;
                     return (
-                      <div
-                        key={index}
-                        className={`relative overflow-hidden rounded-xl border border-slate-200 bg-slate-100 ${
-                          post.images.length === 1 ? "aspect-video" : "aspect-square"
-                        }`}
-                      >
+                      <div key={index} className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
                         <img
                           src={imageSrc(imgUrl)}
                           alt={`수리 요청 이미지 ${index + 1}`}
-                          className="object-cover w-full h-full"
+                          className="block w-full h-auto"
                         />
                       </div>
                     );
