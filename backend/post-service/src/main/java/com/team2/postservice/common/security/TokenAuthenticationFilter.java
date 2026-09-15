@@ -1,6 +1,7 @@
 package com.team2.postservice.common.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team2.postservice.ai.AiRequestTrace;
 import com.team2.postservice.client.UserClient;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
@@ -45,6 +46,6 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         SecurityContextHolder.clearContext();
         response.setStatus(status); response.setContentType("application/json"); response.setCharacterEncoding("UTF-8");
         response.setHeader("Cache-Control", "no-store");
-        mapper.writeValue(response.getWriter(), Map.of("code", code, "message", message));
+        mapper.writeValue(response.getWriter(), Map.of("code", code, "message", message, "requestId", AiRequestTrace.requestId()));
     }
 }

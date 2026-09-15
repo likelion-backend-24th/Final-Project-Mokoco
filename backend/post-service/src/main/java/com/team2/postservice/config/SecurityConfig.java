@@ -11,14 +11,14 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // 채택 전 제안 채팅(견적별 채팅방 개설/조회, 방 상세)만 Authorization: Bearer로 직접 인증한다.
+    // 채택 전 제안 채팅(견적별 채팅방 개설/조회, 방 상세)과 AI 작성 도움만 Authorization: Bearer로 직접 인증한다.
     // 나머지 post-service 엔드포인트는 기존처럼 X-User-Email(BFF가 검증 후 주입) 방식을 그대로 쓴다.
     @Bean
     @org.springframework.core.annotation.Order(1)
     public SecurityFilterChain authenticatedApiSecurityFilterChain(HttpSecurity http,
             com.team2.postservice.client.UserClient users, com.fasterxml.jackson.databind.ObjectMapper mapper) throws Exception {
         return http
-                .securityMatcher("/api/chat-rooms/proposals/*", "/api/chat-rooms/*/detail")
+                .securityMatcher("/api/ai/**", "/api/chat-rooms/*/contract/ai-draft", "/api/chat-rooms/proposals/*", "/api/chat-rooms/*/detail")
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())

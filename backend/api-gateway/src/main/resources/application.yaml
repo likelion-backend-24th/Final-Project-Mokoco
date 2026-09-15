@@ -41,6 +41,12 @@ spring:
           predicates:
             - Path=/api/chat-rooms/**
 
+        # AI 작성 도움(사진 분석/계약 초안) — 컨트롤러가 이미 /api/ai/* 매핑이라 접두어 유지
+        - id: post-service-ai
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/api/ai/**
+
         # SSR(Next 서버)이 게이트웨이로 직접 부르는 접두어 없는 경로
         - id: post-service-direct
           uri: http://mokoco-post-service:8082

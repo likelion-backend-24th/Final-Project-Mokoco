@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Wrench, Upload, X } from "@phosphor-icons/react";
 import Link from "next/link";
 import { backendUrl, imageSrc } from "@/lib/backend";
+import PostAiAssist from "./post-ai-assist";
 
 const categories = [
   { value: "ELECTRIC_LIGHT", label: "전기·조명" },
@@ -20,7 +21,9 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
-  
+  const [title, setTitle] = useState(initialValue?.title || "");
+  const [content, setContent] = useState(initialValue?.content || "");
+
   const [existingImages, setExistingImages] = useState(initialValue?.images || []);
   const [removingImageId, setRemovingImageId] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(initialValue?.category || "ELECTRIC_LIGHT");
@@ -75,9 +78,6 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
     setSubmitting(true);
     setMessage("");
 
-    const formElement = event.currentTarget;
-    const title = formElement.elements.namedItem("title").value;
-    const content = formElement.elements.namedItem("content").value;
     const postDto = { title, content, category: selectedCategory };
 
     try {
@@ -166,11 +166,12 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
         {/* 제목 입력 */}
         <label className="form-field">
           <span>제목</span>
-          <input 
-            name="title" 
-            type="text" 
-            defaultValue={initialValue?.title || ""} 
-            placeholder="제목을 입력해주세요" 
+          <input
+            name="title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="제목을 입력해주세요"
             required
             className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
           />
@@ -179,11 +180,12 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
         {/* 내용 입력 */}
         <label className="form-field">
           <span>내용</span>
-          <textarea 
-            name="content" 
+          <textarea
+            name="content"
             rows={6}
-            defaultValue={initialValue?.content || ""} 
-            placeholder="어떤 도움이 필요한지 자세히 적어주세요" 
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="어떤 도움이 필요한지 자세히 적어주세요"
             required
             className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
           />
@@ -234,6 +236,9 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
             ))}
           </div>
         </div>
+
+        <PostAiAssist files={selectedFiles} values={{ title, content, category: selectedCategory }} categories={categories}
+          onApply={(field, value) => { if (field === "title") setTitle(value); else if (field === "content") setContent(value); else if (field === "category") setSelectedCategory(value); }} />
 
         {/* 💡 에러 메시지를 파란색 등록 버튼 바로 위로 이동 */}
         {message && (
