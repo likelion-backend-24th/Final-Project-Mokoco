@@ -39,8 +39,11 @@ public class AiDraftService {
         parts.add(Map.of("text", "현재 입력(참고 자료): " + Map.of("title", title, "content", content, "category", category)));
         return cache.get(cacheKey(user, "post", parts), () -> limit.acquire(user), () -> {
             var result = gemini.generate(COMMON + " 사진에서 제품 종류와 외관 손상을 관찰하고 의뢰 제목/설명/카테고리를 제안하세요. "
+                    + "실제 이 물건을 쓰다가 문제가 생긴 사람이 동네 커뮤니티에 편하게 글을 올리듯 자연스러운 1인칭 구어체로 작성하세요. "
+                    + "'~관찰됩니다', '~확인이 필요합니다', '~점검이 필요합니다', '외관상 큰 파손은 명확히 보이지 않으나' 같은 딱딱한 점검 보고서 투는 쓰지 말고, "
+                    + "이웃에게 편하게 부탁하듯 자연스러운 문장으로 쓰세요. "
                     + "제목은 100자, 본문은 800자 이내로 간결하게 작성하세요. 가격·수리 가능 여부·내부 고장을 확정하지 마세요. 근거 없는 모델명은 쓰지 마세요. "
-                    + "액정과 전면 유리 손상을 단정하지 말고 확인이 필요한 내용은 본문에 짧게 포함하세요.", parts, postSchema());
+                    + "액정과 전면 유리 손상을 단정하지 말고 확인이 필요한 내용은 자연스러운 말투로 본문에 짧게 포함하세요.", parts, postSchema());
             validatePost(result);
             return result;
         });
