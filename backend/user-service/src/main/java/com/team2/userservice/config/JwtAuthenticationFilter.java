@@ -1,5 +1,7 @@
 package com.team2.userservice.config;
 
+import com.team2.userservice.user.entity.AccountStatus;
+import com.team2.userservice.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +19,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -27,11 +30,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null && jwtTokenProvider.validateAccessToken(token)) {
             String email = jwtTokenProvider.getEmailFromAccessToken(token);
 
-            // 임시 인증 객체 생성 (권한 정보 등 필요 시 확장 가능)
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(email, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+            // 토큰 자체는 아직 유효해도, 그 사이 관리자가 계정을 정지시켰을 수 있으므로
+            // 요청마다 DB에서 현재 상태를 다시 확인한다(정지되면 인증을 아예 심지 않아 401로 막힘).
+            boolean suspended = userRepository.findByEmail(email)
+                    .map(user -> user.getStatus() == AccountStatus.SUSPENDED)
+                    .orElse(false);
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            if (!suspended) {
+                // 임시 인증 객체 생성 (권한 정보 등 필요 시 확장 가능)
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(email, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
 
         filterChain.doFilter(request, response);
