@@ -52,6 +52,8 @@ public enum ErrorCode {
     TRANSACTION_NOT_COMPLETED(HttpStatus.CONFLICT, "TRANSACTION_NOT_COMPLETED", "완료된 거래에만 후기를 작성할 수 있습니다."),
     REVIEW_DEADLINE_EXPIRED(HttpStatus.CONFLICT, "REVIEW_DEADLINE_EXPIRED", "후기 작성 기한(완료 후 3일)이 지났습니다."),
     DUPLICATE_REVIEW(HttpStatus.CONFLICT, "DUPLICATE_REVIEW", "이미 후기를 작성한 거래입니다."),
+    TOO_MANY_REVIEW_IMAGES(HttpStatus.BAD_REQUEST, "TOO_MANY_REVIEW_IMAGES", "후기당 이미지는 최대 5장까지 등록할 수 있습니다."),
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW_NOT_FOUND", "후기를 찾을 수 없습니다."),
     INVALID_RATING(HttpStatus.BAD_REQUEST, "INVALID_RATING", "평점은 1~5 사이의 정수여야 합니다."),
 
     // Common

@@ -22,15 +22,7 @@ function calculateTotalWithFee(baseAmount) {
   return { base, fee, total: base + fee };
 }
 
-export default function FixDealProgress({
-  fixDealId,
-  postId,
-  isRequester,
-  isRepairer,
-  estimatedPrice,
-  repairerEmail,
-  userEmail,
-}) {
+export default function FixDealProgress({ fixDealId, postId, isRequester, isRepairer, estimatedPrice, repairerEmail, userEmail }) {
   const [deal, setDeal] = useState(null);
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -47,39 +39,28 @@ export default function FixDealProgress({
     if (!fixDealId) return;
     const controller = new AbortController();
 
-    fetch(`/api/fix-deals/${fixDealId}`, {
-      signal: controller.signal,
-      cache: "no-store",
-    })
+    fetch(`/api/fix-deals/${fixDealId}`, { signal: controller.signal, cache: "no-store" })
       .then(async (res) => {
         const data = await res.json();
-        if (!res.ok)
-          throw new Error(data.error ?? "거래 상태를 불러오지 못했습니다.");
+        if (!res.ok) throw new Error(data.error ?? "거래 상태를 불러오지 못했습니다.");
         setDeal(data);
         setError("");
 
         if (data.status === "REPAIR_DONE" || data.status === "COMPLETED") {
-          const payRes = await fetch(`/api/payments/post/${postId}`, {
-            signal: controller.signal,
-            cache: "no-store",
-          });
+          const payRes = await fetch(`/api/payments/post/${postId}`, { signal: controller.signal, cache: "no-store" });
           setPayment(payRes.ok ? await payRes.json() : null);
         } else {
           setPayment(null);
         }
 
         if (data.status === "COMPLETED") {
-          const reviewRes = await fetch(
-            `/api/reviews/exists?postId=${postId}`,
-            { signal: controller.signal, cache: "no-store" },
-          );
+          const reviewRes = await fetch(`/api/reviews/exists?postId=${postId}`, { signal: controller.signal, cache: "no-store" });
           const reviewData = reviewRes.ok ? await reviewRes.json() : null;
           setReviewSubmitted(Boolean(reviewData?.exists));
         }
       })
       .catch((failure) => {
-        if (!controller.signal.aborted)
-          setError(failure.message ?? "서버에 연결할 수 없습니다.");
+        if (!controller.signal.aborted) setError(failure.message ?? "서버에 연결할 수 없습니다.");
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -92,18 +73,14 @@ export default function FixDealProgress({
     setActionLoading(true);
     setError("");
     try {
-      const sendRes = await fetch(`/api/fix-deals/${fixDealId}/product-sent`, {
-        method: "PATCH",
-      });
+      const sendRes = await fetch(`/api/fix-deals/${fixDealId}/product-sent`, { method: "PATCH" });
       const sendData = await sendRes.json().catch(() => ({}));
       if (!sendRes.ok) {
         setError(sendData.error ?? "거래 시작 처리에 실패했습니다.");
         return;
       }
 
-      const repairRes = await fetch(`/api/fix-deals/${fixDealId}/repairing`, {
-        method: "PATCH",
-      });
+      const repairRes = await fetch(`/api/fix-deals/${fixDealId}/repairing`, { method: "PATCH" });
       const repairData = await repairRes.json().catch(() => ({}));
       if (!repairRes.ok) {
         // product-sent는 이미 반영됐으니, 상태를 다시 불러와 "수리 시작" 버튼이 이어서 뜨도록 한다.
@@ -139,12 +116,7 @@ export default function FixDealProgress({
         customer: userEmail ? { email: userEmail } : undefined,
         // 웹훅이 프론트 응답보다 먼저 도착하거나, 프론트 응답을 못 받는 경우에도
         // 백엔드가 이 값으로 결제-거래를 연결하고 기준액을 복원할 수 있도록 실어 보낸다.
-        customData: JSON.stringify({
-          postId,
-          payerEmail: userEmail,
-          payeeEmail: repairerEmail,
-          baseAmount: base,
-        }),
+        customData: JSON.stringify({ postId, payerEmail: userEmail, payeeEmail: repairerEmail, baseAmount: base }),
       });
 
       // 사용자가 결제창을 닫았거나 결제가 실패한 경우
@@ -168,10 +140,7 @@ export default function FixDealProgress({
       });
       const confirmData = await confirmRes.json().catch(() => ({}));
       if (!confirmRes.ok) {
-        setError(
-          confirmData.error ??
-            "결제 확인에 실패했습니다. 잠시 후 다시 확인해주세요.",
-        );
+        setError(confirmData.error ?? "결제 확인에 실패했습니다. 잠시 후 다시 확인해주세요.");
         return;
       }
 
@@ -206,8 +175,7 @@ export default function FixDealProgress({
   }
 
   if (!fixDealId) return null;
-  if (loading)
-    return <p className="mt-4 text-sm text-slate-400">거래 상태 확인 중...</p>;
+  if (loading) return <p className="mt-4 text-sm text-slate-400">거래 상태 확인 중...</p>;
   if (error && !deal) {
     return (
       <p role="alert" className="mt-4 text-sm text-red-600">
@@ -245,18 +213,13 @@ export default function FixDealProgress({
           </button>
         )}
         {status === "MATCHED" && isRequester && (
-          <p className="text-xs text-slate-500">
-            수리자에게 제품을 전달해주세요. 수리자가 확인하면 다음 단계로
-            넘어가요.
-          </p>
+          <p className="text-xs text-slate-500">수리자에게 제품을 전달해주세요. 수리자가 확인하면 다음 단계로 넘어가요.</p>
         )}
 
         {status === "PRODUCT_SENT" && isRepairer && (
           <button
             type="button"
-            onClick={() =>
-              runAction(`/api/fix-deals/${fixDealId}/repairing`, "PATCH")
-            }
+            onClick={() => runAction(`/api/fix-deals/${fixDealId}/repairing`, "PATCH")}
             disabled={actionLoading}
             className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
           >
@@ -265,17 +228,13 @@ export default function FixDealProgress({
           </button>
         )}
         {status === "PRODUCT_SENT" && isRequester && (
-          <p className="text-xs text-slate-500">
-            수리자가 수리를 시작하기를 기다리는 중이에요.
-          </p>
+          <p className="text-xs text-slate-500">수리자가 수리를 시작하기를 기다리는 중이에요.</p>
         )}
 
         {status === "REPAIRING" && isRepairer && (
           <button
             type="button"
-            onClick={() =>
-              runAction(`/api/fix-deals/${fixDealId}/repair-done`, "PATCH")
-            }
+            onClick={() => runAction(`/api/fix-deals/${fixDealId}/repair-done`, "PATCH")}
             disabled={actionLoading}
             className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
           >
@@ -284,9 +243,7 @@ export default function FixDealProgress({
           </button>
         )}
         {status === "REPAIRING" && isRequester && (
-          <p className="text-xs text-slate-500">
-            수리가 진행되고 있어요. 완료 신청이 오면 결제를 진행할 수 있어요.
-          </p>
+          <p className="text-xs text-slate-500">수리가 진행되고 있어요. 완료 신청이 오면 결제를 진행할 수 있어요.</p>
         )}
 
         {status === "REPAIR_DONE" && isRequester && !paid && (
@@ -304,8 +261,7 @@ export default function FixDealProgress({
         )}
         {status === "REPAIR_DONE" && isRequester && !paid && (
           <p className="w-full text-xs text-slate-400">
-            수리비 {calculateTotalWithFee(estimatedPrice).base.toLocaleString()}
-            원 + 수수료(10%){" "}
+            수리비 {calculateTotalWithFee(estimatedPrice).base.toLocaleString()}원 + 수수료(10%){" "}
             {calculateTotalWithFee(estimatedPrice).fee.toLocaleString()}원
           </p>
         )}
@@ -313,9 +269,7 @@ export default function FixDealProgress({
           <>
             <button
               type="button"
-              onClick={() =>
-                runAction(`/api/fix-deals/${fixDealId}/complete`, "PATCH")
-              }
+              onClick={() => runAction(`/api/fix-deals/${fixDealId}/complete`, "PATCH")}
               disabled={actionLoading}
               className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
             >
@@ -323,34 +277,23 @@ export default function FixDealProgress({
               {actionLoading ? "처리 중..." : "수리완료 수락"}
             </button>
             <p className="w-full text-xs text-slate-400">
-              결제 총액 {payment.amount?.toLocaleString()}원 (수리비{" "}
-              {payment.netAmount?.toLocaleString()}원 + 수수료{" "}
+              결제 총액 {payment.amount?.toLocaleString()}원 (수리비 {payment.netAmount?.toLocaleString()}원 + 수수료{" "}
               {payment.feeAmount?.toLocaleString()}원)
             </p>
           </>
         )}
         {status === "REPAIR_DONE" && isRepairer && (
-          <p className="text-xs text-slate-500">
-            의뢰자의 결제와 완료 수락을 기다리는 중이에요.
-          </p>
+          <p className="text-xs text-slate-500">의뢰자의 결제와 완료 수락을 기다리는 중이에요.</p>
         )}
 
         {status === "COMPLETED" && (
-          <p className="text-xs font-semibold text-emerald-700">
-            거래가 완료되었습니다.
-          </p>
+          <p className="text-xs font-semibold text-emerald-700">거래가 완료되었습니다.</p>
         )}
         {status === "COMPLETED" && isRequester && !reviewSubmitted && (
-          <ReviewForm
-            postId={postId}
-            onSubmitted={() => setReviewSubmitted(true)}
-          />
+          <ReviewForm postId={postId} userEmail={userEmail} onSubmitted={() => setReviewSubmitted(true)} />
         )}
         {status === "COMPLETED" && isRequester && reviewSubmitted && (
-          <div className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-            <CheckCircle size={16} weight="fill" />
-            후기 작성 완료
-          </div>
+          <p className="w-full text-xs text-slate-400">후기를 남겨주셔서 감사해요.</p>
         )}
       </div>
     </div>

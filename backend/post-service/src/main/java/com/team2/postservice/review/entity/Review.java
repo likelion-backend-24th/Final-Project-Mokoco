@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "reviews")
@@ -33,6 +35,9 @@ public class Review {
     @Column(nullable = false, length = 1000)
     private String content;
 
+    @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ReviewImage> images = new ArrayList<>();
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -44,5 +49,16 @@ public class Review {
         this.rating = rating;
         this.content = content;
         this.createdAt = LocalDateTime.now();
+    }
+
+    public ReviewImage addImage(String imageUrl, String storedFileName, int sortOrder) {
+        ReviewImage image = ReviewImage.builder()
+                .review(this)
+                .imageUrl(imageUrl)
+                .storedFileName(storedFileName)
+                .sortOrder(sortOrder)
+                .build();
+        images.add(image);
+        return image;
     }
 }

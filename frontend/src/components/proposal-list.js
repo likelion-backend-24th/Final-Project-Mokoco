@@ -103,7 +103,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 <span className="text-sm font-bold text-slate-800">
                   {proposal.repairerEmail || "수리공 이웃"}
                 </span>
-                <RatingBadge email={proposal.repairerEmail} />
+                <RatingBadge email={proposal.repairerEmail} postId={postId} />
                 {isAdopted && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
                     <CheckCircle size={14} weight="bold" /> 채택 완료
