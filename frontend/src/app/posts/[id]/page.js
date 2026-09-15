@@ -127,11 +127,16 @@ export default async function PostDetailPage({ params }) {
               <p className="mt-6 whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{post.content}</p>
 
               {post.images && post.images.length > 0 && (
-                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className={`mt-6 grid gap-3 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
                   {post.images.map((img, index) => {
                     const imgUrl = typeof img === "string" ? img : img.imageUrl;
                     return (
-                      <div key={index} className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+                      <div
+                        key={index}
+                        className={`relative overflow-hidden rounded-xl border border-slate-200 bg-slate-100 ${
+                          post.images.length === 1 ? "aspect-video" : "aspect-square"
+                        }`}
+                      >
                         <img
                           src={imageSrc(imgUrl)}
                           alt={`수리 요청 이미지 ${index + 1}`}
