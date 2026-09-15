@@ -1,0 +1,21 @@
+import { backendUrl, readBackendPayload, errorMessage } from "@/lib/backend";
+
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const postId = searchParams.get("postId");
+  if (!postId) return Response.json({ error: "postId가 필요합니다." }, { status: 400 });
+
+  try {
+    const response = await fetch(backendUrl(`/reviews/exists?postId=${encodeURIComponent(postId)}`), {
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+    const payload = await readBackendPayload(response);
+    if (!response.ok) {
+      return Response.json({ error: errorMessage(payload, "확인하지 못했습니다.") }, { status: response.status });
+    }
+    return Response.json({ exists: payload });
+  } catch {
+    return Response.json({ error: "서버에 연결할 수 없습니다." }, { status: 502 });
+  }
+}

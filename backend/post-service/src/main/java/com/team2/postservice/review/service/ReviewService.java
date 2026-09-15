@@ -84,4 +84,8 @@ public class ReviewService {
                 page.getContent().stream().map(ReviewResponseDto::from).toList()
         );
     }
+
+    public boolean existsByPostId(Long postId) {
+        return reviewRepository.existsByPostId(postId);
+    }
 }
