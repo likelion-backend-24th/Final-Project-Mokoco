@@ -154,7 +154,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .post-list { overflow: hidden; border: 1px solid #e5eaf1; border-radius: 8px; background: white; }
 .post-row { display: flex; gap: 15px; padding: 14px; border-bottom: 1px solid #edf1f5; }
 .post-row:last-child { border-bottom: 0; }
-.post-icon { display: grid; width: 76px; min-height: 76px; flex: 0 0 76px; place-items: center; border-radius: 7px; color: #7c9ce3; background: linear-gradient(140deg,#f5f7fb,#e6ebf4); }
+.post-icon { position: relative; display: grid; width: 76px; height: 76px; flex: 0 0 76px; place-items: center; border-radius: 7px; color: #7c9ce3; background: linear-gradient(140deg,#f5f7fb,#e6ebf4); }
 .post-title-line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .post-title-line h3 { overflow: hidden; color: #1f2937; font-size: 14px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
 .post-title-line time { flex: 0 0 auto; color: #94a3b8; font-size: 11px; }
@@ -200,7 +200,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .footer-links { gap: 18px; }
   .region-status-bar { grid-template-columns: 1fr auto; }
   .region-status-bar > a { grid-column: 1 / -1; width: 100%; text-align: center; }
-  .post-icon { width: 54px; min-height: 68px; flex-basis: 54px; }
+  .post-icon { width: 54px; height: 68px; flex-basis: 54px; }
   .location-modal-map { padding: 26px 16px 20px; }
   .location-map { height: 300px; }
   .location-map-actions { grid-template-columns: 1fr; }

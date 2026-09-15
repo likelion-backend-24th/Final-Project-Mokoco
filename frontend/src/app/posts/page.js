@@ -103,7 +103,7 @@ export default async function PostsPage({ searchParams }) {
                       <img
                         src={imageSrc(firstImage)}
                         alt="수리 요청 썸네일"
-                        className="object-cover w-full h-full"
+                        className="absolute inset-0 h-full w-full object-cover"
                       />
                     </div>
                   ) : (

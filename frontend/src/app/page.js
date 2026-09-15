@@ -53,7 +53,7 @@ function PostList({ posts, error, postHref }) {
         <Link key={post.id} href={`/posts/${post.id}`} className="post-row">
           {post.thumbnailUrl ? (
             <div className="post-icon overflow-hidden !p-0 border border-slate-200">
-              <img src={imageSrc(post.thumbnailUrl)} alt="수리 요청 썸네일" className="object-cover w-full h-full" />
+              <img src={imageSrc(post.thumbnailUrl)} alt="수리 요청 썸네일" className="absolute inset-0 h-full w-full object-cover" />
             </div>
           ) : (
             <div className="post-icon" aria-hidden="true"><Wrench size={27} weight="duotone" /></div>
