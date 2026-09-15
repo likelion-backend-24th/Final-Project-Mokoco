@@ -35,4 +35,9 @@ public class ReviewController {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(safeSize, 1));
         return ResponseEntity.ok(reviewService.getUserReviews(revieweeEmail, pageable));
     }
+
+    @GetMapping("/exists")
+    public ResponseEntity<Boolean> existsByPostId(@RequestParam Long postId) {
+        return ResponseEntity.ok(reviewService.existsByPostId(postId));
+    }
 }
