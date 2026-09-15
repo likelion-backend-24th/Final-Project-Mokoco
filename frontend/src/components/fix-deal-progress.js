@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import * as PortOne from "@portone/browser-sdk/v2";
 import { CheckCircle, CreditCard, Wrench } from "@phosphor-icons/react";
+import ReviewForm from "@/components/review-form";
 
 const STATUS_LABEL = {
   MATCHED: "매칭 완료",
@@ -28,6 +29,7 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
   const [refreshToken, setRefreshToken] = useState(0);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   function refresh() {
     setRefreshToken((token) => token + 1);
@@ -280,6 +282,12 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
 
         {status === "COMPLETED" && (
           <p className="text-xs font-semibold text-emerald-700">거래가 완료되었습니다.</p>
+        )}
+        {status === "COMPLETED" && isRequester && !reviewSubmitted && (
+          <ReviewForm postId={postId} onSubmitted={() => setReviewSubmitted(true)} />
+        )}
+        {status === "COMPLETED" && isRequester && reviewSubmitted && (
+          <p className="w-full text-xs text-slate-400">후기를 남겨주셔서 감사해요.</p>
         )}
       </div>
     </div>
