@@ -1,4 +1,3 @@
-// components/SiteHeader.jsx
 "use client";
 
 import Link from "next/link";
@@ -51,7 +50,9 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
       {userEmail ? (
         <div className="header-account">
           <NotificationBell />
-          <UserCircle size={29} weight="duotone" className="text-blue-600" />
+          <Link href="/profile" aria-label="내 프로필" className="header-profile-icon">
+            <UserCircle size={29} weight="duotone" className="text-blue-600" />
+          </Link>
           <span className="header-email">{userEmail}</span>
           <form onSubmit={handleLogout}>
             <button type="submit">로그아웃</button>
