@@ -18,6 +18,15 @@ function dayLabel(value) {
   return messageDate(value)?.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "long" }) || "";
 }
 
+// 채팅에서 계약서 화면으로 넘어갈 때 지금 뭘 해야 하는지 바로 보이도록 배너 문구를 거래 상태별로 다르게 보여준다.
+const dealBannerLabel = {
+  MATCHED: "계약서 작성하고 결제하기 →",
+  PRODUCT_SENT: "수리 진행 상황 보기 →",
+  REPAIRING: "수리 진행 상황 보기 →",
+  REPAIR_DONE: "완료 확인하기 →",
+  COMPLETED: "계약서 · 후기 보기 →",
+};
+
 export default function ChatRoom({ roomId }) {
   const [theme, selectTheme] = useChatTheme();
   const [messages, setMessages] = useState([]);
@@ -178,7 +187,7 @@ export default function ChatRoom({ roomId }) {
       })}<div ref={bottom} />
     </div>
     {detail?.roomId === roomId && (detail.fixDealId
-      ? <Link href={`/chat-rooms/${roomId}/contract`} className="conversation-banner" style={{ fontWeight: 600 }}>수리 계약서 작성 · 서명 · 작업 진행 →</Link>
+      ? <Link href={`/chat-rooms/${roomId}/contract`} className="conversation-banner" style={{ fontWeight: 600 }}>{dealBannerLabel[detail.dealStatus] || "수리 계약서 작성 · 서명 · 작업 진행 →"}</Link>
       : <p className="conversation-banner">견적 상담 중입니다. 이 견적이 채택되면 계약서를 작성할 수 있습니다.</p>)}
 
     <footer className="conversation-footer">

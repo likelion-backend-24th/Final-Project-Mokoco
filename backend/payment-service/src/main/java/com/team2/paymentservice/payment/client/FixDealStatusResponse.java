@@ -4,6 +4,7 @@ package com.team2.paymentservice.payment.client;
 public record FixDealStatusResponse(
         Long id,
         Long postId,
-        String status
+        String status,
+        Integer estimatedPrice
 ) {
 }

@@ -179,15 +179,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                   key={`${proposal.id}-${proposal.fixDealId}`}
                   proposalId={proposal.id}
                 />
-                <FixDealProgress
-                  fixDealId={proposal.fixDealId}
-                  postId={postId}
-                  isRequester={Boolean(isMine)}
-                  isRepairer={Boolean(isMyProposal)}
-                  estimatedPrice={proposal.estimatedPrice}
-                  repairerEmail={proposal.repairerEmail}
-                  userEmail={userEmail}
-                />
+                <FixDealProgress fixDealId={proposal.fixDealId} />
               </>
             )}
           </div>

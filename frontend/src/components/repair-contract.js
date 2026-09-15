@@ -1,8 +1,18 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import * as PortOne from "@portone/browser-sdk/v2";
 import "./repair-contract.css";
 import ContractAiAssist from "./contract-ai-assist";
+import ReviewForm from "./review-form";
+
+const FEE_RATE = 0.1; // 백엔드 Payment.FEE_RATE와 동일하게 유지 (수리자 제안 금액의 10%)
+
+function calculateTotalWithFee(baseAmount) {
+  const base = baseAmount ?? 0;
+  const fee = Math.round(base * FEE_RATE);
+  return { base, fee, total: base + fee };
+}
 
 const fields = [
   ["title", "계약 제목", "text", 120], ["scope", "작업 대상과 수리 범위", "area", 4000],
@@ -43,6 +53,9 @@ export default function RepairContract({ roomId }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [paymentBusy, setPaymentBusy] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const endpoint = `/api/chat-rooms/${roomId}/contract`;
   const load = useCallback(async () => {
     const response = await fetch(endpoint, { cache: "no-store" });
@@ -67,6 +80,67 @@ export default function RepairContract({ roomId }) {
   const latest = overview?.versions[0];
   const selected = overview?.versions.find(version => version.id === selectedId) ?? latest;
   const isLatest = selected?.id === latest?.id;
+  const paid = overview?.payment?.status === "COMPLETED";
+  useEffect(() => {
+    if (overview?.dealStatus !== "COMPLETED" || !overview?.postId) return;
+    let active = true;
+    fetch(`/api/reviews/exists?postId=${overview.postId}`, { cache: "no-store" })
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => { if (active) setReviewSubmitted(Boolean(data?.exists)); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [overview?.dealStatus, overview?.postId]);
+  async function startPayment() {
+    setPaymentBusy(true); setPaymentError("");
+    try {
+      const paymentId = `payment-${crypto.randomUUID()}`;
+      const { base, total } = calculateTotalWithFee(overview.estimatedPrice);
+
+      const paymentResult = await PortOne.requestPayment({
+        storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID,
+        channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY,
+        paymentId,
+        orderName: "동네수리 - 수리 대금 안전결제",
+        totalAmount: total,
+        currency: "CURRENCY_KRW",
+        payMethod: "CARD",
+        isEscrow: true,
+        customer: overview.requesterEmail ? { email: overview.requesterEmail } : undefined,
+        customData: JSON.stringify({ postId: overview.postId, payerEmail: overview.requesterEmail, payeeEmail: overview.repairerEmail, baseAmount: base }),
+        noticeUrls: [`${window.location.origin}/api/payments/webhook`],
+      });
+
+      if (paymentResult?.code != null) {
+        setPaymentError(paymentResult.message ?? "결제가 취소되었거나 실패했습니다.");
+        return;
+      }
+
+      const confirmRes = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId: overview.postId,
+          payeeEmail: overview.repairerEmail,
+          amount: total,
+          baseAmount: base,
+          paymentId,
+        }),
+      });
+      const confirmData = await confirmRes.json().catch(() => ({}));
+      // 확인 요청이 실패해도, 웹훅이 먼저 도착해 이미 결제가 기록된 경우(DUPLICATE_PAYMENT)라면
+      // 실제로는 결제가 완료된 것이므로 에러로 취급하지 않는다.
+      if (!confirmRes.ok && confirmData.code !== "DUPLICATE_PAYMENT") {
+        setPaymentError(confirmData.error ?? "결제 확인에 실패했습니다. 잠시 후 다시 확인해주세요.");
+        return;
+      }
+
+      await load();
+    } catch {
+      setPaymentError("결제 진행 중 문제가 발생했습니다.");
+    } finally {
+      setPaymentBusy(false);
+    }
+  }
   async function mutate(action, body) {
     setBusy(true); setError(""); setNotice("");
     try {
@@ -133,9 +207,33 @@ export default function RepairContract({ roomId }) {
         {isLatest && selected.status === "SIGNING" && userId !== null && !selected.signatures.some(s => s.signerId === userId) && <SignatureForm key={selected.id} version={selected} consentText={overview.consentText} busy={busy} onSign={body => mutate("sign", { versionId: selected.id, ...body })} />}
         {isLatest && selected.status === "SIGNING" && selected.signatures.some(s => s.signerId === userId) && <p className="contract-controls">내 서명이 저장되었습니다. 상대방 서명을 기다리고 있습니다.</p>}
         {isLatest && selected.status === "SIGNED" && <section className="contract-sign contract-controls"><h2>계약 체결 완료</h2><p>양측 서명이 완료되었습니다. 위 계약 내용을 기준으로 작업을 진행하세요.</p>
-          {userId === overview.repairerId && overview.dealStatus === "MATCHED" && <button disabled={busy} onClick={() => advance("start", "체결된 계약에 따라 수리 작업을 시작하시겠습니까?")}>수리 작업 시작</button>}
+          {overview.estimatedPrice != null && Number(selected.terms.totalAmount) !== overview.estimatedPrice &&
+            <p className="contract-error">계약서 금액({Number(selected.terms.totalAmount).toLocaleString("ko-KR")}원)과 채택된 견적 금액({overview.estimatedPrice.toLocaleString("ko-KR")}원)이 달라요. 결제는 채택된 견적 금액 기준으로 진행됩니다.</p>}
+
+          {overview.dealStatus === "MATCHED" && userId === overview.requesterId && !paid &&
+            <div>
+              <p>계약이 체결되었습니다. 결제하면 수리자가 작업을 시작할 수 있어요. 결제 금액은 완료될 때까지 안전하게 보관됩니다.</p>
+              <button disabled={paymentBusy} onClick={startPayment}>
+                {paymentBusy ? "결제 확인 중..." : `안전결제 하기 (${calculateTotalWithFee(overview.estimatedPrice).total.toLocaleString("ko-KR")}원)`}
+              </button>
+              <p className="contract-hash">
+                수리비 {calculateTotalWithFee(overview.estimatedPrice).base.toLocaleString("ko-KR")}원 + 수수료(10%) {calculateTotalWithFee(overview.estimatedPrice).fee.toLocaleString("ko-KR")}원
+              </p>
+              {paymentError && <p role="alert" className="contract-error">{paymentError}</p>}
+            </div>}
+          {overview.dealStatus === "MATCHED" && userId === overview.repairerId && !paid &&
+            <p>의뢰인의 결제를 기다리고 있어요. 결제가 완료되면 작업을 시작할 수 있어요.</p>}
+          {overview.dealStatus === "MATCHED" && paid &&
+            <p className="contract-hash">결제 완료 — 수리자의 작업 시작을 기다리고 있어요.</p>}
+
+          {userId === overview.repairerId && overview.dealStatus === "MATCHED" && paid && <button disabled={busy} onClick={() => advance("start", "체결된 계약에 따라 수리 작업을 시작하시겠습니까?")}>수리 작업 시작</button>}
           {userId === overview.repairerId && overview.dealStatus === "REPAIRING" && <button disabled={busy} onClick={() => advance("finish", "작업을 마치고 의뢰인에게 완료 확인을 요청하시겠습니까?")}>작업 완료 확인 요청</button>}
           {userId === overview.requesterId && overview.dealStatus === "REPAIR_DONE" && <button disabled={busy} onClick={() => advance("accept", "계약의 검수 기준을 확인하고 수리 완료를 수락하시겠습니까?")}>검수 및 수리 완료 확인</button>}
+
+          {overview.dealStatus === "COMPLETED" && userId === overview.requesterId && !reviewSubmitted &&
+            <ReviewForm postId={overview.postId} onSubmitted={() => setReviewSubmitted(true)} />}
+          {overview.dealStatus === "COMPLETED" && userId === overview.requesterId && reviewSubmitted &&
+            <p className="contract-hash">후기 작성 완료 — 남겨주셔서 감사해요.</p>}
         </section>}
       </> : <p className="contract-sign">아직 계약서가 없습니다. 채팅에서 합의한 조건으로 초안을 작성해주세요.</p>}
     </>}

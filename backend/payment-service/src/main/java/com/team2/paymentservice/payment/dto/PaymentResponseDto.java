@@ -15,7 +15,8 @@ public record PaymentResponseDto(
         Integer netAmount,
         PaymentStatus status,
         LocalDateTime createdAt,
-        LocalDateTime paidAt
+        LocalDateTime paidAt,
+        LocalDateTime settledAt
 ) {
     public static PaymentResponseDto from(Payment payment) {
         return new PaymentResponseDto(
@@ -28,7 +29,8 @@ public record PaymentResponseDto(
                 payment.getNetAmount(),
                 payment.getStatus(),
                 payment.getCreatedAt(),
-                payment.getPaidAt()
+                payment.getPaidAt(),
+                payment.getSettledAt()
         );
     }
 }

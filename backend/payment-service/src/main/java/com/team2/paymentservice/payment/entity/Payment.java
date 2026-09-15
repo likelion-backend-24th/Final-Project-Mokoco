@@ -54,6 +54,11 @@ public class Payment {
 
     private LocalDateTime paidAt;
 
+    // 거래가 COMPLETED 되어 플랫폼이 수리자 몫을 '정산 확정'했음을 기록하는 장부용 타임스탬프.
+    // 실제 PG 에스크로 해제나 수리자 계좌 송금 연동은 이번 범위 밖이며, 이 필드는 그 지점을
+    // 표시만 해둔다 — 나중에 실제 지급 연동을 붙일 때 settle() 호출부가 그 자리다.
+    private LocalDateTime settledAt;
+
     @Builder
     public Payment(Long postId, String portonePaymentId, String payerEmail, String payeeEmail,
                    Integer totalAmount, Integer baseAmount) {
@@ -67,6 +72,10 @@ public class Payment {
         this.status = PaymentStatus.COMPLETED;
         this.createdAt = LocalDateTime.now();
         this.paidAt = LocalDateTime.now();
+    }
+
+    public void settle() {
+        if (settledAt == null) settledAt = LocalDateTime.now();
     }
 
     public static int calculateTotalAmount(int baseAmount) {

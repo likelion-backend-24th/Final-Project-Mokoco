@@ -13,38 +13,13 @@ public class FixDealController {
 
     private final FixDealService fixDealService;
 
-    @PatchMapping("/fix-deals/{fixDealId}/product-sent")
-    public ResponseEntity<Void> markProductSent(@PathVariable Long fixDealId,
-                                                 @RequestHeader("X-User-Email") String repairerEmail) {
-        fixDealService.markProductSent(fixDealId, repairerEmail);
-        return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping("/fix-deals/{fixDealId}/repairing")
-    public ResponseEntity<Void> markRepairing(@PathVariable Long fixDealId,
-                                               @RequestHeader("X-User-Email") String repairerEmail) {
-        fixDealService.markRepairing(fixDealId, repairerEmail);
-        return ResponseEntity.ok().build();
-    }
+    // 거래 진행 상태 전이는 전부 ContractService.advance()(계약서 페이지)가 담당한다.
+    // 이 컨트롤러는 읽기 전용 조회만 제공한다.
 
     @GetMapping("/fix-deals/{fixDealId}")
     public ResponseEntity<FixDealDetailResponse> getFixDeal(@PathVariable Long fixDealId,
                                                              @RequestHeader("X-User-Email") String userEmail) {
         return ResponseEntity.ok(fixDealService.getFixDeal(fixDealId, userEmail));
-    }
-
-    @PatchMapping("/fix-deals/{fixDealId}/repair-done")
-    public ResponseEntity<Void> requestCompletion(@PathVariable Long fixDealId,
-                                                   @RequestHeader("X-User-Email") String repairerEmail) {
-        fixDealService.requestCompletion(fixDealId, repairerEmail);
-        return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping("/fix-deals/{fixDealId}/complete")
-    public ResponseEntity<Void> acceptCompletion(@PathVariable Long fixDealId,
-                                                  @RequestHeader("X-User-Email") String requesterEmail) {
-        fixDealService.acceptCompletion(fixDealId, requesterEmail);
-        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/posts/{postId}/fix-deal")

@@ -12,6 +12,7 @@ import com.team2.paymentservice.payment.client.PostServiceClient;
 import com.team2.paymentservice.payment.dto.PaymentRequestDto;
 import com.team2.paymentservice.payment.dto.PaymentResponseDto;
 import com.team2.paymentservice.payment.entity.Payment;
+import com.team2.paymentservice.payment.entity.PaymentStatus;
 import com.team2.paymentservice.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,14 +36,23 @@ public class PaymentService {
             throw new CustomException(ErrorCode.UNAUTHORIZED_PAYMENT_CREATE);
         }
 
+        // 이제 결제는 계약 서명 직후(거래가 MATCHED인 시점)에 이루어진다. 다만 이 변경 이전에
+        // REPAIRING/REPAIR_DONE 등으로 이미 진행 중이던 거래도 결제할 수 있어야 하므로, 종료된
+        // 거래(COMPLETED/CANCELED)만 막는다.
         FixDealStatusResponse fixDeal = postServiceClient.getFixDealStatus(request.postId());
-        if (!"REPAIR_DONE".equals(fixDeal.status())) {
+        if ("COMPLETED".equals(fixDeal.status()) || "CANCELED".equals(fixDeal.status())) {
             throw new CustomException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
 
         if (paymentRepository.existsByPostId(request.postId())
                 || paymentRepository.existsByPortonePaymentId(request.paymentId())) {
             throw new CustomException(ErrorCode.DUPLICATE_PAYMENT);
+        }
+
+        // 결제가 이제 "작업 시작 허가"를 좌우하므로, 클라이언트가 보낸 baseAmount만 믿지 않고
+        // 실제 채택된 제안 금액과 일치하는지 서버에서 다시 확인한다.
+        if (fixDeal.estimatedPrice() != null && !fixDeal.estimatedPrice().equals(request.baseAmount())) {
+            throw new CustomException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
         }
 
         int expectedTotal = Payment.calculateTotalAmount(request.baseAmount());
@@ -141,5 +151,20 @@ public class PaymentService {
         }
 
         return PaymentResponseDto.from(payment);
+    }
+
+    @Transactional
+    public void settlePayment(Long postId, String callerEmail) {
+        Payment payment = paymentRepository.findByPostId(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        if (!payment.getPayerEmail().equals(callerEmail)) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_PAYMENT_ACCESS);
+        }
+        if (payment.getStatus() != PaymentStatus.COMPLETED) {
+            throw new CustomException(ErrorCode.PAYMENT_NOT_SETTLEABLE);
+        }
+
+        payment.settle();
     }
 }

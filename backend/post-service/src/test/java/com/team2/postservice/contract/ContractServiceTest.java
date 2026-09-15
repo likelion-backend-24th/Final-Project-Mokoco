@@ -1,13 +1,21 @@
 package com.team2.postservice.contract;
 
 import com.team2.postservice.chatRoom.entity.ChatRoom;
+import com.team2.postservice.client.PaymentClient;
+import com.team2.postservice.client.dto.PaymentClientResponse;
 import com.team2.postservice.fixDeal.entity.*;
+import com.team2.postservice.post.entity.Post;
+import com.team2.postservice.post.entity.PostCategory;
+import com.team2.postservice.proposal.entity.Proposal;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.*;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.*;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,9 +29,16 @@ class ContractServiceTest {
     }
     @Autowired TestEntityManager em;
     @Autowired ContractService service;
+    @MockitoBean PaymentClient paymentClient;
     Long roomId;
     @BeforeEach void setup() {
-        var deal = em.persist(FixDeal.builder().postId(1L).proposalId(1L).requesterId(10L).repairerId(20L).build());
+        Mockito.reset(paymentClient);
+        Mockito.when(paymentClient.getPaymentByPostId(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString()))
+                .thenReturn(new PaymentClientResponse(1L, 1L, "COMPLETED", 55000, 5000, 50000, null));
+        var post = em.persist(Post.builder().title("의자 수리").content("다리가 흔들려요").authorEmail("requester@test.com")
+                .regionName("서울특별시").regionCode("11000").category(PostCategory.LIVING_ETC).build());
+        var proposal = em.persist(Proposal.builder().post(post).estimatedPrice(50000).repairerEmail("repairer@test.com").content("견적 드립니다").build());
+        var deal = em.persist(FixDeal.builder().postId(post.getId()).proposalId(proposal.getId()).requesterId(10L).repairerId(20L).build());
         roomId = em.persist(ChatRoom.builder().fixDeal(deal).build()).getId();
     }
     ContractTerms terms(String scope) {
@@ -49,6 +64,16 @@ class ContractServiceTest {
         service.advance(roomId, 20L, contract.id(), "finish");
         service.advance(roomId, 10L, contract.id(), "accept");
         assertThat(service.get(roomId, 10L).dealStatus()).isEqualTo(FixDealStatus.COMPLETED);
+        Mockito.verify(paymentClient).settle(ArgumentMatchers.anyLong(), ArgumentMatchers.eq("requester@test.com"));
+    }
+    @Test void startIsBlockedUntilPaymentIsCompleted() {
+        var contract = signing();
+        service.sign(roomId, 10L, contract.id(), contract.documentHash(), "의뢰인", true);
+        service.sign(roomId, 20L, contract.id(), contract.documentHash(), "수리자", true);
+        Mockito.when(paymentClient.getPaymentByPostId(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString()))
+                .thenReturn(new PaymentClientResponse(1L, 1L, "FAILED", 55000, 5000, 50000, null));
+        assertThatThrownBy(() -> service.advance(roomId, 20L, contract.id(), "start")).isInstanceOf(ResponseStatusException.class);
+        assertThat(service.get(roomId, 10L).dealStatus()).isEqualTo(FixDealStatus.MATCHED);
     }
     @Test void revisionPreservesOldContentAndDoesNotReuseSignatures() {
         var first = signing();

@@ -35,4 +35,13 @@ public class PaymentController {
                                                                   @RequestHeader("X-User-Email") String userEmail) {
         return ResponseEntity.ok(paymentService.getPaymentByPostId(postId, userEmail));
     }
+
+    // 거래 완료(COMPLETED) 시 post-service가 내부적으로 호출하는 정산 확정.
+    // 실제 송금은 하지 않고 settledAt만 기록한다 (Payment.settle() 주석 참고).
+    @PostMapping("/post/{postId}/settle")
+    public ResponseEntity<Void> settlePayment(@PathVariable Long postId,
+                                               @RequestHeader("X-User-Email") String payerEmail) {
+        paymentService.settlePayment(postId, payerEmail);
+        return ResponseEntity.ok().build();
+    }
 }

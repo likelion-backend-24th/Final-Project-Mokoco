@@ -19,7 +19,7 @@ class ChatAttachmentRangeTest {
         Path file = Files.write(directory.resolve("video"), new byte[]{0,1,2,3,4,5,6,7});
         var service = mock(ChatAttachmentService.class);
         var users = mock(UserClient.class);
-        when(users.verifyToken("token")).thenReturn(new UserClientResponse(2L, "u", "u", null));
+        when(users.verifyToken("token")).thenReturn(new UserClientResponse(2L, "u", "u", null, "USER"));
         when(service.download(1L, 3L, 2L)).thenReturn(ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("video/mp4")).body(new FileSystemResource(file)));
         var mvc = MockMvcBuilders.standaloneSetup(new ChatAttachmentController(service, users, mock(SimpMessagingTemplate.class))).build();

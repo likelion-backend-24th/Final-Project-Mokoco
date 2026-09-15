@@ -5,6 +5,7 @@ import com.team2.postservice.chatRoom.repository.ChatRoomRepository;
 import com.team2.postservice.chatMessage.entity.ChatMessage;
 import com.team2.postservice.chatMessage.repository.ChatMessageRepository;
 import com.team2.postservice.fixDeal.entity.FixDeal;
+import com.team2.postservice.notification.service.NotificationService;
 import org.junit.jupiter.api.Test;
 import java.util.Optional;
 import static org.mockito.Mockito.*;
@@ -13,7 +14,8 @@ import static org.assertj.core.api.Assertions.*;
 class ChatServiceTest {
     final ChatRoomRepository rooms = mock(ChatRoomRepository.class);
     final ChatMessageRepository messages = mock(ChatMessageRepository.class);
-    final ChatService service = new ChatService(rooms, messages);
+    final NotificationService notifications = mock(NotificationService.class);
+    final ChatService service = new ChatService(rooms, messages, notifications);
 
     void room() {
         when(rooms.findById(1L)).thenReturn(Optional.of(ChatRoom.builder().id(1L)

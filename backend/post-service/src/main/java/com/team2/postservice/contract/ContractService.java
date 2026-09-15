@@ -3,8 +3,15 @@ package com.team2.postservice.contract;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team2.postservice.chatRoom.entity.ChatRoom;
 import com.team2.postservice.chatRoom.repository.ChatRoomRepository;
+import com.team2.postservice.client.PaymentClient;
+import com.team2.postservice.client.dto.PaymentClientResponse;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
+import com.team2.postservice.post.entity.Post;
+import com.team2.postservice.post.repository.PostRepository;
+import com.team2.postservice.proposal.repository.ProposalRepository;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,6 +21,7 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ContractService {
@@ -21,6 +29,9 @@ public class ContractService {
     private final ChatRoomRepository rooms;
     private final ContractRepository contracts;
     private final SignatureRepository signatures;
+    private final PostRepository posts;
+    private final ProposalRepository proposals;
+    private final PaymentClient paymentClient;
     private final ObjectMapper mapper;
 
     public record Version(Long id, int revision, String status, Long authorId, ContractTerms terms,
@@ -29,7 +40,10 @@ public class ContractService {
             @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) Instant requestedAt,
             @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) Instant signedAt,
             List<ContractSignature> signatures) {}
-    public record Overview(Long requesterId, Long repairerId, FixDealStatus dealStatus, String consentText, List<Version> versions) {}
+    public record PaymentSummary(String status, Integer amount, Integer feeAmount, Integer netAmount, boolean settled) {}
+    public record Overview(Long requesterId, Long repairerId, String requesterEmail, String repairerEmail,
+            Long postId, Long fixDealId, Integer estimatedPrice, FixDealStatus dealStatus,
+            PaymentSummary payment, String consentText, List<Version> versions) {}
 
     private ChatRoom participant(Long roomId, Long userId, boolean lock) {
         var room = (lock ? rooms.lockById(roomId) : rooms.findById(roomId))
@@ -49,11 +63,32 @@ public class ContractService {
                     signatures.findByContractIdOrderBySignedAtAsc(contract.getId()));
         } catch (java.io.IOException e) { throw new IllegalStateException("Stored contract cannot be read", e); }
     }
+    // 결제 상태 조회 실패로 계약서 페이지 전체가 죽으면 안 되므로, 조회용으로는 어떤 Feign
+    // 오류든 "아직 결제 없음"으로 취급하고 페이지는 계속 보여준다.
+    private PaymentSummary paymentSummaryOrNull(Long postId, String requesterEmail) {
+        try {
+            PaymentClientResponse payment = paymentClient.getPaymentByPostId(postId, requesterEmail);
+            return new PaymentSummary(payment.status(), payment.amount(), payment.feeAmount(),
+                    payment.netAmount(), payment.settledAt() != null);
+        } catch (FeignException.NotFound e) {
+            return null;
+        } catch (FeignException e) {
+            log.warn("결제 상태 조회 실패 postId={}", postId, e);
+            return null;
+        }
+    }
     @Transactional(readOnly = true)
     public Overview get(Long roomId, Long userId) {
         var room = participant(roomId, userId, false);
         var deal = room.getFixDeal();
-        return new Overview(deal.getRequesterId(), deal.getRepairerId(), deal.getStatus(), CONSENT,
+        Post post = posts.findById(deal.getPostId()).orElse(null);
+        var proposal = proposals.findById(deal.getProposalId()).orElse(null);
+        String requesterEmail = post != null ? post.getAuthorEmail() : null;
+        String repairerEmail = proposal != null ? proposal.getRepairerEmail() : null;
+        Integer estimatedPrice = proposal != null ? proposal.getEstimatedPrice() : null;
+        PaymentSummary payment = requesterEmail == null ? null : paymentSummaryOrNull(deal.getPostId(), requesterEmail);
+        return new Overview(deal.getRequesterId(), deal.getRepairerId(), requesterEmail, repairerEmail,
+                deal.getPostId(), deal.getId(), estimatedPrice, deal.getStatus(), payment, CONSENT,
                 contracts.findByChatRoomIdOrderByRevisionDesc(roomId).stream().map(this::view).toList());
     }
     private RepairContract latest(Long roomId, Long expectedId) {
@@ -116,14 +151,48 @@ public class ContractService {
         var deal = room.getFixDeal();
         boolean requester = action.equals("accept");
         if (!userId.equals(requester ? deal.getRequesterId() : deal.getRepairerId())) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-        FixDealStatus from; FixDealStatus to;
+
         switch (action) {
-            case "start" -> { from = FixDealStatus.MATCHED; to = FixDealStatus.REPAIRING; }
-            case "finish" -> { from = FixDealStatus.REPAIRING; to = FixDealStatus.REPAIR_DONE; }
-            case "accept" -> { from = FixDealStatus.REPAIR_DONE; to = FixDealStatus.COMPLETED; }
+            case "start" -> {
+                if (deal.getStatus() != FixDealStatus.MATCHED) throw conflict("거래 상태가 변경되었습니다. 새로고침해주세요.");
+                Post post = posts.findById(deal.getPostId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                PaymentClientResponse payment = requirePayment(deal.getPostId(), post.getAuthorEmail());
+                if (!"COMPLETED".equals(payment.status()))
+                    throw conflict("의뢰인의 결제가 완료되어야 작업을 시작할 수 있습니다.");
+                deal.changeStatus(FixDealStatus.REPAIRING);
+            }
+            case "finish" -> {
+                // PRODUCT_SENT는 결제를 미리 받는 새 흐름 도입 전 레거시 상태 — 그 상태에 남아있는
+                // 기존 거래도 계속 진행할 수 있도록 finish의 출발 상태로 함께 허용한다.
+                if (deal.getStatus() != FixDealStatus.REPAIRING && deal.getStatus() != FixDealStatus.PRODUCT_SENT)
+                    throw conflict("거래 상태가 변경되었습니다. 새로고침해주세요.");
+                deal.changeStatus(FixDealStatus.REPAIR_DONE);
+            }
+            case "accept" -> {
+                if (deal.getStatus() != FixDealStatus.REPAIR_DONE) throw conflict("거래 상태가 변경되었습니다. 새로고침해주세요.");
+                Post post = posts.findById(deal.getPostId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                deal.changeStatus(FixDealStatus.COMPLETED);
+                // 거래가 최종 완료됐으니 원글 상태도 같이 '거래 완료'로 넘긴다.
+                post.updateStatusToCompleted();
+                // 정산 확정 — 이 호출이 실패하면 트랜잭션 전체가 롤백되어 위 상태 전환도 함께
+                // 취소된다. settle()은 멱등이라 사용자가 버튼을 다시 눌러 안전하게 재시도할 수 있다.
+                try {
+                    paymentClient.settle(deal.getPostId(), post.getAuthorEmail());
+                } catch (FeignException e) {
+                    throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "정산 처리에 실패했습니다. 잠시 후 다시 시도해주세요.");
+                }
+            }
             default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
-        if (deal.getStatus() != from) throw conflict("거래 상태가 변경되었습니다. 새로고침해주세요.");
-        deal.changeStatus(to);
+    }
+
+    private PaymentClientResponse requirePayment(Long postId, String requesterEmail) {
+        try {
+            return paymentClient.getPaymentByPostId(postId, requesterEmail);
+        } catch (FeignException.NotFound e) {
+            throw conflict("의뢰인의 결제가 완료되어야 작업을 시작할 수 있습니다.");
+        } catch (FeignException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "결제 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.");
+        }
     }
 }

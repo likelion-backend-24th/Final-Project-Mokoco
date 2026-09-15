@@ -3,6 +3,7 @@ package com.team2.postservice.chatRoom;
 import com.team2.postservice.chatRoom.repository.ChatRoomRepository;
 import com.team2.postservice.chatRoom.service.ChatRoomService;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
+import com.team2.postservice.proposal.repository.ProposalRepository;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
 import org.junit.jupiter.api.Test;
@@ -13,10 +14,10 @@ import static org.assertj.core.api.Assertions.*;
 class ChatRoomListServiceTest {
     final ChatRoomRepository rooms = mock(ChatRoomRepository.class);
     final UserClient users = mock(UserClient.class);
-    final ChatRoomService service = new ChatRoomService(rooms, mock(FixDealRepository.class), users);
+    final ChatRoomService service = new ChatRoomService(rooms, mock(FixDealRepository.class), mock(ProposalRepository.class), users);
 
     @Test void usesVerifiedUserId() {
-        when(users.verifyToken("token")).thenReturn(new UserClientResponse(7L, "user@example.com", "user", "region"));
+        when(users.verifyToken("token")).thenReturn(new UserClientResponse(7L, "user@example.com", "user", "region", "USER"));
         service.getMyRooms("Bearer token", 0, 5);
         verify(rooms).findMyRooms(7L, PageRequest.of(0, 5));
     }
