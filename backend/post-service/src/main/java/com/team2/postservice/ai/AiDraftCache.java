@@ -17,8 +17,13 @@ public class AiDraftCache {
     private final Map<String, Entry> entries = new HashMap<>();
     private final Clock clock;
 
-    public AiDraftCache() { this(Clock.systemUTC()); }
-    AiDraftCache(Clock clock) { this.clock = clock; }
+    public AiDraftCache() {
+        this(Clock.systemUTC());
+    }
+
+    AiDraftCache(Clock clock) {
+        this.clock = clock;
+    }
 
     private static class Entry {
         long expires, retryAt;

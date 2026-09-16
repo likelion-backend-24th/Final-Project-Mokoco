@@ -1,6 +1,7 @@
 package com.team2.postservice.ai.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team2.postservice.ai.AiDraftStatic;
 import com.team2.postservice.ai.client.GeminiClient;
 import com.team2.postservice.ai.AiImages;
 import com.team2.postservice.ai.AiRateLimit;
@@ -23,15 +24,15 @@ class GeminiLiveTest {
         ImageIO.write(new BufferedImage(32,32,BufferedImage.TYPE_INT_RGB),"png",png);
         var parts = new AiImages().parts(List.of(new MockMultipartFile("images","blank.png","image/png",png.toByteArray())));
         parts.add(Map.of("text","이 사진에서 제품을 알 수 없으면 제품/모델을 null로 두세요. 제목은 '제품 확인 필요', 내용은 추가 사진 요청으로 작성하세요."));
-        var result = client.generate(AiDraftService.COMMON, parts, AiDraftService.postSchema());
-        AiDraftService.validatePost(result);
+        var result = client.generate(AiDraftService.COMMON, parts, AiDraftStatic.postSchema());
+        AiDraftStatic.validatePost(result);
     }
     @Test void structuredContractOutputDoesNotInventMissingMoney() {
         var sources = Map.of("POST","의자 다리가 흔들려 수리를 요청합니다.");
         var result = client.generate(AiDraftService.COMMON + " 계약 초안: 모든 항목은 null로 두세요. fieldSources 각 항목은 sourceId=SUGGESTED_CLAUSE, quote=''로 두세요. 미합의 금액이나 날짜를 만들지 마세요.",
-                List.of(Map.of("text",sources.toString())),AiDraftService.contractSchema(sources.keySet()));
-        AiDraftService.fillServerFields(result,sources,Map.of());
-        AiDraftService.validateContract(result,sources,Map.of()); assertThat(result.path("suggestedTerms").path("totalAmount").isNull()).isTrue();
+                List.of(Map.of("text",sources.toString())),AiDraftStatic.contractSchema(sources.keySet()));
+        AiDraftStatic.fillServerFields(result,sources,Map.of());
+        AiDraftStatic.validateContract(result,sources,Map.of()); assertThat(result.path("suggestedTerms").path("totalAmount").isNull()).isTrue();
     }
     @Test void productionContractPromptProducesGroundedDraft() {
         var context = mock(AiContractContext.class);

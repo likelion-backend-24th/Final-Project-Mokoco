@@ -2,18 +2,21 @@ package com.team2.postservice.ai;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.*;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.UUID;
 
+@Slf4j
 @Component
-@org.springframework.core.annotation.Order(org.springframework.core.Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class AiRequestTrace extends OncePerRequestFilter {
 
-    private static final Logger log = LoggerFactory.getLogger(AiRequestTrace.class);
     @Override protected boolean shouldNotFilter(HttpServletRequest request) {
 
         String path = request.getRequestURI();
