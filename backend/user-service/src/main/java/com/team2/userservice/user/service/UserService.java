@@ -126,4 +126,33 @@ public class UserService {
     public UserResponse findUserById(Long id) {
         return new UserResponse(findById(id));
     }
+
+    public UserResponse getMyInfo(String email) {
+        return findUserByEmail(email);
+    }
+
+    @Transactional
+    public UserResponse updateMyProfile(String email, UpdateProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        userRepository.findByNickname(request.getNickname())
+                .filter(other -> !other.getEmail().equals(email))
+                .ifPresent(other -> { throw new CustomException(ErrorCode.DUPLICATE_NICKNAME); });
+
+        user.updateProfile(request.getName(), request.getNickname());
+        return new UserResponse(user);
+    }
+
+    @Transactional
+    public void changePassword(String email, ChangePasswordRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new CustomException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        user.updatePassword(passwordEncoder.encode(request.getNewPassword()));
+    }
 }
