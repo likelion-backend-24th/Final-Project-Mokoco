@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { X, Wrench } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { X, Wrench, FileText } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 
 export default function ProposalForm({ postId }) {
@@ -9,7 +9,33 @@ export default function ProposalForm({ postId }) {
   const [estimatedPrice, setEstimatedPrice] = useState("");
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [myResume, setMyResume] = useState(null); // null = 아직 확인 전, false = 없음, 객체 = 있음
+  const [attachResume, setAttachResume] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!isOpen || myResume !== null) return;
+    const controller = new AbortController();
+    fetch("/api/resume", { signal: controller.signal, cache: "no-store" })
+      .then(async (res) => {
+        if (res.status === 404 || res.status === 400) {
+          setMyResume(false);
+          return;
+        }
+        const json = await res.json();
+        setMyResume(res.ok ? json : false);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setMyResume(false);
+      });
+    return () => controller.abort();
+  }, [isOpen, myResume]);
+
+  function goWriteResume() {
+    if (window.confirm("아직 작성한 이력서가 없어요. 프로필 페이지로 이동해서 작성하시겠어요?")) {
+      router.push("/profile");
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +46,8 @@ export default function ProposalForm({ postId }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           estimatedPrice: Number(estimatedPrice), 
-          content 
+          content,
+          attachResume: Boolean(myResume) && attachResume,
         }),
       });
 
@@ -94,6 +121,30 @@ export default function ProposalForm({ postId }) {
               required
             />
           </div>
+
+          {myResume === false && (
+            <button
+              type="button"
+              onClick={goWriteResume}
+              className="flex w-full items-center gap-2 rounded-xl border border-dashed border-slate-300 p-3 text-left text-xs text-slate-500 hover:border-blue-300 hover:text-blue-600"
+            >
+              <FileText size={18} weight="duotone" />
+              작성한 이력서가 없어요. 프로필에서 이력서를 작성해보세요.
+            </button>
+          )}
+
+          {myResume && (
+            <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={attachResume}
+                onChange={(e) => setAttachResume(e.target.checked)}
+              />
+              <span className="flex-1">
+                <span className="font-semibold">&quot;{myResume.headline}&quot;</span> 이력서를 이 제안에 보여주기
+              </span>
+            </label>
+          )}
 
           <button
             type="submit"
