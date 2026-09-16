@@ -13,6 +13,8 @@ public class ProposalRequestDto {
             Integer estimatedPrice,
 
             @NotBlank(message = "제안 내용은 필수입니다.")
-            String content
+            String content,
+
+            Boolean attachResume
     ) {}
 }

@@ -33,13 +33,17 @@ public class Proposal {
     @Column(nullable = false)
     private boolean isAdopted = false; // 채택 여부
 
+    @Column(nullable = false)
+    private boolean attachResume = false; // 이 제안에 내 이력서를 보여줄지 여부
+
     @Builder
-    public Proposal(Post post, int estimatedPrice, String repairerEmail, String content) {
+    public Proposal(Post post, int estimatedPrice, String repairerEmail, String content, boolean attachResume) {
         this.post = post;
         this.repairerEmail = repairerEmail;
         this.estimatedPrice = estimatedPrice;
         this.content = content;
         this.isAdopted = false;
+        this.attachResume = attachResume;
     }
 
     public void adopt() {

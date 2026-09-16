@@ -106,11 +106,11 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                   {proposal.repairerEmail || "수리공 이웃"}
                 </span>
                 <RatingBadge email={proposal.repairerEmail} postId={postId} />
-                {proposal.repairerEmail && (
+                {proposal.attachResume && proposal.repairerEmail && (
                   <button
                     type="button"
                     onClick={() => setResumeEmail(proposal.repairerEmail)}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-blue-600 hover:underline"
+                    className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100"
                   >
                     <FileText size={13} weight="duotone" /> 이력서 보기
                   </button>

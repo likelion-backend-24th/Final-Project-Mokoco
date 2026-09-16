@@ -19,6 +19,8 @@ public class ProposalResponseDto {
     @JsonProperty("isAdopted")
     private final boolean isAdopted;
 
+    private final boolean attachResume;
+
     public ProposalResponseDto(Proposal proposal) {
         this(proposal, null, null, 0);
     }
@@ -33,5 +35,6 @@ public class ProposalResponseDto {
         this.isAdopted = proposal.isAdopted();
         this.repairerRegion = repairerRegion;
         this.repairerCompletedCount = repairerCompletedCount;
+        this.attachResume = proposal.isAttachResume();
     }
 }
