@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PencilSimple } from "@phosphor-icons/react";
+import { PencilSimple, LockKey } from "@phosphor-icons/react";
 
 export default function AccountSettings() {
   const [me, setMe] = useState(null);
@@ -125,28 +125,29 @@ export default function AccountSettings() {
 
       {!editingProfile && !editingPassword && (
         <div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold text-slate-800">{me.name} · {me.nickname}</p>
-              <p className="mt-0.5 text-xs text-slate-500">{me.email}</p>
-              {me.regionName && <p className="mt-0.5 text-xs text-slate-400">{me.regionName}</p>}
-            </div>
+          <div>
+            <p className="text-sm font-bold text-slate-800">{me.name} · {me.nickname}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{me.email}</p>
+            {me.regionName && <p className="mt-0.5 text-xs text-slate-400">{me.regionName}</p>}
+          </div>
+          <div className="mt-3 flex gap-2">
             <button
               type="button"
               onClick={startEditProfile}
-              aria-label="개인정보 수정"
-              className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
             >
-              <PencilSimple size={16} />
+              <PencilSimple size={14} weight="bold" />
+              정보 수정
+            </button>
+            <button
+              type="button"
+              onClick={startEditPassword}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
+            >
+              <LockKey size={14} weight="bold" />
+              비밀번호 변경
             </button>
           </div>
-          <button
-            type="button"
-            onClick={startEditPassword}
-            className="mt-3 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
-          >
-            비밀번호 변경
-          </button>
         </div>
       )}
 
