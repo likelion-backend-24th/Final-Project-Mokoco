@@ -1,9 +1,0 @@
-rootProject.name = 'Final-Project-Mokoco'
-
-// Each backend service keeps its own build (own settings.gradle + wrapper),
-// so we wire them together as a Gradle composite build. Opening the repo root
-// in IntelliJ now imports all services as one project.
-includeBuild 'backend/api-gateway'
-includeBuild 'backend/user-service'
-includeBuild 'backend/post-service'
-includeBuild 'backend/payment-service'
