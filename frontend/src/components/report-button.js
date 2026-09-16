@@ -13,8 +13,8 @@ const REASONS = [
 
 // 글(POST)과 작성자(USER)를 하나의 버튼에서 선택해 신고할 수 있게 한다.
 // postId/authorEmail 둘 다 있으면 "이 글" / "작성자" 두 대상 중 선택, authorEmail만 있으면 유저 신고 전용으로 동작.
-export default function ReportButton({ postId, authorEmail, label = "신고하기" }) {
-  const [open, setOpen] = useState(false);
+export default function ReportButton({ postId, authorEmail, label = "신고하기", defaultOpen = false, onClose }) {
+  const [open, setOpen] = useState(defaultOpen);
   const [target, setTarget] = useState(postId ? "POST" : "USER");
   const [reason, setReason] = useState("SPAM");
   const [detail, setDetail] = useState("");
@@ -67,7 +67,13 @@ export default function ReportButton({ postId, authorEmail, label = "신고하�
     <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-sm font-bold text-slate-800">신고하기</span>
-        <button type="button" onClick={() => setOpen(false)} className="text-xs text-slate-400 hover:text-slate-600">닫기</button>
+        <button
+          type="button"
+          onClick={() => { setOpen(false); onClose?.(); }}
+          className="text-xs text-slate-400 hover:text-slate-600"
+        >
+          닫기
+        </button>
       </div>
 
       {postId && authorEmail && (
