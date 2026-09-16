@@ -51,7 +51,7 @@ body {
 .policy-main section { margin-bottom: 40px; }
 .policy-main h2 { font-size: 20px; margin-bottom: 12px; }
 .policy-main p { font-size: 15px; line-height: 1.8; color: #374151; }
-.policy-main ul { margin: 8px 0; padding-left: 20px; }
+.policy-main ul, .policy-main ol { margin: 8px 0; padding-left: 20px; }
 .policy-main li { font-size: 15px; line-height: 1.9; color: #374151; }
 .policy-main a { color: var(--policy-accent); text-decoration: none; }
 .policy-main a:hover { text-decoration: underline; }
