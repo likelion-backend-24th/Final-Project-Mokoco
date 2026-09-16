@@ -2,6 +2,7 @@ package com.team2.postservice.ai.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.team2.postservice.ai.AiDraftStatic;
 import com.team2.postservice.ai.client.GeminiClient;
 import com.team2.postservice.ai.AiImages;
 import com.team2.postservice.ai.AiRateLimit;
@@ -21,27 +22,27 @@ class AiDraftServiceTest {
     final AiDraftService service = new AiDraftService(gemini,images,limit,context,mapper,new com.team2.postservice.ai.AiDraftCache());
     ObjectNode blankContract() {
         var node = mapper.createObjectNode(); var terms = node.putObject("suggestedTerms"); var sources = node.putObject("fieldSources");
-        AiDraftService.TERMS.keySet().forEach(field -> { terms.putNull(field); sources.putObject(field).put("sourceId","SUGGESTED_CLAUSE").put("quote",""); });
+        AiDraftStatic.TERMS.keySet().forEach(field -> { terms.putNull(field); sources.putObject(field).put("sourceId","SUGGESTED_CLAUSE").put("quote",""); });
         node.putArray("conflicts"); node.putArray("warnings"); return node;
     }
     @Test void missingTermsRemainMissing() {
-        var result = blankContract(); AiDraftService.validateContract(result,Map.of("POST","repair"),Map.of());
+        var result = blankContract(); AiDraftStatic.validateContract(result,Map.of("POST","repair"),Map.of());
         assertThat(result.path("missingFields").size()).isEqualTo(13);
     }
     @Test void rejectsInventedMoneyEvenWhenQuoteContainsAnEstimate() {
         var result = blankContract(); ((ObjectNode)result.path("suggestedTerms")).put("totalAmount","50000");
         ((ObjectNode)result.path("fieldSources").path("totalAmount")).put("sourceId","ADOPTED_PROPOSAL").put("quote","50000");
-        assertThatThrownBy(() -> AiDraftService.validateContract(result,Map.of("ADOPTED_PROPOSAL","50000"),Map.of())).isInstanceOf(AiException.class);
+        assertThatThrownBy(() -> AiDraftStatic.validateContract(result,Map.of("ADOPTED_PROPOSAL","50000"),Map.of())).isInstanceOf(AiException.class);
     }
     @Test void rejectsNonexistentQuoteAndUnexpectedField() {
         var result = blankContract(); ((ObjectNode)result.path("suggestedTerms")).put("scope","수리");
         ((ObjectNode)result.path("fieldSources").path("scope")).put("sourceId","POST").put("quote","invented");
-        assertThatThrownBy(() -> AiDraftService.validateContract(result,Map.of("POST","repair"),Map.of())).isInstanceOf(AiException.class);
-        assertThatThrownBy(() -> AiDraftService.validateTerms(Map.of("signerId","1"),false)).isInstanceOf(AiException.class);
+        assertThatThrownBy(() -> AiDraftStatic.validateContract(result,Map.of("POST","repair"),Map.of())).isInstanceOf(AiException.class);
+        assertThatThrownBy(() -> AiDraftStatic.validateTerms(Map.of("signerId","1"),false)).isInstanceOf(AiException.class);
     }
     @Test void rejectsInvalidDatesAndAmount() {
         for (var terms : List.of(Map.of("totalAmount","-1"),Map.of("totalAmount","1e3"),Map.of("startDate","2026-02-30"),Map.of("startDate","2026-10-02","endDate","2026-10-01")))
-            assertThatThrownBy(() -> AiDraftService.validateTerms(terms,false)).isInstanceOf(AiException.class);
+            assertThatThrownBy(() -> AiDraftStatic.validateTerms(terms,false)).isInstanceOf(AiException.class);
     }
     @Test void authorizationPrecedesModelCallAndChangedVersionIsRejectedAfterCall() {
         when(context.read(1L,2L,null)).thenThrow(AiException.input("denied"));
@@ -65,7 +66,7 @@ class AiDraftServiceTest {
     }
     @Test void postRejectsInvalidCategoryFromProvider() throws Exception {
         var result = mapper.readTree("{\"suggestion\":{\"title\":\"수리\",\"content\":\"수리\",\"category\":\"UNKNOWN\"},\"productType\":null,\"modelCandidate\":null,\"observations\":[],\"questions\":[],\"warnings\":[]}");
-        assertThatThrownBy(() -> AiDraftService.validatePost(result)).isInstanceOf(AiException.class);
+        assertThatThrownBy(() -> AiDraftStatic.validatePost(result)).isInstanceOf(AiException.class);
     }
     @Test void rateLimitCapsAccountAndGlobalCalls() {
         var limiter = new AiRateLimit(1,2,2); limiter.acquire(1L);
@@ -89,13 +90,13 @@ class AiDraftServiceTest {
         verify(gemini,times(2)).generate(anyString(),anyList(),anyMap());
     }
     @Test void serverFieldsAreAbsentFromProviderSchemaAndDatesComeFromInput() {
-        var schema = mapper.valueToTree(AiDraftService.contractSchema(Set.of("POST")));
-        for (String field : AiDraftService.SERVER_FIELDS) {
+        var schema = mapper.valueToTree(AiDraftStatic.contractSchema(Set.of("POST")));
+        for (String field : AiDraftStatic.SERVER_FIELDS) {
             assertThat(schema.path("properties").path("suggestedTerms").path("properties").has(field)).isFalse();
             assertThat(schema.path("properties").path("fieldSources").path("properties").has(field)).isFalse();
         }
         var result = blankContract();
-        AiDraftService.fillServerFields(result,Map.of("PROPOSAL_AMOUNT","50000"),Map.of("startDate","2026-10-01"));
+        AiDraftStatic.fillServerFields(result,Map.of("PROPOSAL_AMOUNT","50000"),Map.of("startDate","2026-10-01"));
         assertThat(result.path("suggestedTerms").path("startDate").asText()).isEqualTo("2026-10-01");
         assertThat(result.path("suggestedTerms").path("endDate").isNull()).isTrue();
     }
