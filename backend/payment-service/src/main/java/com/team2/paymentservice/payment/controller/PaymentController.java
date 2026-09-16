@@ -1,9 +1,12 @@
 package com.team2.paymentservice.payment.controller;
 
+import com.team2.paymentservice.payment.dto.PayeePaymentsResponseDto;
 import com.team2.paymentservice.payment.dto.PaymentRequestDto;
 import com.team2.paymentservice.payment.dto.PaymentResponseDto;
 import com.team2.paymentservice.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/payments")
 @RequiredArgsConstructor
 public class PaymentController {
+
+    private static final int MAX_PAGE_SIZE = 50;
 
     private final PaymentService paymentService;
 
@@ -20,6 +25,17 @@ public class PaymentController {
                                                @RequestHeader("X-User-Email") String payerEmail) {
         Long paymentId = paymentService.createPayment(request, payerEmail);
         return ResponseEntity.ok(paymentId);
+    }
+
+    // 수리자 본인이 받은/받을 정산 내역 (실제 송금 없음, settledAt 여부만 표시)
+    @GetMapping("/mine")
+    public ResponseEntity<PayeePaymentsResponseDto> getMyPayments(
+            @RequestHeader("X-User-Email") String payeeEmail,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        int safeSize = Math.min(size, MAX_PAGE_SIZE);
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(safeSize, 1));
+        return ResponseEntity.ok(paymentService.getMyPayments(payeeEmail, pageable));
     }
 
     // 결제 단건 조회 (결제자 또는 수리자 본인만)

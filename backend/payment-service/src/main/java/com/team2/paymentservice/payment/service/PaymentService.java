@@ -9,12 +9,15 @@ import com.team2.paymentservice.payment.client.PortOnePaymentClient;
 import com.team2.paymentservice.payment.client.PortOnePaymentResponse;
 import com.team2.paymentservice.payment.client.PostInfoResponse;
 import com.team2.paymentservice.payment.client.PostServiceClient;
+import com.team2.paymentservice.payment.dto.PayeePaymentsResponseDto;
 import com.team2.paymentservice.payment.dto.PaymentRequestDto;
 import com.team2.paymentservice.payment.dto.PaymentResponseDto;
 import com.team2.paymentservice.payment.entity.Payment;
 import com.team2.paymentservice.payment.entity.PaymentStatus;
 import com.team2.paymentservice.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -151,6 +154,18 @@ public class PaymentService {
         }
 
         return PaymentResponseDto.from(payment);
+    }
+
+    // 수리자 본인이 받은/받을 정산 내역 조회. 실제 계좌 송금은 하지 않으며,
+    // 정산 확정(settledAt) 여부만 보여준다.
+    public PayeePaymentsResponseDto getMyPayments(String payeeEmail, Pageable pageable) {
+        Page<Payment> page = paymentRepository.findByPayeeEmailOrderByCreatedAtDesc(payeeEmail, pageable);
+        return new PayeePaymentsResponseDto(
+                paymentRepository.sumSettledNetAmount(payeeEmail),
+                paymentRepository.sumPendingNetAmount(payeeEmail),
+                page.getTotalElements(),
+                page.getContent().stream().map(PaymentResponseDto::from).toList()
+        );
     }
 
     @Transactional
