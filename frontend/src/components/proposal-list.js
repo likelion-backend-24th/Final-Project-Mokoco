@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import ProposalChatRoom from "@/components/proposal-chat-room";
 import FixDealProgress from "@/components/fix-deal-progress";
 import RatingBadge from "@/components/rating-badge";
+import RepairerEmailMenu from "@/components/repairer-email-menu";
 import ResumeViewModal from "@/components/resume-view-modal";
 
 export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail }) {
@@ -102,9 +103,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-800">
-                  {proposal.repairerEmail || "수리공 이웃"}
-                </span>
+                <RepairerEmailMenu email={proposal.repairerEmail} />
                 <RatingBadge email={proposal.repairerEmail} postId={postId} />
                 {isAdopted && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">

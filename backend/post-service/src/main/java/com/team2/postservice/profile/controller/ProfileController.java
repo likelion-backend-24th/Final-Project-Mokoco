@@ -38,4 +38,15 @@ public class ProfileController {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE));
         return ResponseEntity.ok(profileService.getMyWrittenReviews(email, pageable));
     }
+
+    @GetMapping("/{email}/transactions")
+    public ResponseEntity<TransactionHistoryResponse> getTransactionsByEmail(
+            @PathVariable String email,
+            @RequestParam(defaultValue = "repairer") String role,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE));
+        return ResponseEntity.ok(profileService.getMyTransactions(email, role, pageable));
+    }
 }
