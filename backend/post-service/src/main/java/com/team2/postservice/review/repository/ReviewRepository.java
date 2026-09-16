@@ -16,6 +16,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     Page<Review> findByRevieweeEmailOrderByCreatedAtDesc(String revieweeEmail, Pageable pageable);
 
+    Page<Review> findByReviewerEmailOrderByCreatedAtDesc(String reviewerEmail, Pageable pageable);
+
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.revieweeEmail = :revieweeEmail")
     Double findAverageRatingByRevieweeEmail(@Param("revieweeEmail") String revieweeEmail);
 }

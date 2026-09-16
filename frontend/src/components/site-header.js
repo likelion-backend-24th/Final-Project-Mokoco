@@ -62,6 +62,9 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
         {userEmail && (
           <Link href="/settlements" className={`nav-link ${pathname.startsWith("/settlements") ? "nav-link-active" : ""}`}>정산 내역</Link>
         )}
+        {userEmail && (
+          <Link href="/profile" className={`nav-link ${pathname.startsWith("/profile") ? "nav-link-active" : ""}`}>내 프로필</Link>
+        )}
         {isAdmin && (
           <Link href="/admin" className={`nav-link ${pathname.startsWith("/admin") ? "nav-link-active" : ""}`}>관리자</Link>
         )}

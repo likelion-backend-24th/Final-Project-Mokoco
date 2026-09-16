@@ -152,6 +152,31 @@ public class UserService {
     }
 
     @Transactional
+    public UserResponse updateMyProfile(String email, UpdateProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        userRepository.findByNickname(request.getNickname())
+                .filter(other -> !other.getEmail().equals(email))
+                .ifPresent(other -> { throw new CustomException(ErrorCode.DUPLICATE_NICKNAME); });
+
+        user.updateProfile(request.getName(), request.getNickname());
+        return new UserResponse(user);
+    }
+
+    @Transactional
+    public void changePassword(String email, ChangePasswordRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new CustomException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        user.updatePassword(passwordEncoder.encode(request.getNewPassword()));
+    }
+
+    @Transactional
     public UserResponse changeUserRole(String requesterEmail, Long targetUserId, Role newRole) {
         requireAdmin(requesterEmail);
         User target = userRepository.findById(targetUserId)

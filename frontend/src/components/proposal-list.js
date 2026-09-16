@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle, Trash, MapPin, Wrench } from "@phosphor-icons/react";
+import { CheckCircle, Trash, MapPin, Wrench, FileText } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import ProposalChatRoom from "@/components/proposal-chat-room";
 import FixDealProgress from "@/components/fix-deal-progress";
 import RatingBadge from "@/components/rating-badge";
+import ResumeViewModal from "@/components/resume-view-modal";
 
 export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail }) {
   const [proposals, setProposals] = useState(initialProposals);
   const [previousProposals, setPreviousProposals] = useState(initialProposals);
   const [loadingId, setLoadingId] = useState(null);
+  const [resumeEmail, setResumeEmail] = useState(null);
   const router = useRouter();
 
   // 부모 컴포넌트에서 router.refresh()로 새로운 데이터가 내려올 때 상태 동기화
@@ -104,6 +106,15 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                   {proposal.repairerEmail || "수리공 이웃"}
                 </span>
                 <RatingBadge email={proposal.repairerEmail} postId={postId} />
+                {proposal.repairerEmail && (
+                  <button
+                    type="button"
+                    onClick={() => setResumeEmail(proposal.repairerEmail)}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-blue-600 hover:underline"
+                  >
+                    <FileText size={13} weight="duotone" /> 이력서 보기
+                  </button>
+                )}
                 {isAdopted && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white">
                     <CheckCircle size={14} weight="bold" /> 채택 완료
@@ -185,6 +196,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
           </div>
         );
       })}
+      {resumeEmail && <ResumeViewModal email={resumeEmail} onClose={() => setResumeEmail(null)} />}
     </div>
   );
 }

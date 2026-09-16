@@ -51,7 +51,7 @@ spring:
         - id: post-service-direct
           uri: http://mokoco-post-service:8082
           predicates:
-            - Path=/posts/**, /fix-deals/**, /images/**, /notifications/**, /reviews/**
+            - Path=/posts/**, /fix-deals/**, /images/**, /notifications/**, /reviews/**, /profile/**, /resumes/**
 
         # 관리자용 글 삭제/신고 처리 — 컨트롤러가 이미 /api/admin/* 매핑이라 접두어 유지
         - id: post-service-admin
