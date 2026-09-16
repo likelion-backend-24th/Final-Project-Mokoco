@@ -64,8 +64,11 @@ public class AiDraftService {
                     + "의뢰인의 요청과 수리자의 답변을 구분하고, 나중에 양측이 합의한 변경사항을 반영하세요. 제안이나 질문만으로 합의를 확정하지 마세요. "
                     + "기존 입력값을 존중하고 상충하는 조건은 conflicts에 기록하세요. "
                     + "각 필드 출처는 실제 제공된 sourceId와 그 자료의 정확한 연속 인용문 quote로 기록하세요. "
-                    + "근거 없는 값은 null로 두세요. 표준 문구 제안은 sourceId=SUGGESTED_CLAUSE, quote=''로 구분하세요. "
-                    + "미합의 보증기간·위약금·지급조건을 사실로 만들지 마세요. 금액과 날짜는 서버가 채우므로 출력하지 마세요. "
+                    + "scope·exclusions·materials처럼 이 거래에 특정된 사실은 근거 없이 지어내지 말고 null로 두세요. "
+                    + "반면 paymentTerms처럼 이 플랫폼에서 항상 동일하게 적용되는 일반 조항은 특별한 합의가 없어도 표준 문구로 제안하세요: "
+                    + "paymentTerms는 별다른 합의가 없으면 '계약서 서명 완료 시 결제, 거래 완료(수리 완료 확인) 시 수리자에게 정산'으로 제안하세요. "
+                    + "표준 문구 제안은 sourceId=SUGGESTED_CLAUSE, quote=''로 구분하세요. "
+                    + "미합의 보증기간·위약금을 사실로 만들지 마세요. 금액과 날짜는 서버가 채우므로 출력하지 마세요. "
                     + "서버가 채택 제안의 PROPOSAL_AMOUNT를 직접 입력합니다. 대화나 현재 입력의 금액이 제안 금액과 다르면 conflicts에 알려주세요.",
                     List.of(Map.of("text", input)), contractSchema(sources.keySet()));
             fillServerFields(generated, sources, currentTerms);
@@ -90,11 +93,24 @@ public class AiDraftService {
         var terms = (com.fasterxml.jackson.databind.node.ObjectNode) result.path("suggestedTerms");
         var evidence = (com.fasterxml.jackson.databind.node.ObjectNode) result.path("fieldSources");
         for (String field : SERVER_FIELDS) {
-            String value = field.equals("totalAmount") ? sources.get("PROPOSAL_AMOUNT") : current.get(field);
-            if (value != null && value.isBlank()) value = null;
-            terms.put(field, value);
-            evidence.putObject(field).put("sourceId", value == null ? "SUGGESTED_CLAUSE" : field.equals("totalAmount") ? "PROPOSAL_AMOUNT" : "USER_" + field)
-                    .put("quote", value == null ? "" : value);
+            if (field.equals("totalAmount")) {
+                String value = sources.get("PROPOSAL_AMOUNT");
+                terms.put(field, value);
+                evidence.putObject(field).put("sourceId", "PROPOSAL_AMOUNT").put("quote", value == null ? "" : value);
+                continue;
+            }
+            String userValue = current.get(field);
+            if (userValue != null && userValue.isBlank()) userValue = null;
+            if (userValue != null) {
+                terms.put(field, userValue);
+                evidence.putObject(field).put("sourceId", "USER_" + field).put("quote", userValue);
+            } else {
+                // 사용자가 아직 입력하지 않았으면 일반적인 범위 내 기본값을 제안한다
+                // (시작일=오늘, 완료 예정일=3일 뒤) — 실제 값이 아니므로 SUGGESTED_CLAUSE로 표시한다.
+                String defaulted = field.equals("startDate") ? LocalDate.now().toString() : LocalDate.now().plusDays(3).toString();
+                terms.put(field, defaulted);
+                evidence.putObject(field).put("sourceId", "SUGGESTED_CLAUSE").put("quote", "");
+            }
         }
     }
 
@@ -174,7 +190,15 @@ public class AiDraftService {
             if (source.equals("SUGGESTED_CLAUSE")) { if (!quote.isEmpty()) throw AiException.output(); }
             else if (quote.isBlank() || !sources.get(source).contains(quote)) throw AiException.output();
             if (field.equals("totalAmount") && (!value.equals(sources.get("PROPOSAL_AMOUNT")) || !source.equals("PROPOSAL_AMOUNT"))) throw AiException.output();
-            if (Set.of("startDate","endDate").contains(field) && (!value.equals(current.get(field)) || !source.equals("USER_" + field))) throw AiException.output();
+            if (Set.of("startDate","endDate").contains(field)) {
+                String userValue = current.get(field);
+                boolean hasUserValue = userValue != null && !userValue.isBlank();
+                if (hasUserValue) {
+                    if (!value.equals(userValue) || !source.equals("USER_" + field)) throw AiException.output();
+                } else if (!source.equals("SUGGESTED_CLAUSE")) {
+                    throw AiException.output();
+                }
+            }
         });
         validateTerms(terms, true); strings(result.path("conflicts")); strings(result.path("warnings"));
         var missingArray = ((com.fasterxml.jackson.databind.node.ObjectNode) result).putArray("missingFields");
