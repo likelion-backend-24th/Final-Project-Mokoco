@@ -1,5 +1,6 @@
 import AuthInitializer from "@/components/AuthInitializer";
 import NotificationProvider from "@/components/notification-provider";
+import SiteFooter from "@/components/site-footer";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
@@ -15,6 +16,7 @@ export default function RootLayout({ children }) {
         <AuthInitializer />
         <NotificationProvider />
         {children}
+        <SiteFooter />
       </body>
     </html>
   );
