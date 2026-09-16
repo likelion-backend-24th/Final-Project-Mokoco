@@ -22,11 +22,11 @@ const TABS = [
 
 function StarRow({ rating }) {
   return (
-    <div className="flex gap-0.5">
+    <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((value) => (
         <Star
           key={value}
-          size={13}
+          size={16}
           weight={value <= rating ? "fill" : "regular"}
           className={value <= rating ? "text-amber-400" : "text-slate-300"}
         />
@@ -37,20 +37,20 @@ function StarRow({ rating }) {
 
 function TransactionCard({ item }) {
   return (
-    <li className="rounded-xl border border-slate-200 bg-white p-4">
+    <li className="rounded-xl border border-slate-200 bg-white p-5">
       <div className="flex items-center justify-between">
-        <Link href={`/posts/${item.postId}`} className="text-sm font-bold text-slate-800 hover:underline">
+        <Link href={`/posts/${item.postId}`} className="text-base font-bold text-slate-800 hover:underline">
           {item.postTitle}
         </Link>
-        <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">
           {STATUS_LABEL[item.status] ?? item.status}
         </span>
       </div>
-      <p className="mt-1 text-xs text-slate-500">상대방: {item.counterpartEmail}</p>
+      <p className="mt-1.5 text-sm text-slate-500">상대방: {item.counterpartEmail}</p>
       {item.review && (
-        <div className="mt-2 rounded-lg bg-slate-50 p-2.5">
+        <div className="mt-3 rounded-lg bg-slate-50 p-3">
           <StarRow rating={item.review.rating} />
-          <p className="mt-1 text-xs text-slate-600 line-clamp-2">{item.review.content}</p>
+          <p className="mt-1.5 text-sm text-slate-600 line-clamp-2">{item.review.content}</p>
         </div>
       )}
     </li>
@@ -59,22 +59,22 @@ function TransactionCard({ item }) {
 
 function ReviewCard({ review, showTarget }) {
   return (
-    <li className="rounded-xl border border-slate-200 bg-white p-4">
+    <li className="rounded-xl border border-slate-200 bg-white p-5">
       <div className="flex items-center justify-between">
         <StarRow rating={review.rating} />
-        <span className="text-xs text-slate-400">
+        <span className="text-sm text-slate-400">
           {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ""}
         </span>
       </div>
-      <p className="mt-1.5 text-sm text-slate-700 whitespace-pre-line">{review.content}</p>
-      <p className="mt-1 text-xs text-slate-400">
+      <p className="mt-2 text-base text-slate-700 whitespace-pre-line">{review.content}</p>
+      <p className="mt-1.5 text-sm text-slate-400">
         {showTarget ? `대상: ${review.revieweeEmail}` : `작성자: ${review.reviewerEmail}`}
       </p>
       {review.imageUrls?.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-2.5 flex flex-wrap gap-2">
           {review.imageUrls.map((url) => (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img key={url} src={url} alt="후기 이미지" className="h-16 w-16 rounded-md border border-slate-200 object-cover" />
+            <img key={url} src={url} alt="후기 이미지" className="h-20 w-20 rounded-md border border-slate-200 object-cover" />
           ))}
         </div>
       )}
@@ -132,7 +132,7 @@ export default function ProfileTabs({ userEmail }) {
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
-            className={`whitespace-nowrap px-4 py-2.5 text-sm font-semibold transition-colors ${
+            className={`whitespace-nowrap px-5 py-3 text-base font-semibold transition-colors ${
               activeTab === tab.key
                 ? "border-b-2 border-blue-600 text-blue-600"
                 : "text-slate-400 hover:text-slate-600"
@@ -143,9 +143,9 @@ export default function ProfileTabs({ userEmail }) {
         ))}
       </div>
 
-      <div className="mt-4">
-        {loading && <p className="text-sm text-slate-400">불러오는 중...</p>}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="mt-5">
+        {loading && <p className="text-base text-slate-400">불러오는 중...</p>}
+        {error && <p className="text-base text-red-600">{error}</p>}
 
         {!loading && !error && (!items || items.length === 0) && (
           <div className="reference-empty-state" role="status">
@@ -154,7 +154,7 @@ export default function ProfileTabs({ userEmail }) {
         )}
 
         {!loading && !error && items?.length > 0 && (
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {(activeTab === "requester" || activeTab === "repairer") &&
               items.map((item) => <TransactionCard key={item.fixDealId} item={item} />)}
             {activeTab === "written-reviews" &&

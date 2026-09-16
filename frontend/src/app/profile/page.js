@@ -18,16 +18,16 @@ export default async function ProfilePage() {
       <SiteHeader userEmail={userEmail} />
       <main className="page-shell auth-main">
         <p className="section-kicker">PROFILE</p>
-        <h2 className="mt-1 text-2xl font-extrabold tracking-[-0.03em] text-slate-950">내 프로필</h2>
-        <p className="mt-1 mb-6 text-sm text-slate-500">참여했던 거래와 후기를 확인할 수 있어요.</p>
+        <h2 className="mt-1 text-3xl font-extrabold tracking-[-0.03em] text-slate-950">내 프로필</h2>
+        <p className="mt-2 mb-8 text-base text-slate-500">참여했던 거래와 후기를 확인할 수 있어요.</p>
 
-        <section className="mb-8">
-          <h3 className="mb-2 text-sm font-bold text-slate-700">내 정보</h3>
+        <section className="mb-10">
+          <h3 className="mb-3 text-base font-bold text-slate-700">내 정보</h3>
           <AccountSettings />
         </section>
 
-        <section className="mb-8">
-          <h3 className="mb-2 text-sm font-bold text-slate-700">내 이력서</h3>
+        <section className="mb-10">
+          <h3 className="mb-3 text-base font-bold text-slate-700">내 이력서</h3>
           <ResumeEditor />
         </section>
 

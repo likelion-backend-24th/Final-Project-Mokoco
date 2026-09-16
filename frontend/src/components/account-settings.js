@@ -116,35 +116,35 @@ export default function AccountSettings() {
     }
   }
 
-  if (loading) return <p className="text-sm text-slate-400">내 정보 확인 중...</p>;
-  if (!me) return <p className="text-sm text-red-600">{error || "내 정보를 불러오지 못했습니다."}</p>;
+  if (loading) return <p className="text-base text-slate-400">내 정보 확인 중...</p>;
+  if (!me) return <p className="text-base text-red-600">{error || "내 정보를 불러오지 못했습니다."}</p>;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      {notice && <p className="mb-3 text-xs font-semibold text-emerald-600">{notice}</p>}
+    <div className="rounded-xl border border-slate-200 bg-white p-6">
+      {notice && <p className="mb-4 text-sm font-semibold text-emerald-600">{notice}</p>}
 
       {!editingProfile && !editingPassword && (
         <div>
           <div>
-            <p className="text-sm font-bold text-slate-800">{me.name} · {me.nickname}</p>
-            <p className="mt-0.5 text-xs text-slate-500">{me.email}</p>
-            {me.regionName && <p className="mt-0.5 text-xs text-slate-400">{me.regionName}</p>}
+            <p className="text-lg font-bold text-slate-800">{me.name} · {me.nickname}</p>
+            <p className="mt-1 text-sm text-slate-500">{me.email}</p>
+            {me.regionName && <p className="mt-0.5 text-sm text-slate-400">{me.regionName}</p>}
           </div>
-          <div className="mt-3 flex gap-2">
+          <div className="mt-4 flex gap-3">
             <button
               type="button"
               onClick={startEditProfile}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
             >
-              <PencilSimple size={14} weight="bold" />
+              <PencilSimple size={16} weight="bold" />
               정보 수정
             </button>
             <button
               type="button"
               onClick={startEditPassword}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
             >
-              <LockKey size={14} weight="bold" />
+              <LockKey size={16} weight="bold" />
               비밀번호 변경
             </button>
           </div>
@@ -153,34 +153,34 @@ export default function AccountSettings() {
 
       {editingProfile && (
         <form onSubmit={handleProfileSubmit}>
-          <p className="mb-3 text-sm font-bold text-slate-800">개인정보 수정</p>
-          <label className="block text-xs font-semibold text-slate-500">이름</label>
+          <p className="mb-4 text-base font-bold text-slate-800">개인정보 수정</p>
+          <label className="block text-sm font-semibold text-slate-500">이름</label>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
             maxLength={50}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
+            className="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 text-base outline-none focus:border-blue-400"
           />
-          <label className="mt-3 block text-xs font-semibold text-slate-500">닉네임</label>
+          <label className="mt-4 block text-sm font-semibold text-slate-500">닉네임</label>
           <input
             value={nickname}
             onChange={(event) => setNickname(event.target.value)}
             maxLength={50}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
+            className="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 text-base outline-none focus:border-blue-400"
           />
-          {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
-          <div className="mt-3 flex gap-2">
+          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+          <div className="mt-4 flex gap-3">
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {submitting ? "저장 중..." : "저장"}
             </button>
             <button
               type="button"
               onClick={() => setEditingProfile(false)}
-              className="rounded-lg border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
+              className="rounded-lg border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
             >
               취소
             </button>
@@ -190,42 +190,42 @@ export default function AccountSettings() {
 
       {editingPassword && (
         <form onSubmit={handlePasswordSubmit}>
-          <p className="mb-3 text-sm font-bold text-slate-800">비밀번호 변경</p>
-          <label className="block text-xs font-semibold text-slate-500">현재 비밀번호</label>
+          <p className="mb-4 text-base font-bold text-slate-800">비밀번호 변경</p>
+          <label className="block text-sm font-semibold text-slate-500">현재 비밀번호</label>
           <input
             type="password"
             value={currentPassword}
             onChange={(event) => setCurrentPassword(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
+            className="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 text-base outline-none focus:border-blue-400"
           />
-          <label className="mt-3 block text-xs font-semibold text-slate-500">새 비밀번호</label>
+          <label className="mt-4 block text-sm font-semibold text-slate-500">새 비밀번호</label>
           <input
             type="password"
             value={newPassword}
             onChange={(event) => setNewPassword(event.target.value)}
             placeholder="영문+숫자 포함 8자 이상"
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
+            className="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 text-base outline-none focus:border-blue-400"
           />
-          <label className="mt-3 block text-xs font-semibold text-slate-500">새 비밀번호 확인</label>
+          <label className="mt-4 block text-sm font-semibold text-slate-500">새 비밀번호 확인</label>
           <input
             type="password"
             value={newPasswordConfirm}
             onChange={(event) => setNewPasswordConfirm(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
+            className="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 text-base outline-none focus:border-blue-400"
           />
-          {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
-          <div className="mt-3 flex gap-2">
+          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+          <div className="mt-4 flex gap-3">
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {submitting ? "변경 중..." : "변경"}
             </button>
             <button
               type="button"
               onClick={() => setEditingPassword(false)}
-              className="rounded-lg border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
+              className="rounded-lg border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
             >
               취소
             </button>
