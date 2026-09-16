@@ -64,11 +64,17 @@ public class AiDraftService {
                     + "의뢰인의 요청과 수리자의 답변을 구분하고, 나중에 양측이 합의한 변경사항을 반영하세요. 제안이나 질문만으로 합의를 확정하지 마세요. "
                     + "기존 입력값을 존중하고 상충하는 조건은 conflicts에 기록하세요. "
                     + "각 필드 출처는 실제 제공된 sourceId와 그 자료의 정확한 연속 인용문 quote로 기록하세요. "
-                    + "scope·exclusions·materials처럼 이 거래에 특정된 사실은 근거 없이 지어내지 말고 null로 두세요. "
-                    + "반면 paymentTerms처럼 이 플랫폼에서 항상 동일하게 적용되는 일반 조항은 특별한 합의가 없어도 표준 문구로 제안하세요: "
-                    + "paymentTerms는 별다른 합의가 없으면 '계약서 서명 완료 시 결제, 거래 완료(수리 완료 확인) 시 수리자에게 정산'으로 제안하세요. "
-                    + "표준 문구 제안은 sourceId=SUGGESTED_CLAUSE, quote=''로 구분하세요. "
-                    + "미합의 보증기간·위약금을 사실로 만들지 마세요. 금액과 날짜는 서버가 채우므로 출력하지 마세요. "
+                    + "scope는 POST·ADOPTED_PROPOSAL·대화 내용을 그대로 옮기지 말고, 무엇을 점검·수리하는 작업인지 계약 문구로 정리해서 작성하세요. quote는 그 근거가 된 실제 문장에서 가져오세요. "
+                    + "exclusions·materials·workLocation·acceptanceCriteria·warrantyTerms·cancellationTerms·additionalCostTerms·paymentTerms는 "
+                    + "대화에서 구체적으로 합의된 내용이 있으면 그것을 실제 근거(quote)와 함께 우선 반영하고, 없으면 아래 기본값을 표준 문구(sourceId=SUGGESTED_CLAUSE, quote='')로 제안하세요: "
+                    + "exclusions는 '-'(제외 사항 없음). "
+                    + "materials는 '부품·자재비는 의뢰인이 결제 금액에 포함하여 부담합니다'. "
+                    + "workLocation은 '수리자가 의뢰인이 지정한 장소로 방문하여 작업합니다'. "
+                    + "acceptanceCriteria는 '수리자가 작업을 완료한 후 제품이 정상적으로 동작하는 것을 확인하는 것을 기준으로 합니다'. "
+                    + "warrantyTerms·cancellationTerms·additionalCostTerms는 일반적인 소규모 수리 서비스 관행에 맞는 합리적인 표준 문구를 직접 작성하세요 "
+                    + "(예: 동일 하자 재발 시 일정 기간 무상 재수리, 작업 착수 전 취소 시 처리, 수리 불가로 판명될 경우 처리, 사전 협의 없는 추가 비용 청구 금지 등). "
+                    + "paymentTerms는 '계약서 서명 완료 시 결제, 거래 완료(수리 완료 확인) 시 수리자에게 정산'으로 제안하세요. "
+                    + "이 기본값들은 실제 합의가 아니라 제안일 뿐이므로 사실처럼 단정하지 말고, 대화에서 다른 내용이 확인되면 그것을 우선하세요. 금액과 날짜는 서버가 채우므로 출력하지 마세요. "
                     + "서버가 채택 제안의 PROPOSAL_AMOUNT를 직접 입력합니다. 대화나 현재 입력의 금액이 제안 금액과 다르면 conflicts에 알려주세요.",
                     List.of(Map.of("text", input)), contractSchema(sources.keySet()));
             fillServerFields(generated, sources, currentTerms);
