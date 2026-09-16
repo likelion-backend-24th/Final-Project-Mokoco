@@ -18,14 +18,21 @@ public class AiController {
     private final AiDraftService service;
 
     @PostMapping(value="/api/ai/post-draft", consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
-    public JsonNode post(@AuthenticationPrincipal LoginUser user,
-            @RequestPart("images") List<MultipartFile> images, @RequestParam(defaultValue="") String title,
-            @RequestParam(defaultValue="") String content, @RequestParam(defaultValue="") String category) {
+    public JsonNode post(
+            @AuthenticationPrincipal LoginUser user,
+            @RequestPart("images") List<MultipartFile> images,
+            @RequestParam(defaultValue="") String title,
+            @RequestParam(defaultValue="") String content,
+            @RequestParam(defaultValue="") String category
+    ) {
         return service.post(user.id(), images, title, content, category);
     }
     @PostMapping("/api/chat-rooms/{roomId}/contract/ai-draft")
-    public JsonNode contract(@PathVariable Long roomId, @AuthenticationPrincipal LoginUser user,
-            @Valid @RequestBody ContractDraftRequest input) {
+    public JsonNode contract(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal LoginUser user,
+            @Valid @RequestBody ContractDraftRequest input
+    ) {
         return service.contract(user.id(), roomId, input.baseId(), input.currentTerms(), input.instructions());
     }
 }
