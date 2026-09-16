@@ -30,6 +30,7 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
   const [error, setError] = useState("");
   const [refreshToken, setRefreshToken] = useState(0);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewDeadlinePassed, setReviewDeadlinePassed] = useState(false);
 
   function refresh() {
     setRefreshToken((token) => token + 1);
@@ -57,6 +58,11 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
           const reviewRes = await fetch(`/api/reviews/exists?postId=${postId}`, { signal: controller.signal, cache: "no-store" });
           const reviewData = reviewRes.ok ? await reviewRes.json() : null;
           setReviewSubmitted(Boolean(reviewData?.exists));
+
+          if (data.completedAt) {
+            const elapsed = Date.now() - new Date(data.completedAt).getTime();
+            setReviewDeadlinePassed(elapsed >= 3 * 24 * 60 * 60 * 1000);
+          }
         }
       })
       .catch((failure) => {
@@ -289,8 +295,13 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
         {status === "COMPLETED" && (
           <p className="text-xs font-semibold text-emerald-700">거래가 완료되었습니다.</p>
         )}
-        {status === "COMPLETED" && isRequester && !reviewSubmitted && (
+        {status === "COMPLETED" && isRequester && !reviewSubmitted && !reviewDeadlinePassed && (
           <ReviewForm postId={postId} userEmail={userEmail} onSubmitted={() => setReviewSubmitted(true)} />
+        )}
+        {status === "COMPLETED" && isRequester && !reviewSubmitted && reviewDeadlinePassed && (
+          <p className="w-full text-xs text-slate-400">
+            거래 완료 후 3일이 지나 더 이상 후기를 작성할 수 없어요.
+          </p>
         )}
         {status === "COMPLETED" && isRequester && reviewSubmitted && (
           <p className="w-full text-xs text-slate-400">후기를 남겨주셔서 감사해요.</p>

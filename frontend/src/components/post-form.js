@@ -11,7 +11,7 @@ const categories = [
   { value: "ELECTRIC_LIGHT", label: "전기·조명" },
   { value: "PLUMBING", label: "배관·설비" },
   { value: "FURNITURE_INSTALL", label: "가구·설치" },
-  { value: "HOME_APP_LIANCE", label: "가전제품" },
+  { value: "HOME_LIANCE", label: "가전제품" },
   { value: "DOOR_WINDOW", label: "문·창문" },
   { value: "LIVING_ETC", label: "생활·기타" },
 ];

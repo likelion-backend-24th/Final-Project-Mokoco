@@ -51,9 +51,4 @@ public class ReviewController {
     public ResponseEntity<Boolean> existsByPostId(@RequestParam Long postId) {
         return ResponseEntity.ok(reviewService.existsByPostId(postId));
     }
-
-    @GetMapping("/by-post")
-    public ResponseEntity<ReviewResponseDto> getReviewByPostId(@RequestParam Long postId) {
-        return ResponseEntity.ok(reviewService.getReviewByPostId(postId));
-    }
 }

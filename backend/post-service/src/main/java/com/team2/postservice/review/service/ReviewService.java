@@ -108,12 +108,6 @@ public class ReviewService {
         return ReviewResponseDto.from(review);
     }
 
-    public ReviewResponseDto getReviewByPostId(Long postId) {
-        Review review = reviewRepository.findByPostId(postId)
-                .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
-        return ReviewResponseDto.from(review);
-    }
-
     public boolean existsByPostId(Long postId) {
         return reviewRepository.existsByPostId(postId);
     }
