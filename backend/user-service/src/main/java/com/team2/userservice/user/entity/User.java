@@ -78,6 +78,15 @@ public class User {
         this.region = region;
     }
 
+    public void updateProfile(String name, String nickname) {
+        this.name = name;
+        this.nickname = nickname;
+    }
+
+    public void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
     public String getRegionCode() {
         return this.region != null ? this.region.getRegionCode() : null;
     }
