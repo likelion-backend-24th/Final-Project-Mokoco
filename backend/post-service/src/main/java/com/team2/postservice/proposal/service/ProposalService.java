@@ -46,6 +46,7 @@ public class ProposalService {
                 .repairerEmail(repairerEmail)
                 .estimatedPrice(request.estimatedPrice())
                 .content(request.content())
+                .attachResume(Boolean.TRUE.equals(request.attachResume()))
                 .build();
 
         Proposal saved = proposalRepository.save(proposal);

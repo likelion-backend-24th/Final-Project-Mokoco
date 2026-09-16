@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 import ProposalChatRoom from "@/components/proposal-chat-room";
 import FixDealProgress from "@/components/fix-deal-progress";
 import RatingBadge from "@/components/rating-badge";
+import ResumeViewModal from "@/components/resume-view-modal";
 
 export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail }) {
   const [proposals, setProposals] = useState(initialProposals);
   const [previousProposals, setPreviousProposals] = useState(initialProposals);
   const [loadingId, setLoadingId] = useState(null);
+  const [resumeViewEmail, setResumeViewEmail] = useState(null);
   const router = useRouter();
 
   // 부모 컴포넌트에서 router.refresh()로 새로운 데이터가 내려올 때 상태 동기화
@@ -120,6 +122,16 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 희망 견적: {proposal.estimatedPrice.toLocaleString()}원
               </div>
             )}
+
+            {proposal.attachResume && (
+              <button
+                type="button"
+                onClick={() => setResumeViewEmail(proposal.repairerEmail)}
+                className="mb-2 inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100"
+              >
+                이력서 보기
+              </button>
+            )}
             
             <p className="text-sm text-slate-700 whitespace-pre-line mb-4">{proposal.content}</p>
             
@@ -165,6 +177,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
           </div>
         );
       })}
+      {resumeViewEmail && <ResumeViewModal email={resumeViewEmail} onClose={() => setResumeViewEmail(null)} />}
     </div>
   );
 }
