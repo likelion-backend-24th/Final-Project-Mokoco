@@ -14,6 +14,7 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
   const { userEmail: storeEmail, initAuth, setLogout } = useAuthStore();
   const [mounted, setMounted] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [nickname, setNickname] = useState(null);
 
   useEffect(() => {
     setMounted(true);
@@ -26,14 +27,18 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
 
   const userEmail = serverUserEmail || storeEmail || cookieEmail;
 
-  // 관리자 메뉴 노출 여부 — 페이지마다 role을 넘겨받을 필요 없이 헤더가 직접 확인한다.
+  // 관리자 메뉴 노출 여부 및 닉네임 표시 — 페이지마다 넘겨받을 필요 없이 헤더가 직접 확인한다.
   useEffect(() => {
-    if (!userEmail) { setIsAdmin(false); return; }
+    if (!userEmail) { setIsAdmin(false); setNickname(null); return; }
     let active = true;
     fetch("/api/users/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
-      .then((me) => { if (active) setIsAdmin(me?.role === "ADMIN"); })
-      .catch(() => { if (active) setIsAdmin(false); });
+      .then((me) => {
+        if (!active) return;
+        setIsAdmin(me?.role === "ADMIN");
+        setNickname(me?.nickname ?? null);
+      })
+      .catch(() => { if (active) { setIsAdmin(false); setNickname(null); } });
     return () => { active = false; };
   }, [userEmail]);
 
@@ -72,8 +77,10 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
       {userEmail ? (
         <div className="header-account">
           <NotificationBell />
-          <UserCircle size={29} weight="duotone" className="text-blue-600" />
-          <span className="header-email">{userEmail}</span>
+          <Link href="/profile" aria-label="내 프로필로 이동">
+            <UserCircle size={29} weight="duotone" className="text-blue-600" />
+          </Link>
+          <span className="header-email">{nickname || userEmail}</span>
           <form onSubmit={handleLogout}>
             <button type="submit">로그아웃</button>
           </form>
