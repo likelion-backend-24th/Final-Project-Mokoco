@@ -5,7 +5,6 @@ const POLICY_LINKS = [
   { label: "위치기반서비스 이용약관", path: "/policy/location.html" },
   { label: "이용자보호 비전과 계획", path: "/policy/user-protection.html" },
   { label: "청소년보호정책", path: "/policy/youth.html" },
-  { label: "고객센터", path: "/policy/operation.html" },
 ];
 
 // 정책 페이지는 user-service가 정적 리소스로 서빙하고 Caddy가 /policy/* 를 그쪽으로 직결한다
