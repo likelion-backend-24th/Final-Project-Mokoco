@@ -1,11 +1,15 @@
 "use client";
 
-import { backendUrl } from "@/lib/backend";
+
+// 클라이언트(브라우저)에서 읽어야 하므로 NEXT_PUBLIC_ 접두사가 붙은 변수를 사용해요.
+// (lib/backend.js의 backendUrl()은 서버 전용 BACKEND_API_URL을 쓰기 때문에 "use client" 컴포넌트에서는 값이 안 잡혀요.)
+const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:8000";
 
 const POLICY_LINKS = [
-  { label: "이용약관", path: "/policy/terms.html" },
+  { label: "이용약관", path: "/policy/terms-of-service.html" },
   { label: "개인정보처리방침", path: "/policy/privacy.html" },
   { label: "운영정책", path: "/policy/operation.html" },
+  { label: "분쟁조정센터 운영정책", path: "/policy/terms.html" },
   { label: "위치기반서비스 이용약관", path: "/policy/location.html" },
   { label: "이용자보호 비전과 계획", path: "/policy/user-protection.html" },
   { label: "청소년보호정책", path: "/policy/youth.html" },
@@ -21,7 +25,7 @@ export default function SiteFooter() {
         {POLICY_LINKS.map((item) => (
           <a
             key={item.path}
-            href={backendUrl(item.path)}
+            href={`${BACKEND_BASE_URL}${item.path}`}
             target="_blank"
             rel="noopener noreferrer"
           >
