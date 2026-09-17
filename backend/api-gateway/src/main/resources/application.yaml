@@ -27,6 +27,11 @@ spring:
           predicates:
             - Path=/api/auth/**, /api/users/**, /oauth2/**
 
+        - id: user-service-policy
+          uri: http://localhost:8081
+          predicates:
+            - Path=/policy/**
+
         - id: post-service
           uri: http://localhost:8082
           predicates:

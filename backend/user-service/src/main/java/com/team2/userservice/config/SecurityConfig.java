@@ -39,6 +39,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/error", "/oauth2/**", "/login/**").permitAll()
                         .requestMatchers("/api/regions/test").permitAll()
                         .requestMatchers("/api/internal/**").permitAll()
+                        .requestMatchers("/policy/**").permitAll() // 정책 페이지(개인정보처리방침 등) 공개 접근
                         .requestMatchers("/api/users/me/region").authenticated() // 명시적 지정
                         .anyRequest().authenticated()
                 )
