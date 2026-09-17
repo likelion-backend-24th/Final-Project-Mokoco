@@ -20,7 +20,7 @@ export default function SiteFooter() {
         </div>
         <div className="footer-links">
           {POLICY_LINKS.map((item) => (
-            <a key={item.label} href={item.path} target="_blank" rel="noopener noreferrer">
+            <a key={item.label} href={item.path}>
               {item.label}
             </a>
           ))}
