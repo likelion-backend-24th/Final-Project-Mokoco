@@ -119,6 +119,11 @@
 		reverse_proxy user-service:8081
 	}
 
+	# 정책 페이지(이용약관/개인정보처리방침 등) — 로그인 불필요한 정적 리소스라 user-service 직결
+	handle /policy/* {
+		reverse_proxy user-service:8081
+	}
+
 	# 그 외 전부 프론트엔드 (Next.js). WebSocket 업그레이드는 Caddy 가 자동 처리.
 	handle {
 		reverse_proxy frontend:3000
