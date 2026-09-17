@@ -69,18 +69,9 @@ function PostList({ posts, error, postHref }) {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="site-footer"><div className="page-shell footer-inner">
-      <div><strong>동네수리</strong><p>© 2026 동네수리. All rights reserved.</p></div>
-      <div className="footer-links"><span>이용약관</span><span>개인정보처리방침</span><span>고객센터</span></div>
-    </div></footer>
-  );
-}
-
 function UnifiedHome({ posts, error, userEmail, isAuthenticated, pagination, regionScope }) {
   return (
-    <><main className="page-shell auth-main">
+    <main className="page-shell auth-main">
       {isAuthenticated && <LocationPermissionPrompt userEmail={userEmail} />}
       {isAuthenticated && <RegionScopeFilter pathname="/" regionScope={regionScope} regionFilter={pagination?.regionFilter} />}
       <div className="auth-dashboard-grid">
@@ -125,7 +116,7 @@ function UnifiedHome({ posts, error, userEmail, isAuthenticated, pagination, reg
           )}
         </aside>
       </div>
-    </main><Footer /></>
+    </main>
   );
 }
 
