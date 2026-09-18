@@ -91,17 +91,21 @@ public class ProposalService {
         proposal.adopt();
         post.updateStatusToMatched();
 
-        UserClientResponse requester = userClient.getUserByEmail(post.getAuthorEmail());
-        UserClientResponse repairer = userClient.getUserByEmail(proposal.getRepairerEmail());
-
-        FixDeal fixDeal = FixDeal.builder()
-                .postId(post.getId())
-                .proposalId(proposal.getId())
-                .requesterId(requester.id())
-                .repairerId(repairer.id())
-                .build();
-
-        FixDeal savedDeal = fixDealRepository.save(fixDeal);
+        // 채택 취소(cancelProposal) 후 같은 제안을 다시 채택하는 경우, 새 거래를 또 만들면 같은
+        // proposalId로 거래가 2건이 돼 findByProposalId(단건 조회) 호출부가 전부 깨진다
+        // (프로필 거래 내역 중복 표시, 제안 목록 조회 실패 등). 취소된 거래를 재사용한다.
+        FixDeal savedDeal = fixDealRepository.findByProposalId(proposal.getId())
+                .map(existing -> { existing.changeStatus(FixDealStatus.MATCHED); return existing; })
+                .orElseGet(() -> {
+                    UserClientResponse requester = userClient.getUserByEmail(post.getAuthorEmail());
+                    UserClientResponse repairer = userClient.getUserByEmail(proposal.getRepairerEmail());
+                    return fixDealRepository.save(FixDeal.builder()
+                            .postId(post.getId())
+                            .proposalId(proposal.getId())
+                            .requesterId(requester.id())
+                            .repairerId(repairer.id())
+                            .build());
+                });
         chatRoomRepository.findByProposalId(proposalId).ifPresent(room -> room.attachDeal(savedDeal));
 
         try {
