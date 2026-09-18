@@ -15,6 +15,7 @@ public enum ErrorCode {
 
     // Admin
     FORBIDDEN_NOT_ADMIN(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다."),
+    CANNOT_MODIFY_SELF(HttpStatus.FORBIDDEN, "본인 계정의 권한·상태는 여기서 변경할 수 없습니다."),
 
     // Token / Auth
     INVALID_REFRESH_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않은 Refresh Token입니다."),

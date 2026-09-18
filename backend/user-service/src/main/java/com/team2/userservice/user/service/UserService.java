@@ -145,6 +145,14 @@ public class UserService {
         return requester;
     }
 
+    // 관리자가 자기 자신의 권한을 낮추거나(admin 잠금) 스스로를 정지시키는 걸 막는다.
+    // 프론트는 본인 계정일 때 버튼을 비활성화해두지만, API를 직접 호출하면 우회할 수 있어 서버에서도 재확인한다.
+    private void requireNotSelf(User requester, Long targetUserId) {
+        if (requester.getId().equals(targetUserId)) {
+            throw new CustomException(ErrorCode.CANNOT_MODIFY_SELF);
+        }
+    }
+
     @Transactional(readOnly = true)
     public java.util.List<UserResponse> listUsers(String requesterEmail) {
         requireAdmin(requesterEmail);
@@ -178,7 +186,8 @@ public class UserService {
 
     @Transactional
     public UserResponse changeUserRole(String requesterEmail, Long targetUserId, Role newRole) {
-        requireAdmin(requesterEmail);
+        User requester = requireAdmin(requesterEmail);
+        requireNotSelf(requester, targetUserId);
         User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         target.changeRole(newRole);
@@ -187,7 +196,8 @@ public class UserService {
 
     @Transactional
     public UserResponse changeUserStatus(String requesterEmail, Long targetUserId, AccountStatus newStatus) {
-        requireAdmin(requesterEmail);
+        User requester = requireAdmin(requesterEmail);
+        requireNotSelf(requester, targetUserId);
         User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         if (newStatus == AccountStatus.SUSPENDED) {
