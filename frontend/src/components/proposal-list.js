@@ -1,18 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle, Trash } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { XCircle } from 'lucide-react';
 import ProposalChatRoom from "@/components/proposal-chat-room";
 import FixDealProgress from "@/components/fix-deal-progress";
 import RatingBadge from "@/components/rating-badge";
+import RepairerMenu from "@/components/repairer-menu";
 
 export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail }) {
   const [proposals, setProposals] = useState(initialProposals);
   const [previousProposals, setPreviousProposals] = useState(initialProposals);
   const [loadingId, setLoadingId] = useState(null);
+  const [adoptedDealStatus, setAdoptedDealStatus] = useState(null);
   const router = useRouter();
+
+  const adoptedFixDealId = proposals?.find((p) => p.isAdopted)?.fixDealId ?? null;
+
+  useEffect(() => {
+    if (!adoptedFixDealId) return;
+    const controller = new AbortController();
+    fetch(`/api/fix-deals/${adoptedFixDealId}`, { signal: controller.signal, cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!controller.signal.aborted) setAdoptedDealStatus(data?.status ?? null);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [adoptedFixDealId]);
 
   // 부모 컴포넌트에서 router.refresh()로 새로운 데이터가 내려올 때 상태 동기화
   if (previousProposals !== initialProposals) {
@@ -138,13 +154,12 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-800">
-                  {proposal.repairerEmail || "수리공 이웃"}
-                </span>
+                <RepairerMenu email={proposal.repairerEmail} nickname={proposal.repairerNickname} />
                 <RatingBadge email={proposal.repairerEmail} postId={postId} />
                 {isAdopted && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                    <CheckCircle size={14} weight="bold" /> 채택 완료
+                    <CheckCircle size={14} weight="bold" />
+                    {adoptedDealStatus === "COMPLETED" ? "거래 완료" : "채택 완료"}
                   </span>
                 )}
               </div>
@@ -186,8 +201,8 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 </button>
               )}
 
-              {/* 게시글 작성자이고, 현재 해당 제안이 채택된 상태일 때 채택 취소 버튼 */}
-              {isMine && isAdopted && (
+              {/* 게시글 작성자이고, 현재 해당 제안이 채택된 상태(MATCHED, 결제 전)일 때만 채택 취소 버튼 */}
+              {isMine && isAdopted && adoptedDealStatus === "MATCHED" && (
                 <button
                   onClick={() => handleCancelAdopt(proposal.id)}
                   disabled={loadingId !== null}

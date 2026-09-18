@@ -19,11 +19,17 @@ public class ProposalResponseDto {
 
     private final boolean attachResume;
 
+    private final String repairerNickname;
+
     public ProposalResponseDto(Proposal proposal) {
-        this(proposal, null);
+        this(proposal, null, null);
     }
 
     public ProposalResponseDto(Proposal proposal, Long fixDealId) {
+        this(proposal, fixDealId, null);
+    }
+
+    public ProposalResponseDto(Proposal proposal, Long fixDealId, String repairerNickname) {
         this.fixDealId = fixDealId;
         this.id = proposal.getId();
         this.postId = proposal.getPost() != null ? proposal.getPost().getId() : null;
@@ -32,5 +38,6 @@ public class ProposalResponseDto {
         this.content = proposal.getContent();
         this.isAdopted = proposal.isAdopted();
         this.attachResume = proposal.isAttachResume();
+        this.repairerNickname = repairerNickname;
     }
 }
