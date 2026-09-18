@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeSlash } from "@phosphor-icons/react";
 import TermsModal from "@/components/terms-modal";
+import { backendUrl, readBackendPayload, errorMessage } from "@/lib/backend";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -21,13 +22,12 @@ export default function SignupForm() {
     if (password !== formData.get("passwordConfirm")) { setMessage("비밀번호가 일치하지 않습니다."); return; }
     setLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "";
-      const response = await fetch(`${apiUrl}/api/auth/signup`, {
+      const response = await fetch(backendUrl("/api/auth/signup"), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: formData.get("name"), nickname: formData.get("nickname"), email: formData.get("email"), password, regionCode: null }),
       });
-      const payload = await response.json();
-      if (!response.ok) { setMessage(payload.message ?? "회원가입에 실패했습니다."); return; }
+      const payload = await readBackendPayload(response);
+      if (!response.ok) { setMessage(errorMessage(payload, "회원가입에 실패했습니다.")); return; }
       router.push("/login?registered=true");
     } catch { setMessage("서버와 통신할 수 없습니다. 잠시 후 다시 시도해주세요."); }
     finally { setLoading(false); }
