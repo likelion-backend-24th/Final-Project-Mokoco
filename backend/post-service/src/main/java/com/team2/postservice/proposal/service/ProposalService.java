@@ -115,8 +115,17 @@ public class ProposalService {
         return proposals.stream()
                 .map(proposal -> new ProposalResponseDto(proposal,
                         proposal.isAdopted() ? fixDealRepository.findByProposalId(proposal.getId())
-                                .map(FixDeal::getId).orElse(null) : null))
+                                .map(FixDeal::getId).orElse(null) : null,
+                        resolveNickname(proposal.getRepairerEmail())))
                 .toList();
+    }
+
+    private String resolveNickname(String email) {
+        try {
+            return userClient.getUserByEmail(email).nickname();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Transactional

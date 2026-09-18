@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ClockCounterClockwise, Flag } from "@phosphor-icons/react";
 import RepairerTransactionsModal from "@/components/repairer-transactions-modal";
 
-export default function RepairerEmailMenu({ email }) {
+export default function RepairerMenu({ email, nickname }) {
   const [open, setOpen] = useState(false);
   const [showTransactions, setShowTransactions] = useState(false);
 
@@ -15,7 +15,7 @@ export default function RepairerEmailMenu({ email }) {
         onClick={() => setOpen((v) => !v)}
         className="text-sm font-bold text-slate-800 underline decoration-slate-300 underline-offset-2 hover:decoration-slate-500"
       >
-        {email || "수리공 이웃"}
+        {nickname || email || "수리공 이웃"}
       </button>
 
       {open && (
