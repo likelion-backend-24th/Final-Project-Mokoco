@@ -253,11 +253,13 @@ export default function AccountSettings() {
     )}
 
     <div
-      className={`fixed inset-x-0 bottom-0 z-50 max-h-[85vh] transform overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl transition-transform duration-300 ease-out ${
-        resumeOpen ? "translate-y-0" : "translate-y-full"
+      className={`fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl transition-all duration-300 ease-out md:inset-0 md:m-auto md:h-fit md:w-full md:max-w-lg md:rounded-3xl ${
+        resumeOpen
+          ? "translate-y-0 md:translate-y-0 md:visible md:opacity-100"
+          : "translate-y-full md:translate-y-0 md:invisible md:opacity-0"
       }`}
     >
-      <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-200" />
+      <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-200 md:hidden" />
 
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-extrabold text-slate-900">내 이력서</h3>
