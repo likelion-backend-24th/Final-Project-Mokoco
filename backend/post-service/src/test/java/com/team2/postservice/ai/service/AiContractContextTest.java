@@ -11,6 +11,7 @@ import com.team2.postservice.post.entity.*;
 import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import java.util.*;
 import static org.assertj.core.api.Assertions.*;
@@ -22,10 +23,10 @@ class AiContractContextTest {
     final PostRepository posts = mock(PostRepository.class);
     final ProposalRepository proposals = mock(ProposalRepository.class);
     final ChatMessageRepository messages = mock(ChatMessageRepository.class);
-    final jakarta.persistence.EntityManager entityManager = mock(jakarta.persistence.EntityManager.class);
+    final EntityManager entityManager = mock(EntityManager.class);
     final AiContractContext context = new AiContractContext(rooms,contracts,posts,proposals,messages,entityManager);
     ChatRoom room() {
-        var room = ChatRoom.builder().id(1L).fixDeal(FixDeal.builder().postId(4L).proposalId(5L).requesterId(2L).repairerId(3L).build()).build();
+        ChatRoom room = ChatRoom.builder().id(1L).fixDeal(FixDeal.builder().postId(4L).proposalId(5L).requesterId(2L).repairerId(3L).build()).build();
         when(rooms.findById(1L)).thenReturn(Optional.of(room)); return room;
     }
     void source() {

@@ -6,6 +6,7 @@ import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.common.exception.AiErrors;
 import com.team2.postservice.common.exception.AiException;
+import feign.Request;
 import org.junit.jupiter.api.*;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -17,6 +18,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.team2.postservice.config.SecurityConfig;
 import com.team2.postservice.ai.AiResponseAdvice;
 import com.team2.postservice.ai.AiRequestTrace;
+import org.springframework.test.web.servlet.MvcResult;
+
 import java.util.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -60,7 +63,7 @@ class AiControllerTest {
     @Test void postReceivesVerifiedPrincipalAndMatchingTrace() throws Exception {
         when(users.verifyToken("valid")).thenReturn(new UserClientResponse(7L,"test@example.invalid","test",null));
         when(service.post(eq(7L),anyList(),eq(""),eq(""),eq(""))).thenReturn(new ObjectMapper().createObjectNode());
-        var result = mvc.perform(multipart("/api/ai/post-draft").file(new MockMultipartFile("images",new byte[]{1}))
+        MvcResult result = mvc.perform(multipart("/api/ai/post-draft").file(new MockMultipartFile("images",new byte[]{1}))
                 .header("Authorization","Bearer valid"))
                 .andExpect(status().isOk()).andExpect(header().string("Cache-Control","no-store")).andReturn();
         Assertions.assertEquals(result.getResponse().getHeader("X-Request-Id"),
@@ -69,10 +72,10 @@ class AiControllerTest {
     }
     @Test void authenticationFailuresPreserveErrorContract() throws Exception {
         for (int upstreamStatus : new int[]{401,503}) {
-            var request = feign.Request.create(feign.Request.HttpMethod.GET,"http://user/verify",Map.of(),null,java.nio.charset.StandardCharsets.UTF_8,null);
+            Request request = feign.Request.create(feign.Request.HttpMethod.GET,"http://user/verify",Map.of(),null,java.nio.charset.StandardCharsets.UTF_8,null);
             doThrow(feign.FeignException.errorStatus("verifyToken",
                     feign.Response.builder().status(upstreamStatus).reason("failure").request(request).build())).when(users).verifyToken("invalid");
-            var result = mvc.perform(multipart("/api/ai/post-draft").file(new MockMultipartFile("images",new byte[]{1}))
+            MvcResult result = mvc.perform(multipart("/api/ai/post-draft").file(new MockMultipartFile("images",new byte[]{1}))
                     .header("Authorization","Bearer invalid"))
                     .andExpect(status().is(upstreamStatus == 401 ? 401 : 502))
                     .andExpect(jsonPath("$.code").value("AUTH_FAILED"))

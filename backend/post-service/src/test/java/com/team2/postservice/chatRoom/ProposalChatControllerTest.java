@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
@@ -23,7 +24,8 @@ class ProposalChatControllerTest {
     @Autowired MockMvc mvc;
     @MockitoBean ChatRoomService service;
     @MockitoBean UserClient users;
-    @MockitoBean org.springframework.data.jpa.mapping.JpaMetamodelMappingContext jpaMappingContext;
+    @MockitoBean
+    JpaMetamodelMappingContext jpaMappingContext;
     @Test void proposalRoutesAndDetailRequireBearer() throws Exception {
         mvc.perform(post("/api/chat-rooms/proposals/5").header("X-User-Email","forged@test.invalid")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/chat-rooms/proposals/5")).andExpect(status().isUnauthorized());

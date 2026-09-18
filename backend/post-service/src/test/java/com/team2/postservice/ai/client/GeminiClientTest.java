@@ -44,7 +44,7 @@ class GeminiClientTest {
         }); server.verify();
     }
     @Test void missingKeyDoesNotCallProvider() {
-        var disabled = new GeminiClient(new ObjectMapper(), "", "gemini-flash-lite-latest",true,RestClient.builder());
+        GeminiClient disabled = new GeminiClient(new ObjectMapper(), "", "gemini-flash-lite-latest",true,RestClient.builder());
         assertThatThrownBy(disabled::requireAvailable).isInstanceOf(AiException.class);
     }
 }
