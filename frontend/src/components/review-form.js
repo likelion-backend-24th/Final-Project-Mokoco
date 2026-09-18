@@ -37,19 +37,26 @@ export default function ReviewForm({ postId, onSubmitted }) {
     setSubmitting(true);
     setError("");
     try {
+      // 이미지 업로드는 게이트웨이의 멀티파트 유실 문제를 피해 post-service로 직결되므로(Caddyfile
+      // 참고), 백엔드가 기대하는 review(JSON 파트) + images(파일 파트) 형태를 여기서 직접 만든다.
       const formData = new FormData();
-      formData.append("postId", postId);
-      formData.append("rating", rating);
-      formData.append("content", content);
-      files.forEach((file) => formData.append("images", file));
+      formData.append(
+        "review",
+        new Blob([JSON.stringify({ postId: Number(postId), rating: Number(rating), content })], {
+          type: "application/json",
+        }),
+      );
+      files.forEach((file) => formData.append("images", file, file.name));
 
+      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
       const res = await fetch("/api/reviews", {
         method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? "후기를 등록하지 못했습니다.");
+        setError(data.message ?? "후기를 등록하지 못했습니다.");
         return;
       }
       onSubmitted?.();

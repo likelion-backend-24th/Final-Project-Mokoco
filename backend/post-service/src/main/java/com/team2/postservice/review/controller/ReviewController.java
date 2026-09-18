@@ -1,5 +1,6 @@
 package com.team2.postservice.review.controller;
 
+import com.team2.postservice.post.service.PostViewerService;
 import com.team2.postservice.review.dto.ReviewRequestDto;
 import com.team2.postservice.review.dto.ReviewResponseDto;
 import com.team2.postservice.review.dto.UserReviewsResponseDto;
@@ -22,12 +23,15 @@ public class ReviewController {
     private static final int MAX_PAGE_SIZE = 50;
 
     private final ReviewService reviewService;
+    private final PostViewerService postViewerService;
 
+    // 이미지 업로드가 껴 있어 게이트웨이를 우회해 post-service로 직결되는 엔드포인트라,
+    // 클라이언트가 실어 보내는 헤더를 그대로 믿지 않고 Authorization Bearer 토큰을 직접 검증한다.
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Long> createReview(@RequestPart("review") ReviewRequestDto.Create request,
                                               @RequestPart(value = "images", required = false) List<MultipartFile> images,
-                                              @RequestHeader("X-User-Email") String reviewerEmail) {
-        Long reviewId = reviewService.createReview(request, images, reviewerEmail);
+                                              @RequestHeader(value = "Authorization", required = false) String authorization) {
+        Long reviewId = reviewService.createReview(request, images, postViewerService.requireEmail(authorization));
         return ResponseEntity.ok(reviewId);
     }
 

@@ -38,6 +38,17 @@
 		reverse_proxy post-service:8082
 	}
 
+	# 후기 작성(멀티파트, 이미지 포함)만 post-service 직결. SCG가 파일 파트를 유실하는 문제 회피
+	# (사진 없이 작성할 땐 파일 파트가 아예 없어 문제가 안 드러났었음). 조회(GET /api/reviews*)는 BFF 경유 유지.
+	@review_upload {
+		path /api/reviews
+		method POST
+	}
+	handle @review_upload {
+		uri strip_prefix /api
+		reverse_proxy post-service:8082
+	}
+
 	# 나머지 API 는 전부 Next BFF(route handler) 경유 — 쿠키의 access_token/user_email 을
 	# Authorization / X-User-Email 헤더로 주입한 뒤 백엔드로 포워딩한다.
 	# (프론트 컴포넌트들이 인증 헤더 없이 상대경로로 호출하는 BFF 우선 설계라, 직결하면 400/401)
