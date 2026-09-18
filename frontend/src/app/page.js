@@ -12,6 +12,18 @@ import { getNearbyPosts } from "@/lib/nearby-posts";
 import RegionScopeFilter from "@/components/region-scope-filter";
 import { normalizeRegionScope, regionListHref } from "@/lib/region-scope";
 
+import { backendUrl } from "@/lib/backend";
+
+const POLICY_LINKS = [
+  { label: "이용약관", path: "/policy/terms.html" },
+  { label: "개인정보처리방침", path: "/policy/privacy.html" },
+  { label: "운영정책", path: "/policy/operation.html" },
+  { label: "위치기반서비스 이용약관", path: "/policy/location.html" },
+  { label: "이용자보호 비전과 계획", path: "/policy/user-protection.html" },
+  { label: "청소년보호정책", path: "/policy/youth.html" },
+];
+
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -34,7 +46,7 @@ function formatRelativeDate(value) {
   }
 
   if (Number.isNaN(date.getTime())) return "시간 정보 없음";
-  
+
   const minutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
   if (minutes < 1) return "방금 전";
   if (minutes < 60) return `${minutes}분 전`;
@@ -85,10 +97,24 @@ function PostList({ posts, error, postHref }) {
 
 function Footer() {
   return (
-    <footer className="site-footer"><div className="page-shell footer-inner">
-      <div><strong>동네수리</strong><p>© 2026 동네수리. All rights reserved.</p></div>
-      <div className="footer-links"><span>이용약관</span><span>개인정보처리방침</span><span>고객센터</span></div>
-    </div></footer>
+    <footer className="site-footer">
+      <div className="page-shell footer-inner">
+        <div><strong>동네수리</strong><p>© 2026 동네수리. All rights reserved.</p></div>
+
+        <nav className="policy-links">
+          {POLICY_LINKS.map((item) => (
+            <a
+              key={item.path}
+              href={backendUrl(item.path)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </footer>
   );
 }
 
@@ -149,7 +175,7 @@ export default async function Home({ searchParams }) {
   const cookieStore = await cookies();
   const userEmail = cookieStore.get("user_email")?.value ?? null;
   const accessToken = cookieStore.get("access_token")?.value ?? null;
-  
+
   const isAuthenticated = Boolean(userEmail && accessToken);
 
   const { posts, error, pagination } = await getNearbyPosts(accessToken, "ALL", 0, 5, regionScope);

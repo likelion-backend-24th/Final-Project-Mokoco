@@ -16,7 +16,6 @@ export default function RootLayout({ children }) {
         <AuthInitializer />
         <NotificationProvider />
         {children}
-        <SiteFooter />
       </body>
     </html>
   );
