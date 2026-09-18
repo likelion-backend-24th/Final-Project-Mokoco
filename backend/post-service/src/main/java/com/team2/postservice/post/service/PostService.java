@@ -69,15 +69,19 @@ public class PostService {
         String regionPattern = regionScope == RegionScope.ALL ? null : regionScope.queryPattern(region.regionCode());
         var pageable = PageRequest.of(page, size,
                 Sort.by(Sort.Direction.DESC, "createdAt", "id"));
-        return NearbyRepairRequest.Result.from(
-                postRepository.findNearby(regionPattern, category == PostCategory.ALL ? null : category, pageable),
-                regionScope, region);
+        var posts = postRepository.findNearby(regionPattern, category == PostCategory.ALL ? null : category, pageable);
+        // 같은 페이지 안에서 작성자가 겹칠 수 있어(같은 사람의 여러 글), 이메일당 한 번만 조회하도록
+        // 이 요청 범위에서만 쓰는 로컬 캐시를 사용한다(인스턴스 필드로 두면 요청 간에 공유되어 버그가 된다).
+        var nicknameCache = new java.util.HashMap<String, String>();
+        posts = posts.map(item -> item.withAuthorNickname(
+                nicknameCache.computeIfAbsent(item.authorEmail(), postViewerService::tryNickname)));
+        return NearbyRepairRequest.Result.from(posts, regionScope, region);
     }
 
     public PostResponseDto.Detail getPost(Long id) {
         Post post = getPostOrThrow(id);
         if (!post.isPubliclyVisible()) throw new CustomException(ErrorCode.POST_NOT_FOUND);
-        return PostResponseDto.Detail.from(post);
+        return PostResponseDto.Detail.from(post, postViewerService.tryNickname(post.getAuthorEmail()));
     }
 
     @Transactional
@@ -146,7 +150,7 @@ public class PostService {
 
         attachImages(post, images);
 
-        return PostResponseDto.Detail.from(post);
+        return PostResponseDto.Detail.from(post, postViewerService.tryNickname(post.getAuthorEmail()));
     }
 
     @Transactional

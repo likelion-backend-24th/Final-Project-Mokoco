@@ -14,6 +14,7 @@ public class PostResponseDto {
             String title,
             String content,
             String authorEmail,
+            String authorNickname,
             PostCategory category,
             PostStatus status,
             String regionName,
@@ -23,12 +24,13 @@ public class PostResponseDto {
             String regionCode,
             boolean publiclyVisible
     ) {
-        public static Detail from(Post post) {
+        public static Detail from(Post post, String authorNickname) {
             return new Detail(
                     post.getId(),
                     post.getTitle(),
                     post.getContent(),
                     post.getAuthorEmail(),
+                    authorNickname,
                     post.getCategory(),
                     post.getStatus(),
                     post.getRegionName(),

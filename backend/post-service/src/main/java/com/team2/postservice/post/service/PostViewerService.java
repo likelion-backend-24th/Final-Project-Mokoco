@@ -60,4 +60,15 @@ public class PostViewerService {
             return null;
         }
     }
+
+    // 게시글 목록/상세에 작성자 이메일 대신 닉네임을 보여주기 위한 best-effort 조회.
+    // user-service 장애나 탈퇴 등으로 조회에 실패해도 게시글 자체는 보여야 하므로 예외를 삼키고 null 반환.
+    public String tryNickname(String email) {
+        try {
+            var user = userClient.getUserByEmail(email);
+            return user == null ? null : user.nickname();
+        } catch (Exception ex) {
+            return null;
+        }
+    }
 }

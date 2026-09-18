@@ -60,7 +60,7 @@ function PostList({ posts, error, postHref }) {
           )}
           <div className="min-w-0 flex-1">
             <div className="post-title-line"><h3>{post.title || "제목 없는 수리 요청"}</h3><time>{formatRelativeDate(post.createdAt)}</time></div>
-            <div className="post-meta"><span className={`status-badge status-${post.status?.toLowerCase()}`}>{statusLabel[post.status] ?? post.status ?? "상태 미정"}</span><span>{post.authorEmail || "작성자 정보 없음"}</span></div>
+            <div className="post-meta"><span className={`status-badge status-${post.status?.toLowerCase()}`}>{statusLabel[post.status] ?? post.status ?? "상태 미정"}</span><span>{post.authorNickname || post.authorEmail || "작성자 정보 없음"}</span></div>
             <p className="post-content">{post.content || "등록된 상세 내용이 없습니다."}</p>
           </div>
         </Link>

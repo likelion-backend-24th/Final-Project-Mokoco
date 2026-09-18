@@ -119,7 +119,7 @@ export default async function PostDetailPage({ params }) {
               </div>
 
               <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">
-                <span>{post.authorEmail || "작성자 정보 없음"}</span>
+                <span>{post.authorNickname || post.authorEmail || "작성자 정보 없음"}</span>
                 <span aria-hidden>·</span>
                 <span>{formatDate(post.createdAt)}</span>
               </div>
