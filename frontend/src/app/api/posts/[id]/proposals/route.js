@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { backendUrl } from "@/lib/backend";
+import { backendUrl, readBackendPayload, errorMessage } from "@/lib/backend";
 
 export async function POST(request, { params }) {
   try {
@@ -26,8 +26,8 @@ export async function POST(request, { params }) {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      return Response.json({ error: "백엔드 제안 등록 실패", details: errorText }, { status: response.status });
+      const payload = await readBackendPayload(response);
+      return Response.json({ error: errorMessage(payload, "수리 제안을 등록하지 못했습니다.") }, { status: response.status });
     }
 
     const text = await response.text();

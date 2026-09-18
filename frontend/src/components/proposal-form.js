@@ -59,7 +59,8 @@ export default function ProposalForm({ postId }) {
         setIsOpen(false);
         router.refresh();
       } else {
-        alert("수리 제안 등록에 실패했습니다.");
+        const payload = await response.json().catch(() => ({}));
+        alert(payload.error || "수리 제안 등록에 실패했습니다.");
       }
     } catch {
       alert("서버 연결에 실패했습니다.");
@@ -109,6 +110,8 @@ export default function ProposalForm({ postId }) {
               value={estimatedPrice}
               onChange={(e) => setEstimatedPrice(e.target.value)}
               placeholder="예: 50000"
+              min={0}
+              max={999999999}
               className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
               required
             />

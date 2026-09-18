@@ -52,7 +52,7 @@ public class ProposalService {
         Proposal proposal = Proposal.builder()
                 .post(post)
                 .repairerEmail(repairerEmail)
-                .estimatedPrice(request.estimatedPrice())
+                .estimatedPrice(request.estimatedPrice().intValue())
                 .content(request.content())
                 .attachResume(Boolean.TRUE.equals(request.attachResume()))
                 .build();
