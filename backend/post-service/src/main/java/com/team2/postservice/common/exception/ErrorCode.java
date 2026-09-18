@@ -28,6 +28,7 @@ public enum ErrorCode {
     PROPOSAL_NOT_FOUND(HttpStatus.NOT_FOUND, "PROPOSAL_NOT_FOUND", "해당 제안이 존재하지 않습니다."),
     UNAUTHORIZED_PROPOSAL_ADOPT(HttpStatus.FORBIDDEN, "UNAUTHORIZED_PROPOSAL_ADOPT", "수리 요청글 작성자만 제안을 채택할 수 있습니다."),
     UNAUTHORIZED_PROPOSAL_DELETE(HttpStatus.FORBIDDEN, "UNAUTHORIZED_PROPOSAL_DELETE", "작성자만 삭제할 수 있습니다."),
+    PROPOSAL_ADOPTION_ALREADY_PAID(HttpStatus.CONFLICT, "PROPOSAL_ADOPTION_ALREADY_PAID", "결제가 완료된 거래는 채택을 취소할 수 없습니다."),
 
     // FixDeal
     FIX_DEAL_NOT_FOUND(HttpStatus.NOT_FOUND, "FIX_DEAL_NOT_FOUND", "해당 수리거래 내역을 찾을 수 없습니다."),

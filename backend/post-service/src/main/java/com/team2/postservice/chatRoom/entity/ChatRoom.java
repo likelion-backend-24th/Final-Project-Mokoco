@@ -67,4 +67,11 @@ public class ChatRoom {
             throw new IllegalStateException("Chat room already linked to a deal");
         this.fixDeal = deal;
     }
+
+    // 채택 취소로 거래가 무효화되면 채팅방과의 연결을 끊는다 — 방(대화 기록) 자체는 유지된다.
+    public void detachDeal(FixDeal deal) {
+        if (fixDeal != null && java.util.Objects.equals(fixDeal.getId(), deal.getId())) {
+            this.fixDeal = null;
+        }
+    }
 }

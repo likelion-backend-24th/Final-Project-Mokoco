@@ -49,4 +49,8 @@ public class Proposal {
     public void adopt() {
         this.isAdopted = true;
     }
+
+    public void cancel() {
+        this.isAdopted = false;
+    }
 }

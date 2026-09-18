@@ -81,6 +81,11 @@ public class Post {
         this.status = PostStatus.MATCHED;
     }
 
+    // 채택 취소로 거래가 무효화되면 다시 제안을 받을 수 있는 상태로 되돌린다.
+    public void updateStatusToWaiting() {
+        this.status = PostStatus.WAITING;
+    }
+
     public void updateStatusToCompleted() {
         this.status = PostStatus.COMPLETED;
     }

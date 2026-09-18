@@ -1,6 +1,7 @@
 package com.team2.postservice.proposal.service;
 
 import com.team2.postservice.chatRoom.repository.ChatRoomRepository;
+import com.team2.postservice.client.PaymentClient;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.RegionResponse;
 import com.team2.postservice.client.dto.UserClientResponse;
@@ -16,6 +17,7 @@ import com.team2.postservice.proposal.dto.ProposalResponseDto;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
 import com.team2.postservice.notification.service.NotificationService;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class ProposalService {
     private final FixDealRepository fixDealRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final UserClient userClient;
+    private final PaymentClient paymentClient;
     private final NotificationService notificationService;
 
     @Transactional
@@ -105,6 +108,55 @@ public class ProposalService {
             notificationService.notifyProposalAdopted(post, proposal);
         } catch (Exception e) {
             log.warn("제안 채택 알림 전송 실패 proposalId={}", proposalId, e);
+        }
+    }
+
+    // 의뢰인이 채택을 취소한다. 결제 전(MATCHED) 단계에서만 허용 — 결제가 이미 끝난 거래는
+    // 되돌릴 방법(환불)이 없어 여기서 막는다. 계약서·작업 진행 단계까지 갔다면 대신 거래를
+    // 취소하는 별도 경로를 이용해야 한다.
+    @Transactional
+    public void cancelProposal(Long postId, Long proposalId, String userEmail) {
+        Post post = postRepository.lockById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
+
+        if (!post.getAuthorEmail().equals(userEmail)) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_PROPOSAL_ADOPT);
+        }
+
+        Proposal proposal = proposalRepository.lockById(proposalId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROPOSAL_NOT_FOUND));
+
+        if (!proposal.getPost().getId().equals(postId)) {
+            throw new CustomException(ErrorCode.PROPOSAL_NOT_FOUND);
+        }
+        if (!proposal.isAdopted()) return;
+
+        FixDeal deal = fixDealRepository.findByProposalId(proposalId)
+                .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
+
+        if (deal.getStatus() != FixDealStatus.MATCHED) {
+            throw new CustomException(ErrorCode.INVALID_FIX_DEAL_STATUS);
+        }
+        if (isPaid(postId, userEmail)) {
+            throw new CustomException(ErrorCode.PROPOSAL_ADOPTION_ALREADY_PAID);
+        }
+
+        deal.changeStatus(FixDealStatus.CANCELED);
+        proposal.cancel();
+        post.updateStatusToWaiting();
+        chatRoomRepository.findByProposalId(proposalId).ifPresent(room -> room.detachDeal(deal));
+    }
+
+    // 조회 실패(장애·타임아웃)는 "결제됨"으로 취급해 취소를 막는다 — 실제로 결제된 거래가
+    // 일시적 오류로 취소되는 사고보다는, 취소가 잠시 막히는 쪽이 안전하다.
+    private boolean isPaid(Long postId, String requesterEmail) {
+        try {
+            return "COMPLETED".equals(paymentClient.getPaymentByPostId(postId, requesterEmail).status());
+        } catch (FeignException.NotFound e) {
+            return false;
+        } catch (FeignException e) {
+            log.warn("채택 취소 중 결제 상태 조회 실패 postId={}", postId, e);
+            return true;
         }
     }
 

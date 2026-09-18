@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle, Trash, MapPin, Wrench, FileText } from "@phosphor-icons/react";
+import { CheckCircle, Trash, MapPin, Wrench, FileText, XCircle } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import ProposalChatRoom from "@/components/proposal-chat-room";
 import FixDealProgress from "@/components/fix-deal-progress";
@@ -54,6 +54,30 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
         router.refresh();
       } else {
         alert("제안 채택에 실패했습니다.");
+      }
+    } catch {
+      alert("서버 연결에 실패했습니다.");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleCancelAdoption = async (proposalId) => {
+    if (!confirm("채택을 취소하시겠습니까? 취소하면 다시 다른 제안을 받을 수 있어요.")) return;
+    setLoadingId(proposalId);
+
+    try {
+      const response = await fetch(`/api/posts/${postId}/proposals/${proposalId}/cancel`, {
+        method: "PATCH",
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (response.ok) {
+        setProposals((current) => current.map((proposal) => proposal.id === proposalId ? { ...proposal, isAdopted: false } : proposal));
+        alert("채택이 취소되었습니다.");
+        router.refresh();
+      } else {
+        alert(payload.error || payload.message || "채택을 취소하지 못했습니다.");
       }
     } catch {
       alert("서버 연결에 실패했습니다.");
@@ -180,6 +204,18 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 >
                   <CheckCircle size={16} weight="bold" />
                   {loadingId === proposal.id ? "처리 중..." : "제안 채택하기"}
+                </button>
+              )}
+
+              {/* 채택한 글쓴이만 취소 가능 — 결제 전(MATCHED) 단계가 아니면 서버가 거절하고 이유를 알려준다 */}
+              {isMine && isAdopted && (
+                <button
+                  onClick={() => handleCancelAdoption(proposal.id)}
+                  disabled={loadingId !== null}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-300 transition disabled:opacity-50"
+                >
+                  <XCircle size={16} weight="bold" />
+                  {loadingId === proposal.id ? "처리 중..." : "채택 취소"}
                 </button>
               )}
             </div>

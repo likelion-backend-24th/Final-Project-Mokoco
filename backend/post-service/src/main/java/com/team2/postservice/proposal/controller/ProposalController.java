@@ -35,6 +35,15 @@ public class ProposalController {
         return ResponseEntity.ok().build();
     }
 
+    // 제안 채택 취소 (의뢰인) — 결제 전(MATCHED)에만 가능
+    @PatchMapping("/{proposalId}/cancel")
+    public ResponseEntity<Void> cancelProposal(@PathVariable Long postId,
+                                               @PathVariable Long proposalId,
+                                               @RequestHeader("X-User-Email") String userEmail) {
+        proposalService.cancelProposal(postId, proposalId, userEmail);
+        return ResponseEntity.ok().build();
+    }
+
     // 제안 목록 조회
     @GetMapping
     public ResponseEntity<List<ProposalResponseDto>> getProposals(@PathVariable Long postId) {
