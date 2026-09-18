@@ -3,6 +3,7 @@ package com.team2.postservice.post;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.*;
 import com.team2.postservice.common.exception.*;
+import com.team2.postservice.post.dto.NearbyRepairRequest;
 import com.team2.postservice.post.entity.*;
 import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.post.service.*;
@@ -12,7 +13,6 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import static org.mockito.Mockito.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.assertj.core.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -21,11 +21,15 @@ class NearbyRepairRequestServiceTest {
     @Mock PostRepository posts;
     PostViewerService viewer;
     PostService service;
+
     @BeforeEach void setup() {
         viewer = new PostViewerService(users);
         service = new PostService(posts, mock(FileStorageService.class), viewer);
     }
-    void login() { when(users.verifyToken("valid")).thenReturn(new UserClientResponse(1L, "a@test.com", "a", "A")); }
+
+    void login() {
+        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(1L, "a@test.com", "a", "A"));
+    }
 
     @Test void usesVerifiedUsersCurrentRegionAndReflectsChanges() {
         login();
@@ -47,7 +51,7 @@ class NearbyRepairRequestServiceTest {
     @Test void guestsQueryAllRegionsWithoutCallingUserService() {
         when(posts.findNearby(isNull(), isNull(), any())).thenReturn(Page.empty());
         for (String header : new String[]{null, "", " "}) {
-            var result = service.getNearbyPosts(header, PostCategory.ALL, 0, 20, RegionScope.DONG);
+            NearbyRepairRequest.Result result = service.getNearbyPosts(header, PostCategory.ALL, 0, 20, RegionScope.DONG);
             assertThat(result.regionFilter()).isNull();
         }
         verify(posts, times(3)).findNearby(isNull(), isNull(), any());
@@ -59,10 +63,14 @@ class NearbyRepairRequestServiceTest {
         when(users.getRegionByEmail("a@test.com")).thenReturn(
                 new RegionResponse("1165053100", "서울특별시 서초구 서초4동", "서울특별시", "서초구", "서초4동"));
         when(posts.findNearby(anyString(), isNull(), any())).thenReturn(Page.empty());
-        var district = service.getNearbyPosts("Bearer valid", null, 0, 20, RegionScope.SIGUNGU);
+
+        NearbyRepairRequest.Result district = service.getNearbyPosts("Bearer valid", null, 0, 20, RegionScope.SIGUNGU);
+
         service.getNearbyPosts("Bearer valid", null, 0, 20, RegionScope.DONG);
+
         verify(posts).findNearby(eq("11650%"), isNull(), any());
         verify(posts).findNearby(eq("1165053100"), isNull(), any());
+
         assertThat(district.regionFilter().scope()).isEqualTo(RegionScope.SIGUNGU);
         assertThat(district.regionFilter().sido()).isEqualTo("서울특별시");
         assertThat(district.regionFilter().sigungu()).isEqualTo("서초구");
