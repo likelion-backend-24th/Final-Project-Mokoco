@@ -37,13 +37,13 @@ public class Payment {
     private String payeeEmail; // 수리자 (정산 대상)
 
     @Column(nullable = false)
-    private Integer amount; // 의뢰자가 실제 결제한 총액 (baseAmount + feeAmount)
+    private Integer amount; // 의뢰자가 실제 결제한 총액 = 견적 금액(baseAmount) 그대로
 
     @Column(nullable = false)
-    private Integer feeAmount; // 플랫폼 수수료 (baseAmount의 10%, 의뢰자가 추가로 부담)
+    private Integer feeAmount; // 플랫폼 수수료 (견적 금액의 10%, 수리자 정산액에서 차감)
 
     @Column(nullable = false)
-    private Integer netAmount; // 수리자가 받는 금액 = 수리자가 제안한 금액(baseAmount) 그대로
+    private Integer netAmount; // 수리자가 받는 금액 = 견적 금액 - 플랫폼 수수료(10%)
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -66,9 +66,10 @@ public class Payment {
         this.portonePaymentId = portonePaymentId;
         this.payerEmail = payerEmail;
         this.payeeEmail = payeeEmail;
+        // 의뢰자는 견적 금액(baseAmount) 그대로 결제한다 — 수수료를 얹어 더 받지 않는다.
         this.amount = totalAmount;
-        this.netAmount = baseAmount;
-        this.feeAmount = totalAmount - baseAmount;
+        this.feeAmount = calculateFee(baseAmount);
+        this.netAmount = baseAmount - this.feeAmount;
         this.status = PaymentStatus.COMPLETED;
         this.createdAt = LocalDateTime.now();
         this.paidAt = LocalDateTime.now();
@@ -78,11 +79,11 @@ public class Payment {
         if (settledAt == null) settledAt = LocalDateTime.now();
     }
 
-    public static int calculateTotalAmount(int baseAmount) {
-        int fee = BigDecimal.valueOf(baseAmount)
+    // 플랫폼 수수료 = 견적 금액의 10% (수리자에게 정산될 때 이 금액만큼 차감된다)
+    public static int calculateFee(int baseAmount) {
+        return BigDecimal.valueOf(baseAmount)
                 .multiply(FEE_RATE)
                 .setScale(0, RoundingMode.HALF_UP)
                 .intValue();
-        return baseAmount + fee;
     }
 }

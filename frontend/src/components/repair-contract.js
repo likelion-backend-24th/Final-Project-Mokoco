@@ -6,12 +6,14 @@ import "./repair-contract.css";
 import ContractAiAssist from "./contract-ai-assist";
 import ReviewForm from "./review-form";
 
-const FEE_RATE = 0.1; // 백엔드 Payment.FEE_RATE와 동일하게 유지 (수리자 제안 금액의 10%)
+const FEE_RATE = 0.1; // 백엔드 Payment.calculateFee와 동일하게 유지 (견적 금액의 10%)
 
-function calculateTotalWithFee(baseAmount) {
+// 의뢰자는 견적 금액을 그대로 결제한다(수수료를 얹지 않음). 플랫폼 수수료는 결제액에서
+// 차감되어 수리자 정산액(net)에서만 빠진다 — 안내 문구용으로 fee/net을 미리 계산해둔다.
+function calculateSettlement(baseAmount) {
   const base = baseAmount ?? 0;
   const fee = Math.round(base * FEE_RATE);
-  return { base, fee, total: base + fee };
+  return { base, fee, net: base - fee };
 }
 
 const fields = [
@@ -94,14 +96,14 @@ export default function RepairContract({ roomId }) {
     setPaymentBusy(true); setPaymentError("");
     try {
       const paymentId = `payment-${crypto.randomUUID()}`;
-      const { base, total } = calculateTotalWithFee(overview.estimatedPrice);
+      const base = overview.estimatedPrice ?? 0;
 
       const paymentResult = await PortOne.requestPayment({
         storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID,
         channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY,
         paymentId,
         orderName: "동네수리 - 수리 대금 안전결제",
-        totalAmount: total,
+        totalAmount: base,
         currency: "CURRENCY_KRW",
         payMethod: "CARD",
         isEscrow: true,
@@ -121,7 +123,7 @@ export default function RepairContract({ roomId }) {
         body: JSON.stringify({
           postId: overview.postId,
           payeeEmail: overview.repairerEmail,
-          amount: total,
+          amount: base,
           baseAmount: base,
           paymentId,
         }),
@@ -214,10 +216,10 @@ export default function RepairContract({ roomId }) {
             <div>
               <p>계약이 체결되었습니다. 결제하면 수리자가 작업을 시작할 수 있어요. 결제 금액은 완료될 때까지 안전하게 보관됩니다.</p>
               <button disabled={paymentBusy} onClick={startPayment}>
-                {paymentBusy ? "결제 확인 중..." : `안전결제 하기 (${calculateTotalWithFee(overview.estimatedPrice).total.toLocaleString("ko-KR")}원)`}
+                {paymentBusy ? "결제 확인 중..." : `안전결제 하기 (${calculateSettlement(overview.estimatedPrice).base.toLocaleString("ko-KR")}원)`}
               </button>
               <p className="contract-hash">
-                수리비 {calculateTotalWithFee(overview.estimatedPrice).base.toLocaleString("ko-KR")}원 + 수수료(10%) {calculateTotalWithFee(overview.estimatedPrice).fee.toLocaleString("ko-KR")}원
+                견적 금액 그대로 결제돼요. 거래 완료 시 플랫폼 수수료(10%) {calculateSettlement(overview.estimatedPrice).fee.toLocaleString("ko-KR")}원을 제외한 {calculateSettlement(overview.estimatedPrice).net.toLocaleString("ko-KR")}원이 수리자에게 정산됩니다.
               </p>
               {paymentError && <p role="alert" className="contract-error">{paymentError}</p>}
             </div>}

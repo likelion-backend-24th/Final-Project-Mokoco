@@ -58,7 +58,8 @@ public class PaymentService {
             throw new CustomException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
         }
 
-        int expectedTotal = Payment.calculateTotalAmount(request.baseAmount());
+        // 의뢰자는 견적 금액을 그대로 결제한다(수수료를 얹지 않음) — 결제 총액은 견적 금액과 같아야 한다.
+        int expectedTotal = request.baseAmount();
         if (expectedTotal != request.amount()) {
             throw new CustomException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
         }
