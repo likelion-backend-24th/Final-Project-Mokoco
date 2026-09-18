@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/regions/test").permitAll()
                         .requestMatchers("/api/internal/**").permitAll()
                         .requestMatchers("/policy/**").permitAll() // 정책 페이지(개인정보처리방침 등) 공개 접근
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // API 문서
                         .requestMatchers("/api/users/me/region").authenticated() // 명시적 지정
                         .anyRequest().authenticated()
                 )

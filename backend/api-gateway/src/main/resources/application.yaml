@@ -70,3 +70,35 @@ spring:
           uri: http://mokoco-payment-service:8083
           predicates:
             - Path=/payments/**
+
+        # 아래 3개는 각 서비스의 API 문서(OpenAPI JSON)를 게이트웨이 하나로 모으기 위한 라우트.
+        # 서비스 이름을 경로에 붙여 구분하고(/user-service/v3/api-docs 등), 실제 서비스에는
+        # 표준 경로(/v3/api-docs)로 되돌려서 전달한다. springdoc.swagger-ui.urls가 이 경로들을 참조한다.
+        - id: user-service-docs
+          uri: http://mokoco-user-service:8081
+          predicates:
+            - Path=/user-service/v3/api-docs
+          filters:
+            - RewritePath=/user-service/v3/api-docs, /v3/api-docs
+        - id: post-service-docs
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/post-service/v3/api-docs
+          filters:
+            - RewritePath=/post-service/v3/api-docs, /v3/api-docs
+        - id: payment-service-docs
+          uri: http://mokoco-payment-service:8083
+          predicates:
+            - Path=/payment-service/v3/api-docs
+          filters:
+            - RewritePath=/payment-service/v3/api-docs, /v3/api-docs
+
+springdoc:
+  swagger-ui:
+    urls:
+      - name: user-service
+        url: /user-service/v3/api-docs
+      - name: post-service
+        url: /post-service/v3/api-docs
+      - name: payment-service
+        url: /payment-service/v3/api-docs
