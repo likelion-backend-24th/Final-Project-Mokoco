@@ -138,55 +138,68 @@ export default function ContractActionCard({ roomId }) {
   const isRequester = userId === overview.requesterId;
   const isRepairer = userId === overview.repairerId;
 
+  const contractAmount = Number(latest.terms?.totalAmount);
+  const amountMismatch = overview.estimatedPrice != null && !Number.isNaN(contractAmount) && contractAmount !== overview.estimatedPrice;
+
   return (
     <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <p className="text-sm font-bold text-slate-800">계약 체결 완료</p>
+      <p className="mt-1 text-sm text-slate-500">양측 서명이 완료되었습니다. 위 계약 내용을 기준으로 작업을 진행하세요.</p>
+      {amountMismatch && (
+        <p className="mt-1.5 text-xs text-red-600">
+          계약서 금액({contractAmount.toLocaleString("ko-KR")}원)과 채택된 견적 금액({overview.estimatedPrice.toLocaleString("ko-KR")}원)이 달라요. 결제는 채택된 견적 금액 기준으로 진행됩니다.
+        </p>
+      )}
       {overview.dealStatus === "MATCHED" && isRequester && !paid && (
-        <div>
-          <p className="text-sm text-slate-600">결제하면 수리자가 작업을 시작할 수 있어요.</p>
+        <div className="mt-2">
+          <p className="text-sm text-slate-600">계약이 체결되었습니다. 결제하면 수리자가 작업을 시작할 수 있어요. 결제 금액은 완료될 때까지 안전하게 보관됩니다.</p>
           <button type="button" disabled={paymentBusy} onClick={startPayment} className={`mt-2 ${buttonClass}`}>
             {paymentBusy ? "결제 확인 중..." : `안전결제 하기 (${settlement.base.toLocaleString("ko-KR")}원)`}
           </button>
+          <p className="mt-1.5 text-xs text-slate-400">
+            견적 금액 그대로 결제돼요. 거래 완료 시 플랫폼 수수료(10%) {settlement.fee.toLocaleString("ko-KR")}원을 제외한 {settlement.net.toLocaleString("ko-KR")}원이 수리자에게 정산됩니다.
+          </p>
           {paymentError && <p role="alert" className="mt-1.5 text-xs text-red-600">{paymentError}</p>}
         </div>
       )}
       {overview.dealStatus === "MATCHED" && isRepairer && !paid && (
-        <p className="text-sm text-slate-500">의뢰인의 결제를 기다리고 있어요.</p>
+        <p className="mt-2 text-sm text-slate-500">의뢰인의 결제를 기다리고 있어요.</p>
       )}
       {overview.dealStatus === "MATCHED" && paid && !isRepairer && (
-        <p className="text-sm text-slate-500">결제 완료 — 수리자의 작업 시작을 기다리고 있어요.</p>
+        <p className="mt-2 text-sm text-slate-500">결제 완료 — 수리자의 작업 시작을 기다리고 있어요.</p>
       )}
       {overview.dealStatus === "MATCHED" && isRepairer && paid && (
-        <button type="button" disabled={busy} className={buttonClass}
+        <button type="button" disabled={busy} className={`mt-2 ${buttonClass}`}
           onClick={() => advance("start", "체결된 계약에 따라 수리 작업을 시작하시겠습니까?")}>
           수리 작업 시작
         </button>
       )}
       {overview.dealStatus === "REPAIRING" && isRepairer && (
-        <button type="button" disabled={busy} className={buttonClass}
+        <button type="button" disabled={busy} className={`mt-2 ${buttonClass}`}
           onClick={() => advance("finish", "작업을 마치고 의뢰인에게 완료 확인을 요청하시겠습니까?")}>
           작업 완료 확인 요청
         </button>
       )}
       {overview.dealStatus === "REPAIRING" && !isRepairer && (
-        <p className="text-sm text-slate-500">수리 작업이 진행 중이에요.</p>
+        <p className="mt-2 text-sm text-slate-500">수리 작업이 진행 중이에요.</p>
       )}
       {overview.dealStatus === "REPAIR_DONE" && isRequester && (
-        <button type="button" disabled={busy} className={buttonClass}
+        <button type="button" disabled={busy} className={`mt-2 ${buttonClass}`}
           onClick={() => advance("accept", "계약의 검수 기준을 확인하고 수리 완료를 수락하시겠습니까?")}>
           검수 및 수리 완료 확인
         </button>
       )}
       {overview.dealStatus === "REPAIR_DONE" && !isRequester && (
-        <p className="text-sm text-slate-500">의뢰인의 완료 확인을 기다리고 있어요.</p>
+        <p className="mt-2 text-sm text-slate-500">의뢰인의 완료 확인을 기다리고 있어요.</p>
       )}
       {overview.dealStatus === "COMPLETED" && isRequester && !reviewSubmitted && (
-        <ReviewForm postId={overview.postId} onSubmitted={() => setReviewSubmitted(true)} />
+        <div className="mt-2"><ReviewForm postId={overview.postId} onSubmitted={() => setReviewSubmitted(true)} /></div>
       )}
       {overview.dealStatus === "COMPLETED" && isRequester && reviewSubmitted && (
-        <p className="text-sm text-slate-500">후기 작성 완료 — 남겨주셔서 감사해요.</p>
+        <p className="mt-2 text-sm text-slate-500">후기 작성 완료 — 남겨주셔서 감사해요.</p>
       )}
       {overview.dealStatus === "COMPLETED" && isRepairer && (
-        <p className="text-sm text-slate-500">거래 완료 — 정산 내역에서 확인할 수 있어요.</p>
+        <p className="mt-2 text-sm text-slate-500">거래 완료 — 정산 내역에서 확인할 수 있어요.</p>
       )}
       {actionError && <p role="alert" className="mt-1.5 text-xs text-red-600">{actionError}</p>}
     </div>
