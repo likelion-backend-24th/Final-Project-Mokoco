@@ -16,15 +16,18 @@ export default function AdminReportTable({ initialReports }) {
   const [reports, setReports] = useState(initialReports);
   const [loadingId, setLoadingId] = useState(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   async function act(report, action) {
     setLoadingId(report.id);
     setError("");
+    setNotice("");
     try {
       const response = await fetch(`/api/admin/reports/${report.id}/${action}`, { method: "PATCH" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "처리에 실패했습니다.");
       setReports((current) => current.map((r) => (r.id === report.id ? data : r)));
+      setNotice(action === "resolve" ? "신고를 조치 완료로 표시했어요." : "신고를 기각했어요.");
     } catch (failure) {
       setError(failure.message);
     } finally {
@@ -38,6 +41,7 @@ export default function AdminReportTable({ initialReports }) {
 
   return (
     <div className="dashboard-card">
+      {notice && <p role="status" className="mb-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{notice}</p>}
       {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
       <div className="space-y-3">
         {reports.map((report) => (
@@ -93,7 +97,7 @@ export default function AdminReportTable({ initialReports }) {
         ))}
       </div>
       <p className="mt-4 text-xs text-slate-400">
-        * 글 삭제는 글 상세 페이지의 "관리자 삭제", 유저 정지는 위 회원 목록의 "정지" 버튼으로 실제 조치를 진행한 뒤 여기서 "조치 완료"로 표시해주세요.
+        * 글 삭제는 글 상세 페이지의 &ldquo;관리자 삭제&rdquo;, 유저 정지는 위 회원 목록의 &ldquo;정지&rdquo; 버튼으로 실제 조치를 진행한 뒤 여기서 &ldquo;조치 완료&rdquo;로 표시해주세요.
       </p>
     </div>
   );

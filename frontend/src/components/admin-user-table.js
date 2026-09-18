@@ -7,12 +7,14 @@ export default function AdminUserTable({ initialUsers, currentUserEmail }) {
   const [users, setUsers] = useState(initialUsers);
   const [loadingId, setLoadingId] = useState(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   async function toggleRole(user) {
     const nextRole = user.role === "ADMIN" ? "USER" : "ADMIN";
     if (!confirm(`${user.email}의 권한을 ${nextRole}(으)로 변경하시겠습니까?`)) return;
     setLoadingId(user.id);
     setError("");
+    setNotice("");
     try {
       const response = await fetch(`/api/admin/users/${user.id}/role`, {
         method: "PATCH",
@@ -22,6 +24,7 @@ export default function AdminUserTable({ initialUsers, currentUserEmail }) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "권한 변경에 실패했습니다.");
       setUsers((current) => current.map((u) => (u.id === user.id ? { ...u, role: nextRole } : u)));
+      setNotice(`${user.email}의 권한을 ${nextRole}(으)로 변경했어요.`);
     } catch (failure) {
       setError(failure.message);
     } finally {
@@ -35,6 +38,7 @@ export default function AdminUserTable({ initialUsers, currentUserEmail }) {
     if (!confirm(`${user.email} 계정을 ${verb}하시겠습니까?`)) return;
     setLoadingId(user.id);
     setError("");
+    setNotice("");
     try {
       const response = await fetch(`/api/admin/users/${user.id}/status`, {
         method: "PATCH",
@@ -44,6 +48,7 @@ export default function AdminUserTable({ initialUsers, currentUserEmail }) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "상태 변경에 실패했습니다.");
       setUsers((current) => current.map((u) => (u.id === user.id ? { ...u, status: nextStatus } : u)));
+      setNotice(`${user.email} 계정을 ${verb}했어요.`);
     } catch (failure) {
       setError(failure.message);
     } finally {
@@ -53,6 +58,7 @@ export default function AdminUserTable({ initialUsers, currentUserEmail }) {
 
   return (
     <div className="dashboard-card">
+      {notice && <p role="status" className="mb-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{notice}</p>}
       {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
