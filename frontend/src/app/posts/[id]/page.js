@@ -149,7 +149,7 @@ export default async function PostDetailPage({ params }) {
                 </div>
               )}
 
-              {!isMine && <RepairProposalForm postId={post.id} />}
+              {!isMine && post.status === "WAITING" && <RepairProposalForm postId={post.id} />}
             </div>
 
             {/* 제안 목록 섹션 */}

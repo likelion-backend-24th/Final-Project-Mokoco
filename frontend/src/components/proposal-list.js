@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle, Trash, MapPin, Wrench, FileText, XCircle } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import ProposalChatRoom from "@/components/proposal-chat-room";
@@ -14,6 +14,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
   const [previousProposals, setPreviousProposals] = useState(initialProposals);
   const [loadingId, setLoadingId] = useState(null);
   const [resumeEmail, setResumeEmail] = useState(null);
+  const [adoptedDealStatus, setAdoptedDealStatus] = useState(null);
   const router = useRouter();
 
   // 부모 컴포넌트에서 router.refresh()로 새로운 데이터가 내려올 때 상태 동기화
@@ -21,6 +22,19 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
     setPreviousProposals(initialProposals);
     setProposals(initialProposals);
   }
+
+  const adoptedFixDealId = proposals?.find((p) => p.isAdopted)?.fixDealId ?? null;
+
+  // 채택 취소 버튼은 거래가 아직 결제 전(MATCHED)일 때만 의미가 있어서, 실제 거래 상태를 확인해 노출 여부를 정한다.
+  useEffect(() => {
+    if (!adoptedFixDealId) return;
+    const controller = new AbortController();
+    fetch(`/api/fix-deals/${adoptedFixDealId}`, { signal: controller.signal, cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (!controller.signal.aborted) setAdoptedDealStatus(data?.status ?? null); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [adoptedFixDealId]);
 
   if (!proposals || proposals.length === 0) {
     return (
@@ -127,7 +141,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <RepairerEmailMenu email={proposal.repairerEmail} />
+                <RepairerEmailMenu email={proposal.repairerEmail} nickname={proposal.repairerNickname} />
                 <RatingBadge email={proposal.repairerEmail} postId={postId} />
                 {proposal.attachResume && proposal.repairerEmail && (
                   <button
@@ -140,7 +154,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 )}
                 {isAdopted && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white">
-                    <CheckCircle size={14} weight="bold" /> 채택 완료
+                    <CheckCircle size={14} weight="bold" /> {adoptedDealStatus === "COMPLETED" ? "거래 완료" : "채택 완료"}
                   </span>
                 )}
               </div>
@@ -207,8 +221,8 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 </button>
               )}
 
-              {/* 채택한 글쓴이만 취소 가능 — 결제 전(MATCHED) 단계가 아니면 서버가 거절하고 이유를 알려준다 */}
-              {isMine && isAdopted && (
+              {/* 채택한 글쓴이만 취소 가능 — 결제 전(MATCHED) 단계에서만 의미가 있어서 그때만 보여준다 */}
+              {isMine && isAdopted && adoptedDealStatus === "MATCHED" && (
                 <button
                   onClick={() => handleCancelAdoption(proposal.id)}
                   disabled={loadingId !== null}

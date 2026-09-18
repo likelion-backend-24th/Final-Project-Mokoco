@@ -176,17 +176,18 @@ public class ProposalService {
                     Long fixDealId = proposal.isAdopted() ? fixDealRepository.findByProposalId(proposal.getId())
                             .map(FixDeal::getId).orElse(null) : null;
                     RepairerSummary summary = repairerSummary(proposal.getRepairerEmail());
-                    return new ProposalResponseDto(proposal, fixDealId, summary.region(), summary.completedCount());
+                    return new ProposalResponseDto(proposal, fixDealId, summary.region(), summary.completedCount(), summary.nickname());
                 })
                 .toList();
     }
 
-    private record RepairerSummary(String region, long completedCount) {}
+    private record RepairerSummary(String region, long completedCount, String nickname) {}
 
-    // 수리공 지역/채택 횟수 조회 — 실패해도 제안 목록 자체는 보여야 하므로 개별로 감싸서 무해하게 실패시킨다.
+    // 수리공 지역/채택 횟수/닉네임 조회 — 실패해도 제안 목록 자체는 보여야 하므로 개별로 감싸서 무해하게 실패시킨다.
     private RepairerSummary repairerSummary(String repairerEmail) {
         String region = null;
         long completedCount = 0;
+        String nickname = null;
         try {
             RegionResponse regionResponse = userClient.getRegionByEmail(repairerEmail);
             if (regionResponse != null && regionResponse.sido() != null) {
@@ -198,12 +199,13 @@ public class ProposalService {
             // 활동 지역 미설정 등 — 위치 미노출로 처리
         }
         try {
-            Long repairerId = userClient.getUserByEmail(repairerEmail).id();
-            completedCount = fixDealRepository.countByRepairerIdAndStatus(repairerId, FixDealStatus.COMPLETED);
+            UserClientResponse repairer = userClient.getUserByEmail(repairerEmail);
+            completedCount = fixDealRepository.countByRepairerIdAndStatus(repairer.id(), FixDealStatus.COMPLETED);
+            nickname = repairer.nickname();
         } catch (Exception ignored) {
-            // 유저 조회 실패 시 0건으로 처리
+            // 유저 조회 실패 시 0건/닉네임 없음으로 처리
         }
-        return new RepairerSummary(region, completedCount);
+        return new RepairerSummary(region, completedCount, nickname);
     }
 
     @Transactional

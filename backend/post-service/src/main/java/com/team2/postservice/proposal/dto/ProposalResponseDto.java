@@ -15,6 +15,7 @@ public class ProposalResponseDto {
     private final Long fixDealId;
     private final String repairerRegion; // 수리공 활동 지역 (시도+시군구 정도만, 동까지는 노출 안 함)
     private final long repairerCompletedCount; // 그 수리공이 완료까지 마친 거래 건수
+    private final String repairerNickname;
 
     @JsonProperty("isAdopted")
     private final boolean isAdopted;
@@ -22,10 +23,10 @@ public class ProposalResponseDto {
     private final boolean attachResume;
 
     public ProposalResponseDto(Proposal proposal) {
-        this(proposal, null, null, 0);
+        this(proposal, null, null, 0, null);
     }
 
-    public ProposalResponseDto(Proposal proposal, Long fixDealId, String repairerRegion, long repairerCompletedCount) {
+    public ProposalResponseDto(Proposal proposal, Long fixDealId, String repairerRegion, long repairerCompletedCount, String repairerNickname) {
         this.fixDealId = fixDealId;
         this.id = proposal.getId();
         this.postId = proposal.getPost() != null ? proposal.getPost().getId() : null;
@@ -35,6 +36,7 @@ public class ProposalResponseDto {
         this.isAdopted = proposal.isAdopted();
         this.repairerRegion = repairerRegion;
         this.repairerCompletedCount = repairerCompletedCount;
+        this.repairerNickname = repairerNickname;
         this.attachResume = proposal.isAttachResume();
     }
 }
