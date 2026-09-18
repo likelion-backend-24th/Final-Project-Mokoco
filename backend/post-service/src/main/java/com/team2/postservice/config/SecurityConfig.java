@@ -1,35 +1,47 @@
 package com.team2.postservice.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team2.postservice.client.UserClient;
+import com.team2.postservice.common.security.TokenAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
-    @org.springframework.core.annotation.Order(1)
-    public SecurityFilterChain authenticatedApiSecurityFilterChain(HttpSecurity http,
-            com.team2.postservice.client.UserClient users, com.fasterxml.jackson.databind.ObjectMapper mapper) throws Exception {
+    @Order(1)
+    public SecurityFilterChain authenticatedApiSecurityFilterChain(
+            HttpSecurity http,
+            UserClient users,
+            ObjectMapper mapper) throws Exception {
         return http
-                .securityMatcher("/api/ai/**", "/api/chat-rooms/*/contract/ai-draft", "/api/chat-rooms/proposals/*", "/api/chat-rooms/*/detail")
+                .securityMatcher(
+                        "/api/ai/**",
+                        "/api/chat-rooms/*/contract/ai-draft",
+                        "/api/chat-rooms/proposals/*",
+                        "/api/chat-rooms/*/detail"
+                )
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 .requestCache(cache -> cache.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new com.team2.postservice.common.security.TokenAuthenticationFilter(users, mapper),
-                        org.springframework.security.web.authentication.AnonymousAuthenticationFilter.class)
+                .addFilterBefore(new TokenAuthenticationFilter(users, mapper),
+                        AnonymousAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 .build();
     }
 
     @Bean
-    @org.springframework.core.annotation.Order(2)
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())

@@ -5,8 +5,10 @@ import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.common.exception.CustomException;
 import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.fixDeal.entity.FixDeal;
+import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
 import com.team2.postservice.post.entity.Post;
+import com.team2.postservice.post.entity.PostStatus;
 import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.proposal.dto.ProposalRequestDto;
 import com.team2.postservice.proposal.dto.ProposalResponseDto;
@@ -131,5 +133,43 @@ public class ProposalService {
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
                     "채택되었거나 채팅방이 있는 견적은 삭제할 수 없습니다.");
         proposalRepository.delete(proposal);
+    }
+
+
+
+    @Transactional
+    public void cancelProposal(Long postId, Long proposalId, String userEmail) {
+
+        Post post = postRepository.lockById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
+
+        if(!post.getAuthorEmail().equals(userEmail)) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED_PROPOSAL_ADOPT);
+        }
+
+        Proposal proposal = proposalRepository.lockById(proposalId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROPOSAL_NOT_FOUND));
+
+        if (!proposal.getPost().getId().equals(postId)) {
+            throw new CustomException(ErrorCode.PROPOSAL_NOT_FOUND);
+        }
+
+        if (!proposal.isAdopted()) {
+            return;
+        }
+
+        FixDeal deal = fixDealRepository.findByProposalId(proposalId)
+                .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
+
+        if (deal.getStatus().equals(FixDealStatus.MATCHED)) {
+
+            deal.changeStatus(FixDealStatus.CANCELED);
+            proposal.cancel();
+            post.changeStatus(PostStatus.WAITING);
+
+            rooms.findByProposalId(proposalId)
+                    .ifPresent(room -> room.detachDeal(deal));
+
+        }
     }
 }

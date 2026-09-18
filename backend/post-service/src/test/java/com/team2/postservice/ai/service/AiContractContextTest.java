@@ -5,7 +5,7 @@ import com.team2.postservice.chatRoom.repository.ChatRoomRepository;
 import com.team2.postservice.chatMessage.entity.*;
 import com.team2.postservice.chatMessage.repository.ChatMessageRepository;
 import com.team2.postservice.common.exception.AiException;
-import com.team2.postservice.contract.ContractRepository;
+import com.team2.postservice.contract.repository.ContractRepository;
 import com.team2.postservice.fixDeal.entity.*;
 import com.team2.postservice.post.entity.*;
 import com.team2.postservice.post.repository.PostRepository;

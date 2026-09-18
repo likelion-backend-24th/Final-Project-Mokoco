@@ -1,6 +1,6 @@
 package com.team2.postservice.config;
 
-import com.team2.postservice.chatMessage.ChatService;
+import com.team2.postservice.chatMessage.service.ChatService;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
 import org.junit.jupiter.api.Test;

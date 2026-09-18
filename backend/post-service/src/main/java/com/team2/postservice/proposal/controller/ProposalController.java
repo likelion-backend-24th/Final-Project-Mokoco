@@ -6,6 +6,7 @@ import com.team2.postservice.proposal.service.ProposalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,6 +33,17 @@ public class ProposalController {
                                               @PathVariable Long proposalId,
                                               @RequestHeader("X-User-Email") String userEmail) {
         proposalService.adoptProposal(postId, proposalId, userEmail);
+        return ResponseEntity.ok().build();
+    }
+
+    // 제안 취소 (의뢰인)
+    @PatchMapping("/{proposalId}/cancel")
+    public ResponseEntity<Void> cancelProposal(
+            @PathVariable Long postId,
+            @PathVariable Long proposalId,
+            @RequestHeader("X-User-Email") String userEmail
+    ){
+        proposalService.cancelProposal(postId, proposalId, userEmail);
         return ResponseEntity.ok().build();
     }
 

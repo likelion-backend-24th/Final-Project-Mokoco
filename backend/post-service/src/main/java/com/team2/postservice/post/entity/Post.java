@@ -81,6 +81,10 @@ public class Post {
         this.status = PostStatus.MATCHED;
     }
 
+    public void changeStatus(PostStatus status) {
+        this.status = status;
+    }
+
     public void changeVisibility(boolean publiclyVisible) {
         this.publiclyVisible = publiclyVisible;
     }

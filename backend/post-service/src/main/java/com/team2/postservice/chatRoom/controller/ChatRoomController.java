@@ -1,9 +1,12 @@
 package com.team2.postservice.chatRoom.controller;
 
+import com.team2.postservice.chatRoom.dto.ChatRoomListItem;
 import com.team2.postservice.chatRoom.dto.ChatRoomResponse;
 import com.team2.postservice.chatRoom.service.ChatRoomService;
+import com.team2.postservice.common.security.LoginUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,28 +17,34 @@ public class ChatRoomController {
     private final ChatRoomService chatRoomService;
 
     @PostMapping("/proposals/{proposalId}")
-    public ChatRoomResponse createForProposal(@PathVariable Long proposalId,
-            @org.springframework.security.core.annotation.AuthenticationPrincipal com.team2.postservice.common.security.LoginUser user) {
+    public ChatRoomResponse createForProposal(
+            @PathVariable Long proposalId,
+            @AuthenticationPrincipal LoginUser user
+    ) {
         return chatRoomService.createForProposal(proposalId, user.id());
     }
 
     @GetMapping("/proposals/{proposalId}")
-    public ChatRoomResponse getForProposal(@PathVariable Long proposalId,
-            @org.springframework.security.core.annotation.AuthenticationPrincipal com.team2.postservice.common.security.LoginUser user) {
+    public ChatRoomResponse getForProposal(
+            @PathVariable Long proposalId,
+            @AuthenticationPrincipal LoginUser user
+    ) {
         return chatRoomService.getForProposal(proposalId, user.id());
     }
 
     @GetMapping("/{roomId}/detail")
     public ChatRoomResponse detail(@PathVariable Long roomId,
-            @org.springframework.security.core.annotation.AuthenticationPrincipal com.team2.postservice.common.security.LoginUser user) {
+            @AuthenticationPrincipal LoginUser user
+    ) {
         return chatRoomService.detail(roomId, user.id());
     }
 
     @GetMapping
-    public java.util.List<com.team2.postservice.chatRoom.dto.ChatRoomListItem> getMyRooms(
+    public java.util.List<ChatRoomListItem> getMyRooms(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
+            @RequestParam(defaultValue = "5") int size
+    ) {
         return chatRoomService.getMyRooms(authorization, page, size);
     }
 
