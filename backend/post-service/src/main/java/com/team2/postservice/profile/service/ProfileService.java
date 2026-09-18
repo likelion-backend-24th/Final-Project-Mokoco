@@ -1,5 +1,6 @@
 package com.team2.postservice.profile.service;
 
+import com.team2.postservice.chatRoom.repository.ChatRoomRepository;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.fixDeal.entity.FixDeal;
@@ -26,6 +27,7 @@ public class ProfileService {
     private final PostRepository postRepository;
     private final ReviewRepository reviewRepository;
     private final UserClient userClient;
+    private final ChatRoomRepository chatRoomRepository;
 
     public TransactionHistoryResponse getMyTransactions(String email, String role, Pageable pageable) {
         Long userId = userClient.getUserByEmail(email).id();
@@ -54,6 +56,11 @@ public class ProfileService {
                 .map(ReviewResponseDto::from)
                 .orElse(null);
 
+        // 프로필의 거래 내역에서 바로 계약서(진행 상태·서명·정산)로 이동할 수 있도록 채팅방 id도 같이 내려준다.
+        Long chatRoomId = chatRoomRepository.findByFixDealId(deal.getId())
+                .map(room -> room.getId())
+                .orElse(null);
+
         return new TransactionHistoryItemResponse(
                 deal.getId(),
                 deal.getPostId(),
@@ -63,7 +70,8 @@ public class ProfileService {
                 deal.getStatus(),
                 deal.getCreatedAt(),
                 deal.getCompletedAt(),
-                review
+                review,
+                chatRoomId
         );
     }
 

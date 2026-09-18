@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Star } from "@phosphor-icons/react";
+import { FileText, Star } from "@phosphor-icons/react";
 
 const STATUS_LABEL = {
   MATCHED: "매칭 완료",
@@ -47,6 +47,15 @@ function TransactionCard({ item }) {
         </span>
       </div>
       <p className="mt-1.5 text-sm text-slate-500">상대방: {item.counterpartEmail}</p>
+      {item.chatRoomId && (
+        <Link
+          href={`/chat-rooms/${item.chatRoomId}/contract`}
+          className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-600 hover:bg-blue-100"
+        >
+          <FileText size={15} weight="duotone" />
+          계약서·진행 상태 보기
+        </Link>
+      )}
       {item.review && (
         <div className="mt-3 rounded-lg bg-slate-50 p-3">
           <StarRow rating={item.review.rating} />
