@@ -2,7 +2,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import SiteHeader from "@/components/site-header";
 import ProfileTabs from "@/components/profile-tabs";
-import ResumeEditor from "@/components/resume-editor";
 import AccountSettings from "@/components/account-settings";
 
 export default async function ProfilePage() {
@@ -24,11 +23,6 @@ export default async function ProfilePage() {
         <section className="mb-10">
           <h3 className="mb-3 text-base font-bold text-slate-700">내 정보</h3>
           <AccountSettings />
-        </section>
-
-        <section className="mb-10">
-          <h3 className="mb-3 text-base font-bold text-slate-700">내 이력서</h3>
-          <ResumeEditor />
         </section>
 
         <ProfileTabs userEmail={userEmail} />

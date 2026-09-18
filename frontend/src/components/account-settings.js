@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PencilSimple, LockKey } from "@phosphor-icons/react";
+import { PencilSimple, LockKey, FileText, X } from "@phosphor-icons/react";
+import ResumeEditor from "./resume-editor";
 
 export default function AccountSettings() {
   const [me, setMe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingProfile, setEditingProfile] = useState(false);
   const [editingPassword, setEditingPassword] = useState(false);
+  const [resumeOpen, setResumeOpen] = useState(false);
   const [name, setName] = useState("");
   const [nickname, setNickname] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -120,6 +122,7 @@ export default function AccountSettings() {
   if (!me) return <p className="text-base text-red-600">{error || "내 정보를 불러오지 못했습니다."}</p>;
 
   return (
+    <>
     <div className="rounded-xl border border-slate-200 bg-white p-6">
       {notice && <p className="mb-4 text-sm font-semibold text-emerald-600">{notice}</p>}
 
@@ -146,6 +149,14 @@ export default function AccountSettings() {
             >
               <LockKey size={16} weight="bold" />
               비밀번호 변경
+            </button>
+            <button
+              type="button"
+              onClick={() => setResumeOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
+            >
+              <FileText size={16} weight="bold" />
+              내 이력서
             </button>
           </div>
         </div>
@@ -233,5 +244,35 @@ export default function AccountSettings() {
         </form>
       )}
     </div>
+
+    {resumeOpen && (
+      <div
+        className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+        onClick={() => setResumeOpen(false)}
+      />
+    )}
+
+    <div
+      className={`fixed inset-x-0 bottom-0 z-50 max-h-[85vh] transform overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl transition-transform duration-300 ease-out ${
+        resumeOpen ? "translate-y-0" : "translate-y-full"
+      }`}
+    >
+      <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-200" />
+
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-extrabold text-slate-900">내 이력서</h3>
+        <button
+          type="button"
+          onClick={() => setResumeOpen(false)}
+          aria-label="닫기"
+          className="rounded-full p-1 text-slate-400 hover:bg-slate-100"
+        >
+          <X size={20} weight="bold" />
+        </button>
+      </div>
+
+      <ResumeEditor />
+    </div>
+    </>
   );
 }
