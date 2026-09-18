@@ -2,6 +2,8 @@ package com.team2.postservice.chatMessage;
 
 import com.team2.postservice.chatMessage.entity.*;
 import com.team2.postservice.chatMessage.repository.ChatMessageRepository;
+import com.team2.postservice.chatMessage.service.ChatAttachmentService;
+import com.team2.postservice.chatMessage.service.ChatService;
 import com.team2.postservice.chatRoom.entity.ChatRoom;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;

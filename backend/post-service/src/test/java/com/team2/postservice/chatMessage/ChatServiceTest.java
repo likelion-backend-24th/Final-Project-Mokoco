@@ -1,11 +1,11 @@
 package com.team2.postservice.chatMessage;
 
+import com.team2.postservice.chatMessage.service.ChatService;
 import com.team2.postservice.chatRoom.entity.ChatRoom;
 import com.team2.postservice.chatRoom.repository.ChatRoomRepository;
 import com.team2.postservice.chatMessage.entity.ChatMessage;
 import com.team2.postservice.chatMessage.repository.ChatMessageRepository;
 import com.team2.postservice.fixDeal.entity.FixDeal;
-import com.team2.postservice.notification.service.NotificationService;
 import org.junit.jupiter.api.Test;
 import java.util.Optional;
 import static org.mockito.Mockito.*;

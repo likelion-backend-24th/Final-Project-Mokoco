@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "chat_rooms")
@@ -33,18 +34,32 @@ public class ChatRoom {
     public Long getRequesterId() { return requesterId != null ? requesterId : fixDeal == null ? null : fixDeal.getRequesterId(); }
     public Long getRepairerId() { return repairerId != null ? repairerId : fixDeal == null ? null : fixDeal.getRepairerId(); }
     public Long getPostId() { return postId != null ? postId : fixDeal == null ? null : fixDeal.getPostId(); }
+
     public boolean hasParticipant(Long userId) {
         return userId != null && (userId.equals(getRequesterId()) || userId.equals(getRepairerId()));
     }
+
     public void attachDeal(FixDeal deal) {
-        if (!java.util.Objects.equals(getProposalId(), deal.getProposalId())
-                || !java.util.Objects.equals(getRequesterId(), deal.getRequesterId())
-                || !java.util.Objects.equals(getRepairerId(), deal.getRepairerId())
-                || !java.util.Objects.equals(getPostId(), deal.getPostId()))
+        if (!Objects.equals(getProposalId(), deal.getProposalId())
+                || !Objects.equals(getRequesterId(), deal.getRequesterId())
+                || !Objects.equals(getRepairerId(), deal.getRepairerId())
+                || !Objects.equals(getPostId(), deal.getPostId()))
             throw new IllegalArgumentException("Deal does not match chat participants and proposal");
-        if (fixDeal != null && !java.util.Objects.equals(fixDeal.getId(), deal.getId()))
+        if (fixDeal != null && !Objects.equals(fixDeal.getId(), deal.getId()))
             throw new IllegalStateException("Chat room already linked to a deal");
         this.fixDeal = deal;
+    }
+
+    public void detachDeal(FixDeal deal) {
+        if (this.fixDeal == null) {
+            return;
+        }
+
+        if (!java.util.Objects.equals(this.fixDeal.getId(), deal.getId())) {
+            throw new IllegalArgumentException("Deal does not match linked deal");
+        }
+
+        this.fixDeal = null;
     }
 
     @Builder.Default

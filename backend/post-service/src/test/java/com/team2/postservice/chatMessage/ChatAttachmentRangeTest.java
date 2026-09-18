@@ -1,5 +1,7 @@
 package com.team2.postservice.chatMessage;
 
+import com.team2.postservice.chatMessage.controller.ChatAttachmentController;
+import com.team2.postservice.chatMessage.service.ChatAttachmentService;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
 import org.junit.jupiter.api.Test;

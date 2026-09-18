@@ -3,17 +3,15 @@
 import { useState } from "react";
 import { CheckCircle, Trash } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
+import { XCircle } from 'lucide-react';
 import ProposalChatRoom from "@/components/proposal-chat-room";
 import FixDealProgress from "@/components/fix-deal-progress";
 import RatingBadge from "@/components/rating-badge";
-import RepairerEmailMenu from "@/components/repairer-email-menu";
-import ResumeViewModal from "@/components/resume-view-modal";
 
 export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail }) {
   const [proposals, setProposals] = useState(initialProposals);
   const [previousProposals, setPreviousProposals] = useState(initialProposals);
   const [loadingId, setLoadingId] = useState(null);
-  const [resumeViewEmail, setResumeViewEmail] = useState(null);
   const router = useRouter();
 
   // 부모 컴포넌트에서 router.refresh()로 새로운 데이터가 내려올 때 상태 동기화
@@ -32,6 +30,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
 
   // 이미 채택된 제안이 하나라도 존재하는지 확인
   const hasAdopted = proposals.some((p) => p.isAdopted);
+
 
   // 채택된 제안(isAdopted === true)이 맨 위로 오도록 정렬
   const sortedProposals = [...proposals].sort((a, b) => {
@@ -56,6 +55,43 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
         alert("제안 채택에 실패했습니다.");
       }
     } catch {
+      alert("서버 연결에 실패했습니다.");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+
+  const handleCancelAdopt = async (proposalId) => {
+    if (!confirm("이 제안 채택을 취소하시겠습니까?")) return;
+
+    setLoadingId(proposalId);
+
+    try {
+      const response = await fetch(
+        `/api/posts/${postId}/proposals/${proposalId}/cancel`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        }
+      );
+      if (response.ok) {
+        setProposals((current) =>
+          current.map((proposal) =>
+            proposal.id === proposalId
+              ? { ...proposal, isAdopted: false }
+              : proposal
+          )
+        );
+
+        alert("제안 채택이 취소되었습니다.");
+        router.refresh();
+      } else {
+        console.error("채택 취소 실패:", response.status);
+        alert("제안 채택 취소에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error(error);
       alert("서버 연결에 실패했습니다.");
     } finally {
       setLoadingId(null);
@@ -95,15 +131,16 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
         return (
           <div
             key={proposal.id}
-            className={`rounded-2xl border p-5 transition ${
-              isAdopted
-                ? "border-emerald-500 bg-emerald-50/40 shadow-sm"
-                : "border-slate-100 bg-slate-50/50 hover:border-slate-200"
-            }`}
+            className={`rounded-2xl border p-5 transition ${isAdopted
+              ? "border-emerald-500 bg-emerald-50/40 shadow-sm"
+              : "border-slate-100 bg-slate-50/50 hover:border-slate-200"
+              }`}
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <RepairerEmailMenu email={proposal.repairerEmail} />
+                <span className="text-sm font-bold text-slate-800">
+                  {proposal.repairerEmail || "수리공 이웃"}
+                </span>
                 <RatingBadge email={proposal.repairerEmail} postId={postId} />
                 {isAdopted && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
@@ -122,18 +159,8 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
               </div>
             )}
 
-            {proposal.attachResume && (
-              <button
-                type="button"
-                onClick={() => setResumeViewEmail(proposal.repairerEmail)}
-                className="mb-2 inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100"
-              >
-                이력서 보기
-              </button>
-            )}
-            
             <p className="text-sm text-slate-700 whitespace-pre-line mb-4">{proposal.content}</p>
-            
+
             <div className="flex justify-end gap-2">
               {/* 본인 제안이고 채택되지 않았을 때만 삭제 가능 */}
               {isMyProposal && !isAdopted && (
@@ -158,6 +185,19 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                   {loadingId === proposal.id ? "처리 중..." : "제안 채택하기"}
                 </button>
               )}
+
+              {/* 게시글 작성자이고, 현재 해당 제안이 채택된 상태일 때 채택 취소 버튼 */}
+              {isMine && isAdopted && (
+                <button
+                  onClick={() => handleCancelAdopt(proposal.id)}
+                  disabled={loadingId !== null}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-red-500 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-600 transition disabled:opacity-50"
+                >
+                  <XCircle size={16} weight="bold" />
+                  {loadingId === proposal.id ? "처리 중..." : "채택 취소"}
+                </button>
+              )}
+
             </div>
             {(isMine || isMyProposal) && <ProposalChatRoom key={proposal.id} proposalId={proposal.id} />}
             {isAdopted && (isMine || isMyProposal) && (
@@ -176,7 +216,6 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
           </div>
         );
       })}
-      {resumeViewEmail && <ResumeViewModal email={resumeViewEmail} onClose={() => setResumeViewEmail(null)} />}
     </div>
   );
 }
