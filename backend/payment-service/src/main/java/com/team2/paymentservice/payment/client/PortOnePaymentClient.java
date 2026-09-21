@@ -1,7 +1,7 @@
 package com.team2.paymentservice.payment.client;
 
 import com.team2.common.exception.CustomException;
-import com.team2.common.exception.ErrorCode;
+import com.team2.paymentservice.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,7 +1,7 @@
 package com.team2.userservice.user.service;
 
 import com.team2.common.exception.CustomException;
-import com.team2.common.exception.ErrorCode;
+import com.team2.userservice.common.exception.ErrorCode;
 import com.team2.userservice.config.JwtTokenProvider;
 import com.team2.userservice.region.entity.Region;
 import com.team2.userservice.region.repository.RegionRepository;

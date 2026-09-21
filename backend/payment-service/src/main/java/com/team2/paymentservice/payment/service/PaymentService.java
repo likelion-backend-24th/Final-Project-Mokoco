@@ -2,7 +2,7 @@ package com.team2.paymentservice.payment.service;
 
 import com.team2.common.payment.PaymentContext;
 import com.team2.common.exception.CustomException;
-import com.team2.common.exception.ErrorCode;
+import com.team2.paymentservice.common.exception.ErrorCode;
 import com.team2.paymentservice.payment.client.PortOnePaymentClient;
 import com.team2.paymentservice.payment.client.PortOnePaymentResponse;
 import com.team2.paymentservice.payment.client.PostServiceClient;

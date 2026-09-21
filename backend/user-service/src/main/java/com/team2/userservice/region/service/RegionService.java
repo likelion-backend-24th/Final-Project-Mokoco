@@ -1,7 +1,7 @@
 package com.team2.userservice.region.service;
 
 import com.team2.common.exception.CustomException;
-import com.team2.common.exception.ErrorCode;
+import com.team2.userservice.common.exception.ErrorCode;
 import com.team2.userservice.region.client.KakaoLocalClient;
 import com.team2.userservice.region.dto.RegionRequest;
 import com.team2.userservice.region.dto.RegionInfo;

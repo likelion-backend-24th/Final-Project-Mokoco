@@ -9,7 +9,7 @@ import com.team2.chatservice.client.dto.FixDealResponse;
 import com.team2.chatservice.client.dto.ProposalResponse;
 import com.team2.chatservice.client.dto.UserClientResponse;
 import com.team2.common.exception.CustomException;
-import com.team2.common.exception.ErrorCode;
+import com.team2.chatservice.common.exception.ErrorCode;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;

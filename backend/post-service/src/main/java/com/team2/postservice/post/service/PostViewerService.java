@@ -4,7 +4,7 @@ import com.team2.common.security.LoginUser;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.RegionResponse;
 import com.team2.common.exception.CustomException;
-import com.team2.common.exception.ErrorCode;
+import com.team2.postservice.common.exception.ErrorCode;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -3,7 +3,7 @@ package com.team2.postservice.review.service;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.common.exception.CustomException;
-import com.team2.common.exception.ErrorCode;
+import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;

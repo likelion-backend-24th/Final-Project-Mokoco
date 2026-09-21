@@ -1,7 +1,7 @@
 package com.team2.postservice.post.entity;
 
 import com.team2.common.exception.CustomException;
-import com.team2.common.exception.ErrorCode;
+import com.team2.postservice.common.exception.ErrorCode;
 
 /** Administrative region codes: 2-digit province, 5-digit district, full dong code. */
 public enum RegionScope {
