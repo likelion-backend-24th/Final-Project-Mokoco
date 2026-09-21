@@ -1,10 +1,12 @@
 package com.team2.postservice.fixDeal.controller;
 
+import com.team2.common.security.LoginUser;
 import com.team2.postservice.fixDeal.dto.FixDealDetailResponse;
 import com.team2.postservice.fixDeal.dto.FixDealStatusResponse;
 import com.team2.postservice.fixDeal.service.FixDealService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,8 +20,8 @@ public class FixDealController {
 
     @GetMapping("/fix-deals/{fixDealId}")
     public ResponseEntity<FixDealDetailResponse> getFixDeal(@PathVariable Long fixDealId,
-                                                             @RequestHeader("X-User-Email") String userEmail) {
-        return ResponseEntity.ok(fixDealService.getFixDeal(fixDealId, userEmail));
+                                                             @AuthenticationPrincipal LoginUser user) {
+        return ResponseEntity.ok(fixDealService.getFixDeal(fixDealId, user.email()));
     }
 
     @GetMapping("/posts/{postId}/fix-deal")

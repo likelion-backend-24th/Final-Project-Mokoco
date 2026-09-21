@@ -16,7 +16,7 @@ const categories = [
   { value: "LIVING_ETC", label: "생활·기타" },
 ];
 
-export default function PostForm({ postId, initialValue, userEmail, accessToken }) {
+export default function PostForm({ postId, initialValue, accessToken }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -30,7 +30,6 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
   const isEdit = Boolean(postId);
 
   const authHeaders = {
-    "X-User-Email": userEmail ?? "",
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
   };
 

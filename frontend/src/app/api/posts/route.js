@@ -32,7 +32,6 @@ export async function POST(request) {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "X-User-Email": userEmail,
         // 주의: multipart/form-data 전송 시 Content-Type 헤더는 수동으로 넣지 않아야 boundary가 자동 생성됩니다.
       },
       body: backendFormData,

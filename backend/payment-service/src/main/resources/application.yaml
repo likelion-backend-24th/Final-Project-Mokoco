@@ -28,6 +28,9 @@ spring:
 post-service:
   base-url: http://mokoco-post-service:8082
 
+user-service:
+  base-url: http://mokoco-user-service:8081
+
 portone:
   base-url: https://api.portone.io
   # api-secret / webhook-secret / store-id 는 application-secret.yaml (GitHub Secret) 에서 주입

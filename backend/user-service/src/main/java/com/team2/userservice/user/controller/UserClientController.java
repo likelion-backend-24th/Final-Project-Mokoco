@@ -24,8 +24,8 @@ public class UserClientController {
     @PostMapping("/verify-token")
     public ResponseEntity<UserResponse> verifyToken(@RequestBody String token) {
         if (!tokenProvider.validateAccessToken(token)) return ResponseEntity.status(401).build();
-        String email = tokenProvider.getEmailFromAccessToken(token);
-        UserResponse response = userService.findUserByEmail(email);
+        Long userId = tokenProvider.getUserIdFromAccessToken(token);
+        UserResponse response = userService.findUserById(userId);
         // 정지된 계정은 토큰이 아직 유효해도 이 시점부터 즉시 막는다 —
         // 다른 서비스들은 전부 이 verify-token 결과로 인증하므로 여기 한 곳만 막으면 앱 전체에 적용됨.
         if (response.getStatus() == AccountStatus.SUSPENDED) return ResponseEntity.status(401).build();

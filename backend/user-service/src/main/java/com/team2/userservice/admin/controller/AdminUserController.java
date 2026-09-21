@@ -1,5 +1,6 @@
 package com.team2.userservice.admin.controller;
 
+import com.team2.common.security.LoginUser;
 import com.team2.userservice.admin.dto.RoleChangeRequest;
 import com.team2.userservice.admin.dto.StatusChangeRequest;
 import com.team2.userservice.user.dto.UserResponse;
@@ -21,25 +22,25 @@ public class AdminUserController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>> listUsers(@AuthenticationPrincipal String email) {
-        return ResponseEntity.ok(userService.listUsers(email));
+    public ResponseEntity<List<UserResponse>> listUsers(@AuthenticationPrincipal LoginUser user) {
+        return ResponseEntity.ok(userService.listUsers(user.email()));
     }
 
     @PatchMapping("/{id}/role")
     public ResponseEntity<UserResponse> changeRole(
-            @AuthenticationPrincipal String email,
+            @AuthenticationPrincipal LoginUser user,
             @PathVariable Long id,
             @RequestBody RoleChangeRequest request
     ) {
-        return ResponseEntity.ok(userService.changeUserRole(email, id, request.role()));
+        return ResponseEntity.ok(userService.changeUserRole(user.email(), id, request.role()));
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<UserResponse> changeStatus(
-            @AuthenticationPrincipal String email,
+            @AuthenticationPrincipal LoginUser user,
             @PathVariable Long id,
             @RequestBody StatusChangeRequest request
     ) {
-        return ResponseEntity.ok(userService.changeUserStatus(email, id, request.status()));
+        return ResponseEntity.ok(userService.changeUserStatus(user.email(), id, request.status()));
     }
 }

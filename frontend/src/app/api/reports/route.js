@@ -2,8 +2,8 @@ import { cookies } from "next/headers";
 import { backendUrl, readBackendPayload, errorMessage } from "@/lib/backend";
 
 export async function POST(request) {
-  const email = (await cookies()).get("user_email")?.value;
-  if (!email) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  const accessToken = (await cookies()).get("access_token")?.value;
+  if (!accessToken) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
   let body;
   try {
     body = await request.json();
@@ -13,7 +13,7 @@ export async function POST(request) {
   try {
     const response = await fetch(backendUrl("/api/reports"), {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-User-Email": email },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify(body),
       cache: "no-store",
       signal: AbortSignal.timeout(10000),

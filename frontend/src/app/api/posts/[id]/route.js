@@ -16,7 +16,6 @@ async function forwardPost(id, method, body) {
       method,
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "X-User-Email": userEmail,
         ...(body ? { "Content-Type": "application/json" } : {}),
       },
       ...(body ? { body: JSON.stringify(body) } : {}),

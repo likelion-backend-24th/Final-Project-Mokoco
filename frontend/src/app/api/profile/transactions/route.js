@@ -2,8 +2,8 @@ import { cookies } from "next/headers";
 import { backendUrl, readBackendPayload, errorMessage } from "@/lib/backend";
 
 export async function GET(request) {
-  const email = (await cookies()).get("user_email")?.value;
-  if (!email) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  const accessToken = (await cookies()).get("access_token")?.value;
+  if (!accessToken) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
   const role = searchParams.get("role") ?? "requester";
@@ -13,7 +13,7 @@ export async function GET(request) {
   try {
     const response = await fetch(
       backendUrl(`/profile/transactions?role=${role}&page=${page}&size=${size}`),
-      { headers: { "X-User-Email": email }, cache: "no-store", signal: AbortSignal.timeout(8000) },
+      { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store", signal: AbortSignal.timeout(8000) },
     );
     const payload = await readBackendPayload(response);
     if (!response.ok) {

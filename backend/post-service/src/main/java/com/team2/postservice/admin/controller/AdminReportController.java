@@ -1,9 +1,11 @@
 package com.team2.postservice.admin.controller;
 
+import com.team2.common.security.LoginUser;
 import com.team2.postservice.report.dto.ReportResponseDto;
 import com.team2.postservice.report.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,24 +19,24 @@ public class AdminReportController {
 
     @GetMapping
     public ResponseEntity<List<ReportResponseDto>> listReports(
-            @RequestHeader(value = "Authorization", required = false) String authorization
+            @AuthenticationPrincipal LoginUser user
     ) {
-        return ResponseEntity.ok(reportService.listReports(authorization));
+        return ResponseEntity.ok(reportService.listReports(user));
     }
 
     @PatchMapping("/{id}/resolve")
     public ResponseEntity<ReportResponseDto> resolve(
             @PathVariable Long id,
-            @RequestHeader(value = "Authorization", required = false) String authorization
+            @AuthenticationPrincipal LoginUser user
     ) {
-        return ResponseEntity.ok(reportService.resolve(id, authorization));
+        return ResponseEntity.ok(reportService.resolve(id, user));
     }
 
     @PatchMapping("/{id}/dismiss")
     public ResponseEntity<ReportResponseDto> dismiss(
             @PathVariable Long id,
-            @RequestHeader(value = "Authorization", required = false) String authorization
+            @AuthenticationPrincipal LoginUser user
     ) {
-        return ResponseEntity.ok(reportService.dismiss(id, authorization));
+        return ResponseEntity.ok(reportService.dismiss(id, user));
     }
 }

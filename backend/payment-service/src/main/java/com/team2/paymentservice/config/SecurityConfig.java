@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -30,8 +31,39 @@ public class SecurityConfig {
                 .build();
     }
 
+    // PortOne이 서명 헤더와 함께 직접 호출하는 웹훅 — 유저 로그인이 아니라 PaymentWebhookController의
+    // 자체 서명 검증으로 인증한다. /payments/** 전체를 Bearer 필수로 묶기 전에(Order 1) 먼저
+    // 매치시켜 빠져나가게 한다.
     @Bean
     @Order(1)
+    public SecurityFilterChain webhookSecurityFilterChain(HttpSecurity http) throws Exception {
+        return http.securityMatcher("/payments/webhook")
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .build();
+    }
+
+    // payments의 사용자 대면 엔드포인트(prepare/confirm/mine/단건 조회 등) 전부 Authorization: Bearer로
+    // 직접 인증한다. post/chat-service와 동일한 패턴 — 더 이상 X-User-Email을 신뢰하지 않는다.
+    @Bean
+    @Order(2)
+    public SecurityFilterChain authenticatedApiSecurityFilterChain(HttpSecurity http,
+            com.team2.paymentservice.client.UserClient users, com.fasterxml.jackson.databind.ObjectMapper mapper) throws Exception {
+        return http
+                .securityMatcher("/payments/**")
+                .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .requestCache(cache -> cache.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(new TokenAuthenticationFilter(users, mapper), AnonymousAuthenticationFilter.class)
+                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .build();
+    }
+
+    @Bean
+    @Order(3)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())

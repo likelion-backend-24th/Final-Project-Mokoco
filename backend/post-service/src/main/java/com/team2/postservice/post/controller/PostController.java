@@ -1,8 +1,8 @@
 package com.team2.postservice.post.controller;
 
+import com.team2.common.security.LoginUser;
 import com.team2.postservice.post.dto.PostRequestDto;
 import com.team2.postservice.post.dto.NearbyRepairRequest;
-import com.team2.postservice.post.service.PostViewerService;
 import jakarta.validation.constraints.NotNull;
 import com.team2.postservice.post.dto.PostResponseDto;
 import com.team2.postservice.post.entity.PostCategory;
@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,13 +24,12 @@ import java.util.List;
 public class PostController {
 
     private final PostService postService;
-    private final PostViewerService postViewerService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Long> createPost(@RequestPart("post") @Valid PostRequestDto.Create request,
                                            @RequestPart(value = "images", required = false) List<MultipartFile> images,
-                                           @RequestHeader(value = "Authorization", required = false) String authorization) {
-        Long postId = postService.createPost(request, images, postViewerService.requireEmail(authorization));
+                                           @AuthenticationPrincipal LoginUser user) {
+        Long postId = postService.createPost(request, images, user.email());
         return ResponseEntity.ok(postId);
     }
 
@@ -37,10 +37,10 @@ public class PostController {
     public ResponseEntity<NearbyRepairRequest.Result> getPosts(
             @RequestParam(required = false) PostCategory category,
             @RequestParam(defaultValue = "ALL") RegionScope regionScope,
-            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @AuthenticationPrincipal LoginUser user,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(postService.getNearbyPosts(authorization, category, page, size, regionScope));
+        return ResponseEntity.ok(postService.getNearbyPosts(user == null ? null : user.email(), category, page, size, regionScope));
     }
 
     public record VisibilityRequest(@NotNull Boolean publiclyVisible) {}
@@ -48,8 +48,8 @@ public class PostController {
     @PatchMapping("/{id}/visibility")
     public ResponseEntity<Void> changeVisibility(@PathVariable Long id,
             @RequestBody @Valid VisibilityRequest request,
-            @RequestHeader(value = "Authorization", required = false) String authorization) {
-        postService.changeVisibility(id, request.publiclyVisible(), authorization);
+            @AuthenticationPrincipal LoginUser user) {
+        postService.changeVisibility(id, request.publiclyVisible(), user.email());
         return ResponseEntity.noContent().build();
     }
 
@@ -61,30 +61,30 @@ public class PostController {
     @PatchMapping("/{id}")
     public ResponseEntity<Void> updatePost(@PathVariable Long id,
                                            @RequestBody @Valid PostRequestDto.Update request,
-                                           @RequestHeader(value = "Authorization", required = false) String authorization) {
-        postService.updatePost(id, request, postViewerService.requireEmail(authorization));
+                                           @AuthenticationPrincipal LoginUser user) {
+        postService.updatePost(id, request, user.email());
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePost(@PathVariable Long id,
-                                           @RequestHeader(value = "Authorization", required = false) String authorization) {
-        postService.deletePost(id, postViewerService.requireEmail(authorization));
+                                           @AuthenticationPrincipal LoginUser user) {
+        postService.deletePost(id, user.email());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<PostResponseDto.Detail> addImages(@PathVariable Long id,
                                                             @RequestPart("images") List<MultipartFile> images,
-                                                            @RequestHeader(value = "Authorization", required = false) String authorization) {
-        return ResponseEntity.ok(postService.addImages(id, images, postViewerService.requireEmail(authorization)));
+                                                            @AuthenticationPrincipal LoginUser user) {
+        return ResponseEntity.ok(postService.addImages(id, images, user.email()));
     }
 
     @DeleteMapping("/{id}/images/{imageId}")
     public ResponseEntity<Void> deleteImage(@PathVariable Long id,
                                             @PathVariable Long imageId,
-                                            @RequestHeader(value = "Authorization", required = false) String authorization) {
-        postService.deleteImage(id, imageId, postViewerService.requireEmail(authorization));
+                                            @AuthenticationPrincipal LoginUser user) {
+        postService.deleteImage(id, imageId, user.email());
         return ResponseEntity.ok().build();
     }
 }

@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * "/api/chat-rooms/proposals/**", "/api/chat-rooms/*​/detail" 전용 인증 필터.
- * Authorization: Bearer 토큰을 user-service에 검증해 LoginUser(id)를 SecurityContext에 심는다.
+ * chat-service의 사용자 대면 엔드포인트 전용 인증 필터.
+ * Authorization: Bearer 토큰을 user-service에 검증해 LoginUser(id, email)를 SecurityContext에 심는다.
  * post-service의 같은 이름 클래스와 동일 패턴.
  */
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
@@ -27,16 +27,16 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         if (auth == null || !auth.startsWith("Bearer ") || auth.substring(7).isBlank()) {
             error(response, 401, "LOGIN_REQUIRED", "로그인이 필요합니다."); return;
         }
-        Long userId;
+        LoginUser loginUser;
         try {
             var user = users.verifyToken(auth.substring(7));
-            if (user == null || user.id() == null) { error(response, 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return; }
-            userId = user.id();
+            if (user == null || user.id() == null || user.email() == null) { error(response, 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return; }
+            loginUser = new LoginUser(user.id(), user.email());
         } catch (feign.FeignException e) {
             error(response, e.status() == 401 ? 401 : 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return;
         }
         var context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(new LoginUser(userId), null, List.of()));
+        context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(loginUser, null, List.of()));
         SecurityContextHolder.setContext(context);
         try { chain.doFilter(request, response); }
         finally { SecurityContextHolder.clearContext(); }

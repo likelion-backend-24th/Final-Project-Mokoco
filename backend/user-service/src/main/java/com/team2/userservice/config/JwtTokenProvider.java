@@ -28,10 +28,15 @@ public class JwtTokenProvider {
         this.refreshTokenValidity = refreshTokenValidity;
     }
 
-    // Access Token 생성 (이메일과 권한만 포함)
-    public String createAccessToken(String email, String role) {
+    private String subject(Long userId) {
+        if (userId == null || userId <= 0) throw new IllegalArgumentException("User ID must be positive");
+        return userId.toString();
+    }
+
+    // Access Token 생성 (사용자 ID와 권한 포함)
+    public String createAccessToken(Long userId, String role) {
         JwtBuilder builder = Jwts.builder()
-                .subject(email)
+                .subject(subject(userId))
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + accessTokenValidity))
                 .signWith(accessSecretKey);
@@ -44,9 +49,9 @@ public class JwtTokenProvider {
     }
 
     // Refresh Token 생성 (7일)
-    public String createRefreshToken(String email) {
+    public String createRefreshToken(Long userId) {
         return Jwts.builder()
-                .subject(email)
+                .subject(subject(userId))
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + refreshTokenValidity))
                 .signWith(refreshSecretKey)
@@ -65,29 +70,36 @@ public class JwtTokenProvider {
 
     private boolean validateToken(String token, SecretKey key) {
         try {
-            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
+            getUserId(token, key);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }
 
-    // Access Token에서 이메일 추출
-    public String getEmailFromAccessToken(String token) {
-        return getEmail(token, accessSecretKey);
+    // Access Token에서 사용자 ID 추출
+    public Long getUserIdFromAccessToken(String token) {
+        return getUserId(token, accessSecretKey);
     }
 
-    // Refresh Token에서 이메일 추출
-    public String getEmailFromRefreshToken(String token) {
-        return getEmail(token, refreshSecretKey);
+    // Refresh Token에서 사용자 ID 추출
+    public Long getUserIdFromRefreshToken(String token) {
+        return getUserId(token, refreshSecretKey);
     }
 
-    private String getEmail(String token, SecretKey key) {
-        return Jwts.parser()
+    private Long getUserId(String token, SecretKey key) {
+        String value = Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+        try {
+            Long userId = Long.valueOf(value);
+            if (!subject(userId).equals(value)) throw new IllegalArgumentException("Invalid user ID");
+            return userId;
+        } catch (IllegalArgumentException e) {
+            throw new MalformedJwtException("JWT subject must be a positive user ID", e);
+        }
     }
 }

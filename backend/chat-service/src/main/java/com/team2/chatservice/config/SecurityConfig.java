@@ -12,15 +12,16 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // 채택 전 제안 채팅(견적별 채팅방 개설/조회, 방 상세)만 Authorization: Bearer로 직접 인증한다.
-    // 나머지 chat-service 엔드포인트는 post-service와 같은 방식(X-User-Email 또는 컨트롤러가
-    // 직접 Bearer를 파싱)을 그대로 쓴다.
+    // chat-service의 사용자 대면 엔드포인트 전부 Authorization: Bearer로 직접 인증한다
+    // (공개 조회 없음 — 채팅은 전부 로그인 필요).
     @Bean
     @Order(1)
     public SecurityFilterChain authenticatedApiSecurityFilterChain(HttpSecurity http,
             com.team2.chatservice.client.UserClient users, com.fasterxml.jackson.databind.ObjectMapper mapper) throws Exception {
         return http
-                .securityMatcher("/api/chat-rooms/proposals/*", "/api/chat-rooms/*/detail")
+                .securityMatcher("/api/chat-rooms", "/api/chat-rooms/proposals/*", "/api/chat-rooms/*/detail",
+                        "/api/chat-rooms/fix-deals/*", "/api/chat-rooms/*/attachments/**",
+                        "/api/chat-rooms/*/messages/**", "/api/chat-rooms/*/counterpart", "/api/chat-rooms/session")
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())

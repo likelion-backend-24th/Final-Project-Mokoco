@@ -70,8 +70,8 @@ public class UserService {
             throw new CustomException(ErrorCode.ACCOUNT_SUSPENDED);
         }
 
-        String accessToken = jwtTokenProvider.createAccessToken(user.getEmail(), user.getRole().name());
-        String refreshToken = jwtTokenProvider.createRefreshToken(user.getEmail());
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getRole().name());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
         // Refresh Token 저장 (이미 존재하면 갱신, 없으면 새로 저장)
         RefreshToken tokenEntity = refreshTokenRepository.findByEmail(user.getEmail())
@@ -92,17 +92,21 @@ public class UserService {
             throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        RefreshToken savedToken = refreshTokenRepository.findByEmail(request.getEmail())
+        Long userId = jwtTokenProvider.getUserIdFromRefreshToken(request.getRefreshToken());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        if (!user.getEmail().equals(request.getEmail())) {
+            throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        RefreshToken savedToken = refreshTokenRepository.findByEmail(user.getEmail())
                 .orElseThrow(() -> new CustomException(ErrorCode.EXPIRED_SESSION));
 
         if (!savedToken.getToken().equals(request.getRefreshToken())) {
             throw new CustomException(ErrorCode.INVALID_TOKEN_VALUE);
         }
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        String newAccessToken = jwtTokenProvider.createAccessToken(user.getEmail(), user.getRole().name());
+        String newAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getRole().name());
 
         return new TokenResponse(newAccessToken, request.getRefreshToken());
     }

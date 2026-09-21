@@ -1,10 +1,12 @@
 package com.team2.postservice.resume.controller;
 
+import com.team2.common.security.LoginUser;
 import com.team2.postservice.resume.dto.ResumeRequestDto;
 import com.team2.postservice.resume.dto.ResumeResponseDto;
 import com.team2.postservice.resume.service.ResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,26 +18,26 @@ public class ResumeController {
 
     @PostMapping
     public ResponseEntity<Long> createResume(@RequestBody ResumeRequestDto.Upsert request,
-                                              @RequestHeader("X-User-Email") String userEmail) {
-        return ResponseEntity.ok(resumeService.createResume(request, userEmail));
+                                              @AuthenticationPrincipal LoginUser user) {
+        return ResponseEntity.ok(resumeService.createResume(request, user.email()));
     }
 
     @PatchMapping
     public ResponseEntity<Void> updateResume(@RequestBody ResumeRequestDto.Upsert request,
-                                              @RequestHeader("X-User-Email") String userEmail) {
-        resumeService.updateResume(request, userEmail);
+                                              @AuthenticationPrincipal LoginUser user) {
+        resumeService.updateResume(request, user.email());
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> deleteResume(@RequestHeader("X-User-Email") String userEmail) {
-        resumeService.deleteResume(userEmail);
+    public ResponseEntity<Void> deleteResume(@AuthenticationPrincipal LoginUser user) {
+        resumeService.deleteResume(user.email());
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ResumeResponseDto> getMyResume(@RequestHeader("X-User-Email") String userEmail) {
-        return ResponseEntity.ok(resumeService.getMyResume(userEmail));
+    public ResponseEntity<ResumeResponseDto> getMyResume(@AuthenticationPrincipal LoginUser user) {
+        return ResponseEntity.ok(resumeService.getMyResume(user.email()));
     }
 
     @GetMapping("/{email}")

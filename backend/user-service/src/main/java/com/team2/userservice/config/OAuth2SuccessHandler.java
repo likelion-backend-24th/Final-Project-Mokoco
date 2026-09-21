@@ -67,8 +67,8 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         });
 
         String role = user.getRole().name();
-        String accessToken = jwtTokenProvider.createAccessToken(email, role);
-        String refreshToken = jwtTokenProvider.createRefreshToken(email);
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), role);
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
         // Refresh Token 저장 (재발급에 필요). 이메일 로그인(signin)과 동일하게 upsert.
         final String finalEmail = email;

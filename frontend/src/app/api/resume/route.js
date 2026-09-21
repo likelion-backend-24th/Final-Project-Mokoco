@@ -1,17 +1,17 @@
 import { cookies } from "next/headers";
 import { backendUrl, readBackendPayload, errorMessage } from "@/lib/backend";
 
-async function requireEmail() {
-  return (await cookies()).get("user_email")?.value ?? null;
+async function requireAccessToken() {
+  return (await cookies()).get("access_token")?.value ?? null;
 }
 
 export async function GET() {
-  const email = await requireEmail();
-  if (!email) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  const accessToken = await requireAccessToken();
+  if (!accessToken) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
   try {
     const response = await fetch(backendUrl("/resumes/me"), {
-      headers: { "X-User-Email": email },
+      headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
       signal: AbortSignal.timeout(8000),
     });
@@ -26,8 +26,8 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const email = await requireEmail();
-  if (!email) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  const accessToken = await requireAccessToken();
+  if (!accessToken) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
   let body;
   try {
@@ -39,7 +39,7 @@ export async function POST(request) {
   try {
     const response = await fetch(backendUrl("/resumes"), {
       method: "POST",
-      headers: { "X-User-Email": email, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         headline: body.headline,
         introduction: body.introduction,
@@ -60,8 +60,8 @@ export async function POST(request) {
 }
 
 export async function PATCH(request) {
-  const email = await requireEmail();
-  if (!email) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  const accessToken = await requireAccessToken();
+  if (!accessToken) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
   let body;
   try {
@@ -73,7 +73,7 @@ export async function PATCH(request) {
   try {
     const response = await fetch(backendUrl("/resumes"), {
       method: "PATCH",
-      headers: { "X-User-Email": email, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         headline: body.headline,
         introduction: body.introduction,
@@ -94,13 +94,13 @@ export async function PATCH(request) {
 }
 
 export async function DELETE() {
-  const email = await requireEmail();
-  if (!email) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  const accessToken = await requireAccessToken();
+  if (!accessToken) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
   try {
     const response = await fetch(backendUrl("/resumes"), {
       method: "DELETE",
-      headers: { "X-User-Email": email },
+      headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
       signal: AbortSignal.timeout(8000),
     });

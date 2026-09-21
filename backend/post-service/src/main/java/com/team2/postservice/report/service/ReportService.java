@@ -2,6 +2,7 @@ package com.team2.postservice.report.service;
 
 import com.team2.common.exception.CustomException;
 import com.team2.common.exception.ErrorCode;
+import com.team2.common.security.LoginUser;
 import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.post.service.PostViewerService;
 import com.team2.postservice.report.dto.ReportCreateRequest;
@@ -51,14 +52,14 @@ public class ReportService {
     }
 
     @Transactional(readOnly = true)
-    public List<ReportResponseDto> listReports(String authorization) {
-        postViewerService.requireAdmin(authorization);
+    public List<ReportResponseDto> listReports(LoginUser admin) {
+        postViewerService.requireAdmin(admin);
         return reportRepository.findAllByOrderByCreatedAtDesc().stream().map(ReportResponseDto::from).toList();
     }
 
     @Transactional
-    public ReportResponseDto resolve(Long id, String authorization) {
-        postViewerService.requireAdmin(authorization);
+    public ReportResponseDto resolve(Long id, LoginUser admin) {
+        postViewerService.requireAdmin(admin);
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.REPORT_NOT_FOUND));
         report.resolve();
@@ -66,8 +67,8 @@ public class ReportService {
     }
 
     @Transactional
-    public ReportResponseDto dismiss(Long id, String authorization) {
-        postViewerService.requireAdmin(authorization);
+    public ReportResponseDto dismiss(Long id, LoginUser admin) {
+        postViewerService.requireAdmin(admin);
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.REPORT_NOT_FOUND));
         report.dismiss();

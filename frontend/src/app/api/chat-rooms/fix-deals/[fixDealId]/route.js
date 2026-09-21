@@ -6,12 +6,12 @@ async function forward(method, { params }) {
   if (!/^\d+$/.test(fixDealId)) {
     return Response.json({ error: "잘못된 거래 번호입니다." }, { status: 400 });
   }
-  const email = (await cookies()).get("user_email")?.value;
-  if (!email) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  const accessToken = (await cookies()).get("access_token")?.value;
+  if (!accessToken) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
   try {
     const response = await fetch(backendUrl(`/api/chat-rooms/fix-deals/${fixDealId}`), {
       method,
-      headers: { "X-User-Email": email },
+      headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
       signal: AbortSignal.timeout(10000),
     });

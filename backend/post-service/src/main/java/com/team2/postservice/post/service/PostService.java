@@ -56,9 +56,7 @@ public class PostService {
     }
 
     public NearbyRepairRequest.Result getNearbyPosts(
-            String authorization, PostCategory category, int page, int size, RegionScope regionScope) {
-        String email = authorization == null || authorization.isBlank()
-                ? null : postViewerService.requireEmail(authorization);
+            String email, PostCategory category, int page, int size, RegionScope regionScope) {
         if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE)
             throw new CustomException(ErrorCode.INVALID_INPUT);
         // ALL(기본값)은 활동 지역 설정 여부와 무관하게 필터링 없이 전체를 보여준다.
@@ -85,8 +83,7 @@ public class PostService {
     }
 
     @Transactional
-    public void changeVisibility(Long id, boolean publiclyVisible, String authorization) {
-        String email = postViewerService.requireEmail(authorization);
+    public void changeVisibility(Long id, boolean publiclyVisible, String email) {
         Post post = getPostOrThrow(id);
         validateAuthor(post, email, ErrorCode.UNAUTHORIZED_POST_UPDATE);
         post.changeVisibility(publiclyVisible);
@@ -108,11 +105,11 @@ public class PostService {
         deletePostInternal(post);
     }
 
-    // 관리자는 작성자가 아니어도 삭제 가능 — authorization은 requireAdmin에서 매 요청 다시 검증한다.
+    // 관리자는 작성자가 아니어도 삭제 가능 — 관리자 권한은 requireAdmin에서 매 요청 다시 검증한다.
     // 단, 진행 중인 거래가 있으면 관리자도 삭제 불가(문제 있는 유저는 글 삭제 대신 계정 정지로 처리).
     @Transactional
-    public void deletePostAsAdmin(Long id, String authorization) {
-        postViewerService.requireAdmin(authorization);
+    public void deletePostAsAdmin(Long id, com.team2.common.security.LoginUser admin) {
+        postViewerService.requireAdmin(admin);
         Post post = getPostOrThrow(id);
         guardNoActiveDeal(post.getId());
         deletePostInternal(post);
