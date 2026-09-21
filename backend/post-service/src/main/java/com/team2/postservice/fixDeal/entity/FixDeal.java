@@ -2,7 +2,7 @@ package com.team2.postservice.fixDeal.entity;
 
 import jakarta.persistence.*;
 import com.team2.common.exception.CustomException;
-import com.team2.common.exception.ErrorCode;
+import com.team2.postservice.common.exception.ErrorCode;
 import lombok.*;
 
 import java.time.LocalDateTime;

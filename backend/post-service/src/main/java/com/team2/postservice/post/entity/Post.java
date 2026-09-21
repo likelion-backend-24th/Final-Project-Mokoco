@@ -2,7 +2,7 @@ package com.team2.postservice.post.entity;
 
 import jakarta.persistence.*;
 import com.team2.common.exception.CustomException;
-import com.team2.common.exception.ErrorCode;
+import com.team2.postservice.common.exception.ErrorCode;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;

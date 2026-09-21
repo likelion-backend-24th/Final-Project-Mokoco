@@ -2,7 +2,7 @@ package com.team2.postservice.post.service;
 
 import com.team2.postservice.client.dto.RegionResponse;
 import com.team2.common.exception.CustomException;
-import com.team2.common.exception.ErrorCode;
+import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.post.dto.PostRequestDto;
 import com.team2.postservice.post.dto.NearbyRepairRequest;
 import org.springframework.data.domain.PageRequest;

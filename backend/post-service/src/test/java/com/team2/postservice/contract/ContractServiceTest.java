@@ -5,6 +5,7 @@ import com.team2.postservice.client.ChatClient;
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.entity.PostCategory;
 import com.team2.postservice.proposal.entity.Proposal;
+import com.team2.postservice.FlywaySchemaTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import static org.mockito.Mockito.*;
 import com.team2.postservice.contract.dto.ContractTerms;
@@ -23,9 +24,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.*;
 
-@DataJpaTest(properties = {"spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false"})
 @Import({ContractService.class, ContractServiceTest.JsonConfig.class})
-class ContractServiceTest {
+class ContractServiceTest extends FlywaySchemaTest {
     @TestConfiguration static class JsonConfig {
         @Bean ObjectMapper mapper() { return new ObjectMapper().findAndRegisterModules(); }
     }
