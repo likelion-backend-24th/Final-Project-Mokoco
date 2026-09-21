@@ -47,6 +47,9 @@ export const useAuthStore = create((set) => ({
     if (typeof window !== "undefined") {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
+      // 헤더가 캐시해둔 닉네임 — 안 지우면 같은 브라우저에서 다른 계정으로 로그인할 때
+      // 이전 사용자의 닉네임이 잠깐 스쳐 지나간다.
+      localStorage.removeItem("nickname");
     }
     document.cookie = "user_email=; path=/; max-age=0;";
     document.cookie = "access_token=; path=/; max-age=0;";
