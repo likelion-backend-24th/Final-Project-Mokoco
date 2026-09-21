@@ -40,7 +40,7 @@ class ChatWebSocketConfigTest {
         assertThatThrownBy(() -> interceptor.preSend(message, null)).hasMessageContaining("Authentication required");
 
         headers.setNativeHeader("Authorization", "Bearer token");
-        when(users.verifyToken("token")).thenReturn(new UserClientResponse(2L, "a@example.com", "a", "region"));
+        when(users.verifyToken("token")).thenReturn(new UserClientResponse(2L, "a@example.com", "a", "region", com.team2.common.security.Role.USER));
 
         interceptor.preSend(message, null);
         assertThat(Objects.requireNonNull(headers.getUser()).getName()).isEqualTo("2");

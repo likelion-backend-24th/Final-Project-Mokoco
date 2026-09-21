@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/resumes/me").authenticated()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/posts", "/posts/{id}",
-                                "/posts/{id}/proposals", "/reviews/**", "/resumes/{email}").permitAll()
+                                "/posts/{id}/proposals", "/reviews/**", "/resumes/{userId}").permitAll()
                         .anyRequest().authenticated())
                 .build();
     }

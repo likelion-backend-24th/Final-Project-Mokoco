@@ -19,7 +19,7 @@ class NearbyRepairRequestQueryTest {
     @Autowired PostRepository repository;
 
     Post post(String region, boolean visible, PostStatus status, PostCategory category) {
-        Post post = Post.builder().title("제품 수리").content("전원이 켜지지 않음").authorEmail("owner@example.com")
+        Post post = Post.builder().title("제품 수리").content("전원이 켜지지 않음").authorId(999L)
                 .regionCode(region).regionName("같은 표시 이름").category(category).build();
         post.changeVisibility(visible);
         org.springframework.test.util.ReflectionTestUtils.setField(post, "status", status);

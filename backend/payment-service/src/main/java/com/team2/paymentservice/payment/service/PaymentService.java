@@ -22,10 +22,10 @@ public class PaymentService {
     private final PostServiceClient posts;
     private final PortOnePaymentClient portOne;
 
-    public PaymentOrder prepare(Long postId, LoginUser user) {
+    public PaymentOrder prepare(Long postId, Long userId) {
         if (postId == null || postId <= 0) throw new CustomException(ErrorCode.INVALID_INPUT);
         PaymentContext context = posts.getPaymentContext(postId);
-        if (!user.id().equals(context.payerId())) throw new CustomException(ErrorCode.UNAUTHORIZED_PAYMENT_CREATE);
+        if (!userId.equals(context.payerId())) throw new CustomException(ErrorCode.UNAUTHORIZED_PAYMENT_CREATE);
         if (!"REPAIR_DONE".equals(context.status())) throw new CustomException(ErrorCode.INVALID_PAYMENT_STATUS);
         if (payments.existsByPostId(postId)) throw new CustomException(ErrorCode.DUPLICATE_PAYMENT);
         PaymentOrder existing = orders.findByPostId(postId).orElse(null);
@@ -38,15 +38,15 @@ public class PaymentService {
         }
     }
 
-    public Long createPayment(PaymentRequestDto.Create request, LoginUser user) {
+    public Long createPayment(PaymentRequestDto.Create request, Long userId) {
         if (request.paymentId() == null || request.paymentId().isBlank() || request.postId() == null)
             throw new CustomException(ErrorCode.INVALID_INPUT);
         PaymentOrder order = orders.findById(request.paymentId()).orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
-        if (!user.id().equals(order.getPayerId())) throw new CustomException(ErrorCode.UNAUTHORIZED_PAYMENT_CREATE);
+        if (!userId.equals(order.getPayerId())) throw new CustomException(ErrorCode.UNAUTHORIZED_PAYMENT_CREATE);
         if (!request.postId().equals(order.getPostId())) throw new CustomException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
         if ((request.baseAmount() != null && request.baseAmount() != order.getBaseAmount())
                 || (request.amount() != null && request.amount() != order.getTotalAmount())
-                || (request.payeeEmail() != null && !request.payeeEmail().equals(order.getPayeeEmail())))
+                || (request.payeeId() != null && !request.payeeId().equals(order.getPayeeId())))
             throw new CustomException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
         Payment existing = payments.findByPortonePaymentId(order.getPaymentId()).orElse(null);
         if (existing != null) return existing.getId();
@@ -77,7 +77,7 @@ public class PaymentService {
         if (existing != null) return existing;
         if (!"REPAIR_DONE".equals(context.status())) throw new CustomException(ErrorCode.INVALID_PAYMENT_STATUS);
         Payment payment = Payment.builder().postId(order.getPostId()).portonePaymentId(order.getPaymentId())
-                .payerEmail(order.getPayerEmail()).payeeEmail(order.getPayeeEmail())
+                .payerId(order.getPayerId()).payeeId(order.getPayeeId())
                 .baseAmount(order.getBaseAmount()).totalAmount(order.getTotalAmount()).build();
         // Repository transactions finish before conflict recovery; no remote calls hold a DB transaction open.
         try { return payments.saveAndFlush(payment); }
@@ -91,23 +91,22 @@ public class PaymentService {
     private void verifyContext(PaymentOrder order, PaymentContext context) {
         if (!Objects.equals(order.getFixDealId(), context.fixDealId())
                 || !Objects.equals(order.getPayerId(), context.payerId())
-                || !Objects.equals(order.getPayerEmail(), context.payerEmail())
-                || !Objects.equals(order.getPayeeEmail(), context.payeeEmail())
+                || !Objects.equals(order.getPayeeId(), context.payeeId())
                 || order.getBaseAmount() != context.baseAmount())
             throw new CustomException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
     }
 
-    public PaymentResponseDto getPayment(Long id, String email) {
-        return visible(payments.findById(id).orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND)), email);
+    public PaymentResponseDto getPayment(Long id, Long userId) {
+        return visible(payments.findById(id).orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND)), userId);
     }
-    public PaymentResponseDto getPaymentByPostId(Long postId, String email) {
-        return visible(payments.findByPostId(postId).orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND)), email);
+    public PaymentResponseDto getPaymentByPostId(Long postId, Long userId) {
+        return visible(payments.findByPostId(postId).orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND)), userId);
     }
     public PaymentResponseDto internalPayment(Long postId) {
         return PaymentResponseDto.from(payments.findByPostId(postId).orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND)));
     }
-    private PaymentResponseDto visible(Payment payment, String email) {
-        if (!payment.getPayerEmail().equals(email) && !payment.getPayeeEmail().equals(email))
+    private PaymentResponseDto visible(Payment payment, Long userId) {
+        if (!payment.getPayerId().equals(userId) && !payment.getPayeeId().equals(userId))
             throw new CustomException(ErrorCode.UNAUTHORIZED_PAYMENT_ACCESS);
         return PaymentResponseDto.from(payment);
     }

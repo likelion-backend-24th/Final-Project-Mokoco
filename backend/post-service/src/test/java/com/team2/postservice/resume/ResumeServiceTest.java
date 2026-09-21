@@ -35,15 +35,15 @@ class ResumeServiceTest {
     }
 
     @Test void createsResumeWithSkillsAndCareers() {
-        when(resumes.existsByUserEmail("repairer@test.com")).thenReturn(false);
+        when(resumes.existsByUserId(200L)).thenReturn(false);
         when(resumes.save(any(Resume.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.createResume(request(), "repairer@test.com");
+        service.createResume(request(), 200L);
 
         ArgumentCaptor<Resume> captor = ArgumentCaptor.forClass(Resume.class);
         verify(resumes).save(captor.capture());
         Resume saved = captor.getValue();
-        assertThat(saved.getUserEmail()).isEqualTo("repairer@test.com");
+        assertThat(saved.getUserId()).isEqualTo(200L);
         assertThat(saved.getHeadline()).isEqualTo("10년차 가전 수리 전문가");
         assertThat(saved.getSkills()).containsExactly("세탁기", "냉장고", "에어컨");
         assertThat(saved.getCareers()).hasSize(2);
@@ -53,9 +53,9 @@ class ResumeServiceTest {
     }
 
     @Test void rejectsDuplicateResumeCreation() {
-        when(resumes.existsByUserEmail("repairer@test.com")).thenReturn(true);
+        when(resumes.existsByUserId(200L)).thenReturn(true);
 
-        assertThatThrownBy(() -> service.createResume(request(), "repairer@test.com"))
+        assertThatThrownBy(() -> service.createResume(request(), 200L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.DUPLICATE_RESUME);
@@ -65,9 +65,9 @@ class ResumeServiceTest {
 
     @Test void rejectsBlankHeadline() {
         ResumeRequestDto.Upsert invalid = new ResumeRequestDto.Upsert("", "소개", List.of(), List.of());
-        when(resumes.existsByUserEmail("repairer@test.com")).thenReturn(false);
+        when(resumes.existsByUserId(200L)).thenReturn(false);
 
-        assertThatThrownBy(() -> service.createResume(invalid, "repairer@test.com"))
+        assertThatThrownBy(() -> service.createResume(invalid, 200L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.INVALID_INPUT);
@@ -79,21 +79,21 @@ class ResumeServiceTest {
                 List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"),
                 List.of()
         );
-        when(resumes.existsByUserEmail("repairer@test.com")).thenReturn(false);
+        when(resumes.existsByUserId(200L)).thenReturn(false);
 
-        assertThatThrownBy(() -> service.createResume(invalid, "repairer@test.com"))
+        assertThatThrownBy(() -> service.createResume(invalid, 200L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.INVALID_INPUT);
     }
 
     @Test void updateReplacesSkillsAndCareersEntirely() {
-        Resume existing = Resume.builder().userEmail("repairer@test.com").build();
+        Resume existing = Resume.builder().userId(200L).build();
         existing.updateContent("옛 제목", "옛 소개", List.of("드럼세탁기"),
                 List.of(new ResumeCareer.CareerInput("2020", "예전 경력")));
-        when(resumes.findByUserEmail("repairer@test.com")).thenReturn(Optional.of(existing));
+        when(resumes.findByUserId(200L)).thenReturn(Optional.of(existing));
 
-        service.updateResume(request(), "repairer@test.com");
+        service.updateResume(request(), 200L);
 
         assertThat(existing.getHeadline()).isEqualTo("10년차 가전 수리 전문가");
         assertThat(existing.getSkills()).containsExactly("세탁기", "냉장고", "에어컨");
@@ -103,27 +103,27 @@ class ResumeServiceTest {
     }
 
     @Test void rejectsUpdateWhenResumeNotFound() {
-        when(resumes.findByUserEmail("repairer@test.com")).thenReturn(Optional.empty());
+        when(resumes.findByUserId(200L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.updateResume(request(), "repairer@test.com"))
+        assertThatThrownBy(() -> service.updateResume(request(), 200L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.RESUME_NOT_FOUND);
     }
 
     @Test void deletesOwnResume() {
-        Resume existing = Resume.builder().userEmail("repairer@test.com").build();
-        when(resumes.findByUserEmail("repairer@test.com")).thenReturn(Optional.of(existing));
+        Resume existing = Resume.builder().userId(200L).build();
+        when(resumes.findByUserId(200L)).thenReturn(Optional.of(existing));
 
-        service.deleteResume("repairer@test.com");
+        service.deleteResume(200L);
 
         verify(resumes).delete(existing);
     }
 
     @Test void rejectsDeleteWhenResumeNotFound() {
-        when(resumes.findByUserEmail("repairer@test.com")).thenReturn(Optional.empty());
+        when(resumes.findByUserId(200L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.deleteResume("repairer@test.com"))
+        assertThatThrownBy(() -> service.deleteResume(200L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.RESUME_NOT_FOUND);
@@ -131,21 +131,21 @@ class ResumeServiceTest {
         verify(resumes, never()).delete(any());
     }
 
-    @Test void getsResumeByEmailForPublicView() {
-        Resume existing = Resume.builder().userEmail("repairer@test.com").build();
+    @Test void getsResumeByUserIdForPublicView() {
+        Resume existing = Resume.builder().userId(200L).build();
         existing.updateContent("제목", "소개", List.of("세탁기"), List.of());
-        when(resumes.findByUserEmail("repairer@test.com")).thenReturn(Optional.of(existing));
+        when(resumes.findByUserId(200L)).thenReturn(Optional.of(existing));
 
-        ResumeResponseDto result = service.getResumeByEmail("repairer@test.com");
+        ResumeResponseDto result = service.getResumeByUserId(200L);
 
-        assertThat(result.userEmail()).isEqualTo("repairer@test.com");
+        assertThat(result.userId()).isEqualTo(200L);
         assertThat(result.skills()).containsExactly("세탁기");
     }
 
     @Test void rejectsGetWhenResumeNotFound() {
-        when(resumes.findByUserEmail("nobody@test.com")).thenReturn(Optional.empty());
+        when(resumes.findByUserId(999L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.getResumeByEmail("nobody@test.com"))
+        assertThatThrownBy(() -> service.getResumeByUserId(999L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.RESUME_NOT_FOUND);

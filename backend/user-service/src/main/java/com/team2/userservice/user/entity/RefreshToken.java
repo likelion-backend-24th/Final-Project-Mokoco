@@ -17,14 +17,14 @@ public class RefreshToken {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String email;
+    private Long userId;
 
     @Column(nullable = false, length = 500)
     private String token;
 
     @Builder
-    public RefreshToken(String email, String token) {
-        this.email = email;
+    public RefreshToken(Long userId, String token) {
+        this.userId = userId;
         this.token = token;
     }
 

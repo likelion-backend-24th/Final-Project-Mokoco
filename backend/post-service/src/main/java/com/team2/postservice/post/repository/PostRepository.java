@@ -16,7 +16,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query(value = """
         select new com.team2.postservice.post.dto.NearbyRepairRequest(
-            p.id, p.title, p.content, p.authorEmail, p.category, p.status, p.regionCode, p.regionName, p.createdAt,
+            p.id, p.title, p.content, p.authorId, p.category, p.status, p.regionCode, p.regionName, p.createdAt,
             (select i.imageUrl from PostImage i where i.post = p
                 and i.id = (select min(firstImage.id) from PostImage firstImage where firstImage.post = p)))
         from Post p

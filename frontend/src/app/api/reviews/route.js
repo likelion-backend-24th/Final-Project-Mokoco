@@ -3,15 +3,15 @@ import { backendUrl, readBackendPayload, errorMessage } from "@/lib/backend";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const revieweeEmail = searchParams.get("revieweeEmail");
-  if (!revieweeEmail) return Response.json({ error: "revieweeEmail이 필요합니다." }, { status: 400 });
+  const revieweeId = searchParams.get("revieweeId");
+  if (!revieweeId) return Response.json({ error: "revieweeId이 필요합니다." }, { status: 400 });
 
   const page = searchParams.get("page") ?? "0";
   const size = searchParams.get("size") ?? "10";
 
   try {
     const response = await fetch(
-      backendUrl(`/reviews?revieweeEmail=${encodeURIComponent(revieweeEmail)}&page=${page}&size=${size}`),
+      backendUrl(`/reviews?revieweeId=${encodeURIComponent(revieweeId)}&page=${page}&size=${size}`),
       { cache: "no-store", signal: AbortSignal.timeout(8000) },
     );
     const payload = await readBackendPayload(response);

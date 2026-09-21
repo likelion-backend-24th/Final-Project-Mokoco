@@ -2,7 +2,6 @@ package com.team2.postservice;
 
 import com.team2.common.exception.CustomException;
 import com.team2.postservice.client.*;
-import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.fixDeal.entity.*;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
 import com.team2.postservice.fixDeal.service.FixDealService;
@@ -45,10 +44,8 @@ class ProposalConcurrencyTest extends FlywaySchemaTest {
     Long secondId;
 
     @BeforeEach void seed() {
-        when(users.getUserByEmail("owner@test")).thenReturn(new UserClientResponse(1L, "owner@test", "owner", null));
-        when(users.getUserByEmail("repair@test")).thenReturn(new UserClientResponse(2L, "repair@test", "repair", null));
         new TransactionTemplate(manager).executeWithoutResult(status -> {
-            Post post = posts.save(Post.builder().title("Repair").content("Repair").authorEmail("owner@test")
+            Post post = posts.save(Post.builder().title("Repair").content("Repair").authorId(1L)
                     .regionName("Seoul").category(PostCategory.values()[0]).build());
             postId = post.getId();
             firstId = proposals.save(proposal(post)).getId();
@@ -57,7 +54,7 @@ class ProposalConcurrencyTest extends FlywaySchemaTest {
     }
 
     private Proposal proposal(Post post) {
-        return Proposal.builder().post(post).repairerEmail("repair@test").content("Repair").estimatedPrice(100).build();
+        return Proposal.builder().post(post).repairerId(2L).content("Repair").estimatedPrice(100).build();
     }
 
     private List<Boolean> race(Runnable first, Runnable second) throws Exception {
@@ -77,26 +74,26 @@ class ProposalConcurrencyTest extends FlywaySchemaTest {
     }
 
     @Test void competingProposalsHaveExactlyOneWinner() throws Exception {
-        assertThat(race(() -> service.adoptProposal(postId, firstId, "owner@test"),
-                () -> service.adoptProposal(postId, secondId, "owner@test"))).containsExactlyInAnyOrder(true, false);
+        assertThat(race(() -> service.adoptProposal(postId, firstId, 1L),
+                () -> service.adoptProposal(postId, secondId, 1L))).containsExactlyInAnyOrder(true, false);
         assertThat(List.of(proposals.findById(firstId).orElseThrow(), proposals.findById(secondId).orElseThrow())
                 .stream().filter(Proposal::isAdopted).count()).isEqualTo(1);
         assertThat(deals.findByPostId(postId)).isPresent();
     }
 
     @Test void repeatedConcurrentAdoptionCreatesOneDeal() throws Exception {
-        assertThat(race(() -> service.adoptProposal(postId, firstId, "owner@test"),
-                () -> service.adoptProposal(postId, firstId, "owner@test"))).containsOnly(true);
+        assertThat(race(() -> service.adoptProposal(postId, firstId, 1L),
+                () -> service.adoptProposal(postId, firstId, 1L))).containsOnly(true);
         Long dealId = deals.findByProposalId(firstId).orElseThrow().getId();
-        service.adoptProposal(postId, firstId, "owner@test");
+        service.adoptProposal(postId, firstId, 1L);
         assertThat(deals.findByProposalId(firstId).orElseThrow().getId()).isEqualTo(dealId);
     }
 
     @Test void cancellationRacesWithProgressWithoutResurrectingDeal() throws Exception {
-        service.adoptProposal(postId, firstId, "owner@test");
+        service.adoptProposal(postId, firstId, 1L);
         Long dealId = deals.findByProposalId(firstId).orElseThrow().getId();
-        assertThat(race(() -> service.cancelProposal(postId, firstId, "owner@test"),
-                () -> dealService.markProductSent(dealId, "repair@test"))).containsExactlyInAnyOrder(true, false);
+        assertThat(race(() -> service.cancelProposal(postId, firstId, 1L),
+                () -> dealService.markProductSent(dealId, 2L))).containsExactlyInAnyOrder(true, false);
         FixDeal deal = deals.findById(dealId).orElseThrow();
         boolean canceled = deal.getStatus() == FixDealStatus.CANCELED;
         assertThat(proposals.findById(firstId).orElseThrow().isAdopted()).isEqualTo(!canceled);
@@ -105,17 +102,17 @@ class ProposalConcurrencyTest extends FlywaySchemaTest {
     }
 
     @Test void cancellationAndReadoptionPreserveHistoryAndCurrentLookup() {
-        service.adoptProposal(postId, firstId, "owner@test");
+        service.adoptProposal(postId, firstId, 1L);
         Long oldId = deals.findByProposalId(firstId).orElseThrow().getId();
-        service.cancelProposal(postId, firstId, "owner@test");
-        service.cancelProposal(postId, firstId, "owner@test");
-        service.adoptProposal(postId, firstId, "owner@test");
+        service.cancelProposal(postId, firstId, 1L);
+        service.cancelProposal(postId, firstId, 1L);
+        service.adoptProposal(postId, firstId, 1L);
         assertThat(deals.findById(oldId).orElseThrow().getStatus()).isEqualTo(FixDealStatus.CANCELED);
         assertThat(deals.findByPostId(postId).orElseThrow().getId()).isNotEqualTo(oldId);
     }
 
     @Test void databaseRejectsDuplicateActivePostAndProposalEvenWithoutServiceLock() {
-        service.adoptProposal(postId, firstId, "owner@test");
+        service.adoptProposal(postId, firstId, 1L);
         assertThatThrownBy(() -> deals.saveAndFlush(FixDeal.builder().postId(postId).proposalId(secondId)
                 .requesterId(1L).repairerId(2L).build())).isInstanceOf(DataIntegrityViolationException.class);
         assertThatThrownBy(() -> deals.saveAndFlush(FixDeal.builder().postId(postId + 100000).proposalId(firstId)
@@ -127,27 +124,27 @@ class ProposalConcurrencyTest extends FlywaySchemaTest {
     }
 
     @Test void repeatedProgressRequestsAreIdempotent() throws Exception {
-        service.adoptProposal(postId, firstId, "owner@test");
+        service.adoptProposal(postId, firstId, 1L);
         Long dealId = deals.findByProposalId(firstId).orElseThrow().getId();
-        assertThat(race(() -> dealService.markProductSent(dealId, "repair@test"),
-                () -> dealService.markProductSent(dealId, "repair@test"))).containsOnly(true);
+        assertThat(race(() -> dealService.markProductSent(dealId, 2L),
+                () -> dealService.markProductSent(dealId, 2L))).containsOnly(true);
         assertThat(deals.findById(dealId).orElseThrow().getStatus()).isEqualTo(FixDealStatus.PRODUCT_SENT);
     }
     @Test void concurrentCompletionChecksPaymentOnceAndPreservesCompletionTime() throws Exception {
-        service.adoptProposal(postId, firstId, "owner@test");
+        service.adoptProposal(postId, firstId, 1L);
         Long dealId = deals.findByProposalId(firstId).orElseThrow().getId();
-        dealService.markProductSent(dealId, "repair@test");
-        dealService.markRepairing(dealId, "repair@test");
-        dealService.requestCompletion(dealId, "repair@test");
+        dealService.markProductSent(dealId, 2L);
+        dealService.markRepairing(dealId, 2L);
+        dealService.requestCompletion(dealId, 2L);
         when(payments.getPaymentByPostId(postId))
                 .thenReturn(new com.team2.postservice.client.dto.PaymentClientResponse(1L, postId, "COMPLETED"));
-        assertThat(race(() -> dealService.acceptCompletion(dealId, "owner@test"),
-                () -> dealService.acceptCompletion(dealId, "owner@test"))).containsOnly(true);
+        assertThat(race(() -> dealService.acceptCompletion(dealId, 1L),
+                () -> dealService.acceptCompletion(dealId, 1L))).containsOnly(true);
         java.time.LocalDateTime completedAt = deals.findById(dealId).orElseThrow().getCompletedAt();
-        dealService.acceptCompletion(dealId, "owner@test");
+        dealService.acceptCompletion(dealId, 1L);
         assertThat(deals.findById(dealId).orElseThrow().getCompletedAt()).isNotNull().isEqualTo(completedAt);
         verify(payments, times(1)).getPaymentByPostId(postId);
-        assertThatThrownBy(() -> service.cancelProposal(postId, firstId, "owner@test")).isInstanceOf(CustomException.class);
+        assertThatThrownBy(() -> service.cancelProposal(postId, firstId, 1L)).isInstanceOf(CustomException.class);
         assertThatThrownBy(() -> deals.saveAndFlush(FixDeal.builder().postId(postId).proposalId(secondId)
                 .requesterId(1L).repairerId(2L).build())).isInstanceOf(DataIntegrityViolationException.class);
     }
@@ -159,7 +156,7 @@ class ProposalConcurrencyTest extends FlywaySchemaTest {
             post.changeStatus(PostStatus.COMPLETED);
             assertThatThrownBy(post::updateStatusToMatched).isInstanceOf(CustomException.class);
         });
-        assertThatThrownBy(() -> service.adoptProposal(postId, firstId, "owner@test"))
+        assertThatThrownBy(() -> service.adoptProposal(postId, firstId, 1L))
                 .isInstanceOf(CustomException.class);
         assertThat(proposals.findById(firstId).orElseThrow().isAdopted()).isFalse();
         assertThat(deals.findByPostId(postId)).isEmpty();

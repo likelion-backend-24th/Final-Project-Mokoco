@@ -36,7 +36,7 @@ public class ProposalService {
     private final com.team2.postservice.client.ChatClient chat;
 
     @Transactional
-    public Long createProposal(Long postId, ProposalRequestDto.Create request, String repairerEmail) {
+    public Long createProposal(Long postId, ProposalRequestDto.Create request, Long repairerId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
 
@@ -45,7 +45,7 @@ public class ProposalService {
 
         Proposal proposal = Proposal.builder()
                 .post(post)
-                .repairerEmail(repairerEmail)
+                .repairerId(repairerId)
                 .estimatedPrice(request.estimatedPrice())
                 .content(request.content())
                 .attachResume(Boolean.TRUE.equals(request.attachResume()))
@@ -63,11 +63,11 @@ public class ProposalService {
     }
 
     @Transactional
-    public void adoptProposal(Long postId, Long proposalId, String userEmail) {
+    public void adoptProposal(Long postId, Long proposalId, Long userId) {
         Post post = postRepository.lockById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
 
-        if (!post.getAuthorEmail().equals(userEmail)) {
+        if (!post.getAuthorId().equals(userId)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_PROPOSAL_ADOPT);
         }
 
@@ -89,14 +89,14 @@ public class ProposalService {
         proposal.adopt();
         post.updateStatusToMatched();
 
-        UserClientResponse requester = userClient.getUserByEmail(post.getAuthorEmail());
-        UserClientResponse repairer = userClient.getUserByEmail(proposal.getRepairerEmail());
+        Long requesterUserId = post.getAuthorId();
+        Long repairerUserId = proposal.getRepairerId();
 
         FixDeal fixDeal = FixDeal.builder()
                 .postId(post.getId())
                 .proposalId(proposal.getId())
-                .requesterId(requester.id())
-                .repairerId(repairer.id())
+                .requesterId(requesterUserId)
+                .repairerId(repairerUserId)
                 .build();
 
         fixDealRepository.save(fixDeal);
@@ -120,24 +120,24 @@ public class ProposalService {
                 .map(proposal -> new ProposalResponseDto(proposal,
                         proposal.isAdopted() ? fixDealRepository.findByProposalId(proposal.getId())
                                 .map(FixDeal::getId).orElse(null) : null,
-                        resolveNickname(proposal.getRepairerEmail())))
+                        resolveNickname(proposal.getRepairerId())))
                 .toList();
     }
 
-    private String resolveNickname(String email) {
+    private String resolveNickname(Long userId) {
         try {
-            return userClient.getUserByEmail(email).nickname();
+            return userClient.getUserById(userId).nickname();
         } catch (Exception e) {
             return null;
         }
     }
 
     @Transactional
-    public void deleteProposal(Long postId, Long proposalId, String userEmail) {
+    public void deleteProposal(Long postId, Long proposalId, Long userId) {
         Proposal proposal = proposalRepository.lockById(proposalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
 
-        if (!proposal.getRepairerEmail().equals(userEmail)) {
+        if (!proposal.getRepairerId().equals(userId)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_PROPOSAL_DELETE);
         }
 
@@ -151,12 +151,12 @@ public class ProposalService {
 
 
     @Transactional
-    public void cancelProposal(Long postId, Long proposalId, String userEmail) {
+    public void cancelProposal(Long postId, Long proposalId, Long userId) {
 
         Post post = postRepository.lockById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
 
-        if(!post.getAuthorEmail().equals(userEmail)) {
+        if(!post.getAuthorId().equals(userId)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_PROPOSAL_ADOPT);
         }
 

@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { Briefcase, X } from "@phosphor-icons/react";
 
-export default function ResumeViewModal({ email, onClose }) {
+export default function ResumeViewModal({ userId, onClose }) {
   const [resume, setResume] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`/api/resume/${encodeURIComponent(email)}`, { signal: controller.signal, cache: "no-store" })
+    fetch(`/api/resume/${encodeURIComponent(userId)}`, { signal: controller.signal, cache: "no-store" })
       .then(async (res) => {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error ?? "이력서를 불러오지 못했습니다.");
@@ -23,7 +23,7 @@ export default function ResumeViewModal({ email, onClose }) {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [email]);
+  }, [userId]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose} role="presentation">
@@ -44,7 +44,7 @@ export default function ResumeViewModal({ email, onClose }) {
 
           {resume && (
             <>
-              <p className="text-xs text-slate-400">{resume.userEmail}</p>
+              <p className="text-xs text-slate-400">{resume.userId}</p>
               <h4 className="mt-0.5 text-base font-extrabold text-slate-800">{resume.headline}</h4>
 
               {resume.skills?.length > 0 && (

@@ -4,8 +4,8 @@ import { backendUrl } from "@/lib/backend";
 export async function PATCH(request, { params }) {
   const { id } = await params;
   if (!/^\d+$/.test(id)) return Response.json({ error: "잘못된 요청입니다." }, { status: 400 });
-  const userEmail = (await cookies()).get("user_email")?.value;
-  if (!userEmail) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  const accessToken = (await cookies()).get("access_token")?.value;
+  if (!accessToken) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
   try {
     const response = await fetch(backendUrl(`/notifications/${id}/read`), {
       method: "PATCH",

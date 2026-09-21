@@ -27,12 +27,6 @@ public class UserClientController {
         return ResponseEntity.ok(userService.findUserById(userId));
     }
 
-    @GetMapping("/by-email")
-    public ResponseEntity<UserResponse> getUserByEmail(@RequestParam String email) {
-        UserResponse response = userService.findUserByEmail(email);
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping("/by-id")
     public ResponseEntity<UserResponse> getUserById(@RequestParam Long id) {
         return ResponseEntity.ok(userService.findUserById(id));

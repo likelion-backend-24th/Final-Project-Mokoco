@@ -21,7 +21,7 @@ public class ChatRoomController {
             @PathVariable Long proposalId,
             @AuthenticationPrincipal LoginUser user
     ) {
-        return chatRoomService.createForProposal(proposalId, user.id());
+        return chatRoomService.createForProposal(proposalId, user.userId());
     }
 
     @GetMapping("/proposals/{proposalId}")
@@ -29,23 +29,23 @@ public class ChatRoomController {
             @PathVariable Long proposalId,
             @AuthenticationPrincipal LoginUser user
     ) {
-        return chatRoomService.getForProposal(proposalId, user.id());
+        return chatRoomService.getForProposal(proposalId, user.userId());
     }
 
     @GetMapping("/{roomId}/detail")
     public ChatRoomResponse detail(@PathVariable Long roomId,
             @AuthenticationPrincipal LoginUser user
     ) {
-        return chatRoomService.detail(roomId, user.id());
+        return chatRoomService.detail(roomId, user.userId());
     }
 
     @GetMapping
     public java.util.List<ChatRoomListItem> getMyRooms(
-            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @AuthenticationPrincipal LoginUser user,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
     ) {
-        return chatRoomService.getMyRooms(authorization, page, size);
+        return chatRoomService.getMyRooms(user.userId(), page, size);
     }
 
     @PostMapping("/fix-deals/{fixDealId}")
@@ -53,7 +53,7 @@ public class ChatRoomController {
             @PathVariable Long fixDealId,
             @AuthenticationPrincipal LoginUser loginUser
     ) {
-        ChatRoomResponse response = chatRoomService.createChatRoom(fixDealId, loginUser.email());
+        ChatRoomResponse response = chatRoomService.createChatRoom(fixDealId, loginUser.userId());
 
         return ResponseEntity.ok(response);
     }
@@ -64,7 +64,7 @@ public class ChatRoomController {
             @AuthenticationPrincipal LoginUser loginUser
     ) {
         return ResponseEntity.ok(
-                chatRoomService.getChatRoom(fixDealId, loginUser.email())
+                chatRoomService.getChatRoom(fixDealId, loginUser.userId())
         );
     }
 }

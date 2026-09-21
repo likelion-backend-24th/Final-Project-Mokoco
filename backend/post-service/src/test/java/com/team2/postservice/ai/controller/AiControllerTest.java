@@ -38,12 +38,12 @@ class AiControllerTest {
         verifyNoInteractions(service,users);
     }
     @Test void malformedContractInputIsRejected() throws Exception {
-        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(7L,"test@example.invalid","test",null));
+        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(7L, "test@example.invalid", "test", null, com.team2.common.security.Role.USER));
         mvc.perform(post("/api/chat-rooms/1/contract/ai-draft").header("Authorization","Bearer valid").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest()); verifyNoInteractions(service);
     }
     @Test void identityComesFromVerifiedTokenNotRequestFields() throws Exception {
-        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(7L,"test@example.invalid","test",null));
+        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(7L, "test@example.invalid", "test", null, com.team2.common.security.Role.USER));
         when(service.contract(eq(7L),eq(1L),isNull(),anyMap(),eq(""))).thenReturn(new ObjectMapper().createObjectNode());
         mvc.perform(post("/api/chat-rooms/1/contract/ai-draft").header("Authorization","Bearer valid")
                 .contentType(MediaType.APPLICATION_JSON).content("{\"baseId\":null,\"currentTerms\":{},\"selectedMessageIds\":[],\"instructions\":\"\",\"requesterId\":999}"))
@@ -53,7 +53,7 @@ class AiControllerTest {
                 .andExpect(status().isUnauthorized());
     }
     @Test void forbidsNonParticipantWithoutCreatingContract() throws Exception {
-        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(9L,"test@example.invalid","test",null));
+        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(9L, "test@example.invalid", "test", null, com.team2.common.security.Role.USER));
         when(service.contract(eq(9L),eq(1L),isNull(),anyMap(),eq("")))
                 .thenThrow(new AiException(org.springframework.http.HttpStatus.FORBIDDEN,"NOT_PARTICIPANT","참여자만 사용할 수 있습니다."));
         mvc.perform(post("/api/chat-rooms/1/contract/ai-draft").header("Authorization","Bearer valid")
@@ -61,7 +61,7 @@ class AiControllerTest {
                 .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("NOT_PARTICIPANT"));
     }
     @Test void postReceivesVerifiedPrincipalAndMatchingTrace() throws Exception {
-        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(7L,"test@example.invalid","test",null));
+        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(7L, "test@example.invalid", "test", null, com.team2.common.security.Role.USER));
         when(service.post(eq(7L),anyList(),eq(""),eq(""),eq(""))).thenReturn(new ObjectMapper().createObjectNode());
         MvcResult result = mvc.perform(multipart("/api/ai/post-draft").file(new MockMultipartFile("images",new byte[]{1}))
                 .header("Authorization","Bearer valid"))

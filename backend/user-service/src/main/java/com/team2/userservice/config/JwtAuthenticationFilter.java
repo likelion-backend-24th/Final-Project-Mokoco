@@ -43,11 +43,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
-            String email = user.getEmail();
+            com.team2.common.security.LoginUser loginUser = new com.team2.common.security.LoginUser(
+                    user.getId(), com.team2.common.security.Role.valueOf(user.getRole().name()));
 
-            // 기존 내 정보·지역 API의 이메일 principal 계약을 유지한다.
+            // 계정 식별자와 검증된 역할만 principal에 저장한다.
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(email, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                    new UsernamePasswordAuthenticationToken(loginUser, null, List.of(new SimpleGrantedAuthority("ROLE_" + loginUser.role().name())));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }

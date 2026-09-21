@@ -30,10 +30,10 @@ class PaymentAuthenticationTest {
         upstream.expect(requestTo("http://users/api/internal/users/verify-token"))
                 .andExpect(header("X-Internal-Service-Key", "test-key"))
                 .andExpect(content().string("valid-token"))
-                .andRespond(withSuccess("{\"id\":10,\"email\":\"actual@test\"}", MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess("{\"id\":10,\"email\":\"actual@test\",\"role\":\"USER\"}", MediaType.APPLICATION_JSON));
         mvc.perform(get("/payments/post/1").header("Authorization", "Bearer valid-token")
                 .header("X-User-Email", "victim@test")).andExpect(status().isOk());
-        verify(service).getPaymentByPostId(1L, "actual@test");
+        verify(service).getPaymentByPostId(1L, 10L);
         upstream.verify();
     }
     @Test void invalidTokenIs401AndInternalKeyFailureIs502() throws Exception {

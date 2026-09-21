@@ -8,9 +8,9 @@ export async function PATCH(request, { params }) {
     const proposalId = resolvedParams.proposalId;
 
     const cookieStore = await cookies();
-    const userEmail = cookieStore.get("user_email")?.value;
+    const accessToken = cookieStore.get("access_token")?.value;
 
-    if (!userEmail) {
+    if (!accessToken) {
       return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
     }
 

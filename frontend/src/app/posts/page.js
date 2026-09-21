@@ -135,7 +135,7 @@ export default async function PostsPage({ searchParams }) {
                       </div>
                       <div className="flex flex-col items-end shrink-0 text-xs text-slate-400 gap-0.5">
                         <time>{formatRelativeDate(post.createdAt)}</time>
-                        <span>{post.authorEmail || "작성자 정보 없음"}</span>
+                        <span>{post.authorId || "작성자 정보 없음"}</span>
                       </div>
                     </div>
                     <p className="post-content">{post.content || "등록된 상세 내용이 없습니다."}</p>

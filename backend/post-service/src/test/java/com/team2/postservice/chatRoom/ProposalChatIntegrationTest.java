@@ -4,7 +4,6 @@ import com.team2.common.chat.ChatRoomInfo;
 import com.team2.common.chat.ProposalChatResponse;
 import com.team2.postservice.client.ChatClient;
 import com.team2.postservice.client.UserClient;
-import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
 import com.team2.postservice.internal.controller.InternalChatContextController;
@@ -46,13 +45,11 @@ class ProposalChatIntegrationTest {
     final ConcurrentMap<Long, ChatRoomInfo> remoteRooms = new ConcurrentHashMap<>();
 
     @BeforeEach void setup() {
-        when(users.getUserByEmail("requester@test")).thenReturn(new UserClientResponse(10L, "requester@test", "Requester", null));
-        when(users.getUserByEmail("repairer@test")).thenReturn(new UserClientResponse(20L, "repairer@test", "Repairer", null));
         new TransactionTemplate(transactions).executeWithoutResult(status -> {
-            Post post = posts.save(Post.builder().title("Repair").content("Repair").authorEmail("requester@test")
+            Post post = posts.save(Post.builder().title("Repair").content("Repair").authorId(10L)
                     .regionName("Seoul").category(PostCategory.values()[0]).build());
             postId = post.getId();
-            proposalId = proposalRepo.save(Proposal.builder().post(post).repairerEmail("repairer@test")
+            proposalId = proposalRepo.save(Proposal.builder().post(post).repairerId(20L)
                     .estimatedPrice(50000).content("Repair").build()).getId();
         });
         when(chat.ensureRoom(any())).thenAnswer(call -> {
@@ -96,7 +93,7 @@ class ProposalChatIntegrationTest {
         try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
             Future<ChatRoomInfo> create = pool.submit(() -> internal.ensureRoom(proposalId, 10L, "test-key"));
             assertThat(remoteEntered.await(5, TimeUnit.SECONDS)).isTrue();
-            Future<?> delete = pool.submit(() -> proposals.deleteProposal(postId, proposalId, "repairer@test"));
+            Future<?> delete = pool.submit(() -> proposals.deleteProposal(postId, proposalId, 20L));
             remoteRelease.countDown();
             create.get(10, TimeUnit.SECONDS);
             assertThatThrownBy(() -> delete.get(10, TimeUnit.SECONDS))
@@ -107,7 +104,7 @@ class ProposalChatIntegrationTest {
 
     @Test void unavailableChatCannotBypassDeletionGuard() {
         when(chat.existsForProposal(proposalId)).thenThrow(new IllegalStateException("unavailable"));
-        assertThatThrownBy(() -> proposals.deleteProposal(postId, proposalId, "repairer@test")).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> proposals.deleteProposal(postId, proposalId, 20L)).isInstanceOf(IllegalStateException.class);
         assertThat(proposalRepo.existsById(proposalId)).isTrue();
     }
 
@@ -117,20 +114,20 @@ class ProposalChatIntegrationTest {
             assertThat(context.fixDealId()).isNotNull();
             return null;
         }).when(chat).syncProposal(proposalId);
-        proposals.adoptProposal(postId, proposalId, "requester@test");
+        proposals.adoptProposal(postId, proposalId, 10L);
         FixDeal first = deals.findByProposalId(proposalId).orElseThrow();
         verify(chat).syncProposal(proposalId);
         doNothing().when(chat).syncProposal(proposalId);
-        proposals.cancelProposal(postId, proposalId, "requester@test");
+        proposals.cancelProposal(postId, proposalId, 10L);
         assertThat(internal.proposal(proposalId, "test-key").fixDealId()).isNull();
         verify(chat, times(2)).syncProposal(proposalId);
-        proposals.adoptProposal(postId, proposalId, "requester@test");
+        proposals.adoptProposal(postId, proposalId, 10L);
         assertThat(deals.findByProposalId(proposalId).orElseThrow().getId()).isNotEqualTo(first.getId());
     }
 
     @Test void rolledBackAdoptionDoesNotPublishSync() {
         new TransactionTemplate(transactions).executeWithoutResult(status -> {
-            proposals.adoptProposal(postId, proposalId, "requester@test");
+            proposals.adoptProposal(postId, proposalId, 10L);
             status.setRollbackOnly();
         });
         verify(chat, never()).syncProposal(anyLong());

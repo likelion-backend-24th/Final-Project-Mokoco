@@ -45,7 +45,6 @@ export default function ReviewForm({ postId, userEmail, onSubmitted }) {
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/reviews`, {
         method: "POST",
-        headers: { "X-User-Email": userEmail },
         body: formData,
       });
       const data = await res.json().catch(() => ({}));

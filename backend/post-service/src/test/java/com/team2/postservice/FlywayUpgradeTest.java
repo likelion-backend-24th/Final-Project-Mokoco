@@ -26,7 +26,7 @@ class FlywayUpgradeTest {
                     VALUES (1, 1, 10, 20, 'CANCELED', NOW()), (1, 1, 10, 20, 'MATCHED', NOW())
                     """);
             Flyway flyway = Flyway.configure().dataSource(MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword()).load();
-            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(2);
             flyway.validate();
             try (ResultSet rows = statement.executeQuery("SELECT COUNT(*), COUNT(active_post_id) FROM fix_deals")) {
                 assertThat(rows.next()).isTrue();
@@ -42,7 +42,7 @@ class FlywayUpgradeTest {
         String url = java.util.Objects.requireNonNull(yaml.getObject()).getProperty("spring.datasource.url")
                 .replace("localhost:3306/post_db", MYSQL.getHost() + ":" + MYSQL.getMappedPort(3306) + "/missing_post_db");
         Flyway flyway = Flyway.configure().dataSource(url, "root", MYSQL.getPassword()).load();
-        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(2);
+        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(3);
         flyway.validate();
     }
 

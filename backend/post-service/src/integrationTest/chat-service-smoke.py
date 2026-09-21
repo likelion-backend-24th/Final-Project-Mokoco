@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[4]
 RUN = ROOT / ".tmp" / f"chat-split-qa-{time.time_ns()}"
 RUN.mkdir(parents=True)
 KEY = "isolated-chat-qa-key"
-USERS = {name: {"id": index, "email": name + "@test", "nickname": name, "region": None}
+USERS = {name: {"id": index, "email": name + "@test", "nickname": name, "region": None, "role": "USER"}
          for index, name in enumerate(("requester", "repairer", "outsider"), 1)}
 
 
@@ -98,8 +98,8 @@ def main():
 }
 """, encoding="utf-8")
     seed = RUN / "seed.sql"
-    seed.write_text("""INSERT INTO posts (id,title,content,author_email,region_name,publicly_visible,category,status,created_at,updated_at) VALUES (1,'Repair','Repair','requester@test','Seoul',true,'FURNITURE_INSTALL','WAITING',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
-INSERT INTO proposals (id,post_id,repairer_email,estimated_price,content,is_adopted,attach_resume) VALUES (1,1,'repairer@test',50000,'Repair',false,false);
+    seed.write_text("""INSERT INTO posts (id,title,content,author_id,region_name,publicly_visible,category,status,created_at,updated_at) VALUES (1,'Repair','Repair',1,'Seoul',true,'FURNITURE_INSTALL','WAITING',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+INSERT INTO proposals (id,post_id,repairer_id,estimated_price,content,is_adopted,attach_resume) VALUES (1,1,2,50000,'Repair',false,false);
 """, encoding="utf-8")
     processes, logs = [], []
     try:

@@ -24,7 +24,7 @@ public class ProposalController {
     public ResponseEntity<Long> createProposal(@PathVariable Long postId,
                                                @RequestBody @Valid ProposalRequestDto.Create request,
                                                @AuthenticationPrincipal LoginUser loginUser) {
-        Long proposalId = proposalService.createProposal(postId, request, loginUser.email());
+        Long proposalId = proposalService.createProposal(postId, request, loginUser.userId());
         return ResponseEntity.ok(proposalId);
     }
 
@@ -33,7 +33,7 @@ public class ProposalController {
     public ResponseEntity<Void> adoptProposal(@PathVariable Long postId,
                                               @PathVariable Long proposalId,
                                               @AuthenticationPrincipal LoginUser loginUser) {
-        proposalService.adoptProposal(postId, proposalId, loginUser.email());
+        proposalService.adoptProposal(postId, proposalId, loginUser.userId());
         return ResponseEntity.ok().build();
     }
 
@@ -44,7 +44,7 @@ public class ProposalController {
             @PathVariable Long proposalId,
             @AuthenticationPrincipal LoginUser loginUser
     ){
-        proposalService.cancelProposal(postId, proposalId, loginUser.email());
+        proposalService.cancelProposal(postId, proposalId, loginUser.userId());
         return ResponseEntity.ok().build();
     }
 
@@ -60,7 +60,7 @@ public class ProposalController {
     public ResponseEntity<Void> deleteProposal(@PathVariable Long postId,
                                                @PathVariable Long proposalId,
                                                @AuthenticationPrincipal LoginUser loginUser) {
-        proposalService.deleteProposal(postId, proposalId, loginUser.email());
+        proposalService.deleteProposal(postId, proposalId, loginUser.userId());
         return ResponseEntity.ok().build();
     }
 }

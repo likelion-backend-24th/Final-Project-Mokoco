@@ -21,7 +21,7 @@ public class Resume {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String userEmail;
+    private Long userId;
 
     @Column(nullable = false, length = 100)
     private String headline;
@@ -46,8 +46,8 @@ public class Resume {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Resume(String userEmail, String headline, String introduction, List<String> skills) {
-        this.userEmail = userEmail;
+    public Resume(Long userId, String headline, String introduction, List<String> skills) {
+        this.userId = userId;
         this.headline = headline;
         this.introduction = introduction;
         this.skills = skills != null ? new ArrayList<>(skills) : new ArrayList<>();

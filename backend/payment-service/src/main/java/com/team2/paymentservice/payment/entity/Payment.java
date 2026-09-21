@@ -31,10 +31,10 @@ public class Payment {
     private String portonePaymentId;
 
     @Column(nullable = false)
-    private String payerEmail; // 의뢰자 (결제자)
+    private Long payerId; // 의뢰자 (결제자)
 
     @Column(nullable = false)
-    private String payeeEmail; // 수리자 (정산 대상)
+    private Long payeeId; // 수리자 (정산 대상)
 
     @Column(nullable = false)
     private Integer amount; // 의뢰자가 실제 결제한 총액 (baseAmount + feeAmount)
@@ -55,12 +55,12 @@ public class Payment {
     private LocalDateTime paidAt;
 
     @Builder
-    public Payment(Long postId, String portonePaymentId, String payerEmail, String payeeEmail,
+    public Payment(Long postId, String portonePaymentId, Long payerId, Long payeeId,
                    Integer totalAmount, Integer baseAmount) {
         this.postId = postId;
         this.portonePaymentId = portonePaymentId;
-        this.payerEmail = payerEmail;
-        this.payeeEmail = payeeEmail;
+        this.payerId = payerId;
+        this.payeeId = payeeId;
         this.amount = totalAmount;
         this.netAmount = baseAmount;
         this.feeAmount = totalAmount - baseAmount;

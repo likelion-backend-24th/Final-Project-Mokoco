@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { Star } from "@phosphor-icons/react";
 
-export default function RatingBadge({ email }) {
+export default function RatingBadge({ userId }) {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    if (!email) return;
+    if (!userId) return;
     const controller = new AbortController();
-    fetch(`/api/reviews?revieweeEmail=${encodeURIComponent(email)}&size=1`, {
+    fetch(`/api/reviews?revieweeId=${encodeURIComponent(userId)}&size=1`, {
       signal: controller.signal,
       cache: "no-store",
     })
@@ -19,7 +19,7 @@ export default function RatingBadge({ email }) {
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [email]);
+  }, [userId]);
 
   if (!data || data.averageRating == null) return null;
 

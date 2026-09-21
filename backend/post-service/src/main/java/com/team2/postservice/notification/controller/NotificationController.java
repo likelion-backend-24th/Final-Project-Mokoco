@@ -22,40 +22,40 @@ public class NotificationController {
     @GetMapping
     public ResponseEntity<List<NotificationResponseDto>> getMyNotifications(
             @AuthenticationPrincipal LoginUser loginUser) {
-        return ResponseEntity.ok(notificationService.getMyNotifications(loginUser.email()));
+        return ResponseEntity.ok(notificationService.getMyNotifications(loginUser.userId()));
     }
 
     @GetMapping("/unread-count")
     public ResponseEntity<Map<String, Long>> getUnreadCount(
             @AuthenticationPrincipal LoginUser loginUser) {
-        return ResponseEntity.ok(Map.of("count", notificationService.getUnreadCount(loginUser.email())));
+        return ResponseEntity.ok(Map.of("count", notificationService.getUnreadCount(loginUser.userId())));
     }
 
     @PatchMapping("/{id}/read")
     public ResponseEntity<Void> markAsRead(
             @PathVariable Long id,
             @AuthenticationPrincipal LoginUser loginUser) {
-        notificationService.markAsRead(id, loginUser.email());
+        notificationService.markAsRead(id, loginUser.userId());
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/read-all")
     public ResponseEntity<Void> markAllAsRead(
             @AuthenticationPrincipal LoginUser loginUser) {
-        notificationService.markAllAsRead(loginUser.email());
+        notificationService.markAllAsRead(loginUser.userId());
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/settings")
     public ResponseEntity<NotificationSettingDto> getSettings(
             @AuthenticationPrincipal LoginUser loginUser) {
-        return ResponseEntity.ok(notificationService.getSettings(loginUser.email()));
+        return ResponseEntity.ok(notificationService.getSettings(loginUser.userId()));
     }
 
     @PutMapping("/settings")
     public ResponseEntity<NotificationSettingDto> updateSettings(
             @AuthenticationPrincipal LoginUser loginUser,
             @RequestBody NotificationSettingDto request) {
-        return ResponseEntity.ok(notificationService.updateSettings(loginUser.email(), request));
+        return ResponseEntity.ok(notificationService.updateSettings(loginUser.userId(), request));
     }
 }

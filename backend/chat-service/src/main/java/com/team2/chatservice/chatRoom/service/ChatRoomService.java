@@ -5,10 +5,8 @@ import com.team2.chatservice.chatRoom.dto.ChatRoomResponse;
 import com.team2.chatservice.chatRoom.entity.ChatRoom;
 import com.team2.chatservice.chatRoom.repository.ChatRoomRepository;
 import com.team2.chatservice.client.PostClient;
-import com.team2.chatservice.client.UserClient;
 import com.team2.common.chat.ProposalChatResponse;
 import com.team2.chatservice.client.dto.FixDealResponse;
-import com.team2.chatservice.client.dto.UserClientResponse;
 import com.team2.common.exception.CustomException;
 import com.team2.common.exception.ErrorCode;
 import com.team2.common.chat.ChatRoomInfo;
@@ -29,31 +27,14 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
-    private final UserClient userClient;
     private final PostClient postClient;
     private final org.springframework.transaction.PlatformTransactionManager transactions;
 
-    public List<ChatRoomListItem> getMyRooms(String authorization, int page, int size) {
-        if (authorization == null || !authorization.startsWith("Bearer ") || authorization.substring(7).isBlank())
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+    public List<ChatRoomListItem> getMyRooms(Long userId, int page, int size) {
+        if (userId == null || userId <= 0) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         if (page < 0 || size < 1 || size > 50)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "page must be non-negative and size must be between 1 and 50");
-        UserClientResponse user;
-        try {
-            user = userClient.verifyToken(authorization.substring(7));
-        } catch (feign.FeignException failure) {
-            if (failure.status() == 401) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "User authentication service unavailable");
-        }
-        if (user == null || user.id() == null)
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Invalid user authentication response");
-        return chatRoomRepository.findMyRooms(user.id(), PageRequest.of(page, size));
-    }
-
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public ChatRoomResponse createChatRoom(Long fixDealId, String userEmail) {
-        return createChatRoom(fixDealId, userClient.getUserByEmail(userEmail).id());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid pagination");
+        return chatRoomRepository.findMyRooms(userId, PageRequest.of(page, size));
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -166,14 +147,12 @@ public class ChatRoomService {
     }
 
     @Transactional
-    public ChatRoomResponse getChatRoom(Long fixDealId, String userEmail) {
+    public ChatRoomResponse getChatRoom(Long fixDealId, Long userId) {
         FixDealResponse deal = postClient.getFixDeal(fixDealId);
         if (deal == null || deal.proposalId() == null)
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Invalid post-service response");
-        UserClientResponse user = userClient.getUserByEmail(userEmail);
-        if (user == null || user.id() == null
-                || (!user.id().equals(deal.requesterId()) && !user.id().equals(deal.repairerId())))
+        if (userId == null || (!userId.equals(deal.requesterId()) && !userId.equals(deal.repairerId())))
             throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_ACCESS);
-        return getForProposal(deal.proposalId(), user.id());
+        return getForProposal(deal.proposalId(), userId);
     }
 }

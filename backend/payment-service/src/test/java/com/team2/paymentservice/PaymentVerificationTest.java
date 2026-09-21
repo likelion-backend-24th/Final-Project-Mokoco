@@ -27,12 +27,12 @@ class PaymentVerificationTest extends FlywaySchemaTest {
     @MockitoBean PostServiceClient posts;
     @MockitoBean PortOnePaymentClient portOne;
     static final AtomicLong IDS = new AtomicLong(100);
-    final LoginUser owner = new LoginUser(10L, "owner@test");
+    final LoginUser owner = new LoginUser(10L, com.team2.common.security.Role.USER);
     PaymentContext context;
 
     @BeforeEach void setup() {
         Long postId = IDS.incrementAndGet();
-        context = new PaymentContext(postId, postId + 1000, 10L, "owner@test", "repair@test", 10000, "REPAIR_DONE");
+        context = new PaymentContext(postId, postId + 1000, 10L, 20L, 10000, "REPAIR_DONE");
         when(posts.getPaymentContext(postId)).thenReturn(context);
     }
     PaymentRequestDto.Create request(PaymentOrder order) {
@@ -43,30 +43,30 @@ class PaymentVerificationTest extends FlywaySchemaTest {
     }
 
     @Test void serverOrderDeterminesMoneyAndRecipientAndRetryReturnsSamePayment() {
-        PaymentOrder order = service.prepare(context.postId(), owner);
-        assertThat(service.prepare(context.postId(), owner).getPaymentId()).isEqualTo(order.getPaymentId());
+        PaymentOrder order = service.prepare(context.postId(), owner.userId());
+        assertThat(service.prepare(context.postId(), owner.userId()).getPaymentId()).isEqualTo(order.getPaymentId());
         when(portOne.getPayment(order.getPaymentId())).thenReturn(paid(order));
-        Long id = service.createPayment(request(order), owner);
-        assertThat(service.createPayment(request(order), owner)).isEqualTo(id);
-        assertThat(payments.findById(id).orElseThrow().getPayeeEmail()).isEqualTo("repair@test");
+        Long id = service.createPayment(request(order), owner.userId());
+        assertThat(service.createPayment(request(order), owner.userId())).isEqualTo(id);
+        assertThat(payments.findById(id).orElseThrow().getPayeeId()).isEqualTo(20L);
         assertThat(payments.findById(id).orElseThrow().getAmount()).isEqualTo(11000);
         assertThat(payments.findById(id).orElseThrow().getNetAmount()).isEqualTo(10000);
         verify(portOne, times(1)).getPayment(order.getPaymentId());
     }
 
     @Test void rejectsImpersonationAndTamperedAmountRecipientOrPost() {
-        assertThatThrownBy(() -> service.prepare(context.postId(), new LoginUser(99L, "owner@test"))).isInstanceOf(CustomException.class);
-        PaymentOrder order = service.prepare(context.postId(), owner);
-        assertThatThrownBy(() -> service.createPayment(request(order), new LoginUser(99L, "owner@test"))).isInstanceOf(CustomException.class);
-        assertThatThrownBy(() -> service.createPayment(new PaymentRequestDto.Create(context.postId(), "attacker@test", 11000, 10000, order.getPaymentId()), owner)).isInstanceOf(CustomException.class);
-        assertThatThrownBy(() -> service.createPayment(new PaymentRequestDto.Create(context.postId(), null, 1, 1, order.getPaymentId()), owner)).isInstanceOf(CustomException.class);
-        assertThatThrownBy(() -> service.createPayment(new PaymentRequestDto.Create(999L, null, null, null, order.getPaymentId()), owner)).isInstanceOf(CustomException.class);
+        assertThatThrownBy(() -> service.prepare(context.postId(), 99L)).isInstanceOf(CustomException.class);
+        PaymentOrder order = service.prepare(context.postId(), owner.userId());
+        assertThatThrownBy(() -> service.createPayment(request(order), 99L)).isInstanceOf(CustomException.class);
+        assertThatThrownBy(() -> service.createPayment(new PaymentRequestDto.Create(context.postId(), 99L, 11000, 10000, order.getPaymentId()), owner.userId())).isInstanceOf(CustomException.class);
+        assertThatThrownBy(() -> service.createPayment(new PaymentRequestDto.Create(context.postId(), null, 1, 1, order.getPaymentId()), owner.userId())).isInstanceOf(CustomException.class);
+        assertThatThrownBy(() -> service.createPayment(new PaymentRequestDto.Create(999L, null, null, null, order.getPaymentId()), owner.userId())).isInstanceOf(CustomException.class);
         verifyNoInteractions(portOne);
         assertThat(payments.findByPostId(context.postId())).isEmpty();
     }
 
     @Test void webhookUsesSameProviderAmountCurrencyAndOrderValidation() {
-        PaymentOrder order = service.prepare(context.postId(), owner);
+        PaymentOrder order = service.prepare(context.postId(), owner.userId());
         when(portOne.getPayment(order.getPaymentId())).thenReturn(new PortOnePaymentResponse(order.getPaymentId(), "PAID", new PortOnePaymentResponse.Amount(1), "KRW", "{}"));
         assertThatThrownBy(() -> service.handleWebhookPayment(order.getPaymentId())).isInstanceOf(CustomException.class);
         when(portOne.getPayment(order.getPaymentId())).thenReturn(new PortOnePaymentResponse(order.getPaymentId(), "PAID", new PortOnePaymentResponse.Amount(11000), "USD", "{}"));
@@ -76,7 +76,7 @@ class PaymentVerificationTest extends FlywaySchemaTest {
         assertThat(payments.findByPostId(context.postId())).isEmpty();
         when(portOne.getPayment(order.getPaymentId())).thenReturn(paid(order));
         service.handleWebhookPayment(order.getPaymentId());
-        Long id = service.createPayment(request(order), owner);
+        Long id = service.createPayment(request(order), owner.userId());
         service.handleWebhookPayment(order.getPaymentId());
         assertThat(payments.findByPostId(context.postId()).orElseThrow().getId()).isEqualTo(id);
     }
@@ -88,23 +88,23 @@ class PaymentVerificationTest extends FlywaySchemaTest {
     }
 
     @Test void rejectsChangedDealAndUnpaidProviderState() {
-        PaymentOrder order = service.prepare(context.postId(), owner);
+        PaymentOrder order = service.prepare(context.postId(), owner.userId());
         when(portOne.getPayment(order.getPaymentId())).thenReturn(new PortOnePaymentResponse(order.getPaymentId(), "READY", new PortOnePaymentResponse.Amount(11000), "KRW", null));
-        assertThatThrownBy(() -> service.createPayment(request(order), owner)).isInstanceOf(CustomException.class);
+        assertThatThrownBy(() -> service.createPayment(request(order), owner.userId())).isInstanceOf(CustomException.class);
         when(portOne.getPayment(order.getPaymentId())).thenReturn(paid(order));
-        when(posts.getPaymentContext(context.postId())).thenReturn(new PaymentContext(context.postId(), 999L, 10L, "owner@test", "repair@test", 10000, "REPAIR_DONE"));
-        assertThatThrownBy(() -> service.createPayment(request(order), owner)).isInstanceOf(CustomException.class);
+        when(posts.getPaymentContext(context.postId())).thenReturn(new PaymentContext(context.postId(), 999L, 10L, 20L, 10000, "REPAIR_DONE"));
+        assertThatThrownBy(() -> service.createPayment(request(order), owner.userId())).isInstanceOf(CustomException.class);
         assertThat(payments.findByPostId(context.postId())).isEmpty();
     }
 
     @Test void frontendConfirmationRacingWebhookCreatesOnePayment() throws Exception {
-        PaymentOrder order = service.prepare(context.postId(), owner);
+        PaymentOrder order = service.prepare(context.postId(), owner.userId());
         CyclicBarrier providerBarrier = new CyclicBarrier(2);
         when(portOne.getPayment(order.getPaymentId())).thenAnswer(invocation -> {
             providerBarrier.await(10, TimeUnit.SECONDS); return paid(order);
         });
         try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
-            Future<Long> frontend = pool.submit(() -> service.createPayment(request(order), owner));
+            Future<Long> frontend = pool.submit(() -> service.createPayment(request(order), owner.userId()));
             Future<?> webhook = pool.submit(() -> service.handleWebhookPayment(order.getPaymentId()));
             Long id = frontend.get(20, TimeUnit.SECONDS);
             webhook.get(20, TimeUnit.SECONDS);
@@ -116,7 +116,7 @@ class PaymentVerificationTest extends FlywaySchemaTest {
     @Test void concurrentPreparationReturnsOneServerPaymentId() throws Exception {
         CyclicBarrier ready = new CyclicBarrier(2);
         try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
-            Callable<String> prepare = () -> { ready.await(10, TimeUnit.SECONDS); return service.prepare(context.postId(), owner).getPaymentId(); };
+            Callable<String> prepare = () -> { ready.await(10, TimeUnit.SECONDS); return service.prepare(context.postId(), owner.userId()).getPaymentId(); };
             Future<String> first = pool.submit(prepare);
             Future<String> second = pool.submit(prepare);
             assertThat(first.get(20, TimeUnit.SECONDS)).isEqualTo(second.get(20, TimeUnit.SECONDS));

@@ -118,7 +118,7 @@ class NearbyRepairRequestE2ETest {
         var completedPost = posts.findById(completed).orElseThrow();
         org.springframework.test.util.ReflectionTestUtils.setField(completedPost, "status", PostStatus.COMPLETED); posts.save(completedPost);
         var legacy = posts.save(com.team2.postservice.post.entity.Post.builder().title("지역 코드 없는 기존 요청")
-                .content("공개 요청").authorEmail("owner@nearby.test").regionName("기존 지역")
+                .content("공개 요청").authorId(1L).regionName("기존 지역")
                 .category(com.team2.postservice.post.entity.PostCategory.LIVING_ETC).build());
         var guest = json(call(postPort, "GET", "/posts?regionScope=DONG", null, null), 200);
         assertThat(guest.path("totalElements").asInt()).isEqualTo(6);

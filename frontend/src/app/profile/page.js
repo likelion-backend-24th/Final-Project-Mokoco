@@ -1,3 +1,4 @@
+import { userIdFromToken } from "@/lib/user-id";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import SiteHeader from "@/components/site-header";
@@ -9,7 +10,7 @@ export default async function ProfilePage() {
   const cookieStore = await cookies();
   const userEmail = cookieStore.get("user_email")?.value ?? null;
 
-  if (!userEmail) {
+  if (!cookieStore.get("access_token")?.value) {
     redirect("/login");
   }
 
@@ -31,7 +32,7 @@ export default async function ProfilePage() {
           <ResumeEditor />
         </section>
 
-        <ProfileTabs userEmail={userEmail} />
+        <ProfileTabs userEmail={userEmail} userId={userIdFromToken(cookieStore.get("access_token")?.value)} />
       </main>
     </div>
   );

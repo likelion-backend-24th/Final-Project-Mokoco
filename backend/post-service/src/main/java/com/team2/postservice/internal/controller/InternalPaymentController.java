@@ -32,9 +32,11 @@ public class InternalPaymentController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         FixDeal deal = deals.findByPostId(postId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         Proposal proposal = proposals.findById(deal.getProposalId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (!proposal.isAdopted() || !proposal.getPost().getId().equals(postId) || proposal.getEstimatedPrice() <= 0)
+        if (!deal.getRequesterId().equals(proposal.getPost().getAuthorId())
+                || !deal.getRepairerId().equals(proposal.getRepairerId())
+                || !proposal.isAdopted() || !proposal.getPost().getId().equals(postId) || proposal.getEstimatedPrice() <= 0)
             throw new ResponseStatusException(HttpStatus.CONFLICT);
-        return new PaymentContext(postId, deal.getId(), deal.getRequesterId(), proposal.getPost().getAuthorEmail(),
-                proposal.getRepairerEmail(), proposal.getEstimatedPrice(), deal.getStatus().name());
+        return new PaymentContext(postId, deal.getId(), deal.getRequesterId(),
+                proposal.getRepairerId(), proposal.getEstimatedPrice(), deal.getStatus().name());
     }
 }

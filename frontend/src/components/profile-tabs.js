@@ -68,7 +68,7 @@ function ReviewCard({ review, showTarget }) {
       </div>
       <p className="mt-1.5 text-sm text-slate-700 whitespace-pre-line">{review.content}</p>
       <p className="mt-1 text-xs text-slate-400">
-        {showTarget ? `대상: ${review.revieweeEmail}` : `작성자: ${review.reviewerEmail}`}
+        {showTarget ? `대상: ${review.revieweeId}` : `작성자: ${review.reviewerId}`}
       </p>
       {review.imageUrls?.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-2">
@@ -82,7 +82,7 @@ function ReviewCard({ review, showTarget }) {
   );
 }
 
-export default function ProfileTabs({ userEmail }) {
+export default function ProfileTabs({ userEmail, userId }) {
   const [activeTab, setActiveTab] = useState("requester");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -97,7 +97,7 @@ export default function ProfileTabs({ userEmail }) {
     } else if (activeTab === "written-reviews") {
       url = `/api/profile/reviews?size=20`;
     } else {
-      url = `/api/reviews?revieweeEmail=${encodeURIComponent(userEmail)}&size=20`;
+      url = `/api/reviews?revieweeId=${encodeURIComponent(userId)}&size=20`;
     }
 
     fetch(url, { signal: controller.signal, cache: "no-store" })
@@ -115,7 +115,7 @@ export default function ProfileTabs({ userEmail }) {
       });
 
     return () => controller.abort();
-  }, [activeTab, userEmail]);
+  }, [activeTab, userId]);
 
   const items =
     activeTab === "requester" || activeTab === "repairer"

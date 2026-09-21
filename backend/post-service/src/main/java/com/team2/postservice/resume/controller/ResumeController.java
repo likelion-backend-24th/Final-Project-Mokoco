@@ -19,29 +19,29 @@ public class ResumeController {
     @PostMapping
     public ResponseEntity<Long> createResume(@RequestBody ResumeRequestDto.Upsert request,
                                               @AuthenticationPrincipal LoginUser loginUser) {
-        return ResponseEntity.ok(resumeService.createResume(request, loginUser.email()));
+        return ResponseEntity.ok(resumeService.createResume(request, loginUser.userId()));
     }
 
     @PatchMapping
     public ResponseEntity<Void> updateResume(@RequestBody ResumeRequestDto.Upsert request,
                                               @AuthenticationPrincipal LoginUser loginUser) {
-        resumeService.updateResume(request, loginUser.email());
+        resumeService.updateResume(request, loginUser.userId());
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping
     public ResponseEntity<Void> deleteResume(@AuthenticationPrincipal LoginUser loginUser) {
-        resumeService.deleteResume(loginUser.email());
+        resumeService.deleteResume(loginUser.userId());
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/me")
     public ResponseEntity<ResumeResponseDto> getMyResume(@AuthenticationPrincipal LoginUser loginUser) {
-        return ResponseEntity.ok(resumeService.getMyResume(loginUser.email()));
+        return ResponseEntity.ok(resumeService.getMyResume(loginUser.userId()));
     }
 
-    @GetMapping("/{email}")
-    public ResponseEntity<ResumeResponseDto> getResumeByEmail(@PathVariable String email) {
-        return ResponseEntity.ok(resumeService.getResumeByEmail(email));
+    @GetMapping("/{userId}")
+    public ResponseEntity<ResumeResponseDto> getResumeByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(resumeService.getResumeByUserId(userId));
     }
 }

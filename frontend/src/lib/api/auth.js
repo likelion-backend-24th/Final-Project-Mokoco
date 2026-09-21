@@ -13,22 +13,7 @@ export async function loginUser(email, password) {
   }
 
   if (data.accessToken) {
-    let userEmail = email;
-
-    // accessToken 페이로드에서 sub(이메일) 추출
-    try {
-      const base64Payload = data.accessToken.split(".")[1];
-      const jsonPayload = decodeURIComponent(
-        atob(base64Payload)
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
-      );
-      const payload = JSON.parse(jsonPayload);
-      userEmail = payload.sub || email;
-    } catch (e) {
-      console.error("토큰 파싱 실패", e);
-    }
+    const userEmail = email;
 
     // Refresh Token은 localStorage에 백업용으로 보관 (선택 사항)
     if (data.refreshToken && typeof window !== "undefined") {
