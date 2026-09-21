@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import SiteHeader from "@/components/site-header";
 import ProfileTabs from "@/components/profile-tabs";
 import AccountSettings from "@/components/account-settings";
@@ -23,6 +24,19 @@ export default async function ProfilePage() {
         <section className="mb-10">
           <h3 className="mb-3 text-base font-bold text-slate-700">내 정보</h3>
           <AccountSettings />
+        </section>
+
+        <section className="mb-10 flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4">
+          <div>
+            <h3 className="text-base font-bold text-slate-700">정산 내역</h3>
+            <p className="mt-0.5 text-sm text-slate-500">수리자로 참여해 받은 결제 내역을 확인할 수 있어요.</p>
+          </div>
+          <Link
+            href="/settlements"
+            className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            정산 내역 보기
+          </Link>
         </section>
 
         <ProfileTabs userEmail={userEmail} />
