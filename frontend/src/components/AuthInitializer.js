@@ -28,20 +28,10 @@ async function refreshIfNeeded({ force = false } = {}) {
   }
   if (!needs) return;
 
-  let email;
   try {
-    email = jwtDecode(token || refreshToken)?.sub;
-  } catch {
-    /* 무시 */
-  }
-
-  try {
-    const res = await fetch("/api/auth/reissue", {
-      method: "POST",
-      cache: "no-store",
-      headers: email ? { "Content-Type": "application/json" } : undefined,
-      body: email ? JSON.stringify({ email }) : undefined,
-    });
+    // email은 안 보내도 된다 — 재발급 라우트가 user_email 쿠키(서버가 이미 정확히 심어둠)를
+    // 우선 쓴다. accessToken의 sub는 이제 이메일이 아니라 사용자 ID라 여기서 뽑을 수 없다.
+    const res = await fetch("/api/auth/reissue", { method: "POST", cache: "no-store" });
     if (res.status === 400 || res.status === 401) {
       // refresh_token 만료/무효 -> 세션 종료
       useAuthStore.getState().setLogout();
@@ -52,12 +42,7 @@ async function refreshIfNeeded({ force = false } = {}) {
     if (data.accessToken) {
       localStorage.setItem("access_token", data.accessToken);
       if (data.refreshToken) localStorage.setItem("refresh_token", data.refreshToken);
-      try {
-        const email = jwtDecode(data.accessToken).sub;
-        useAuthStore.setState({ accessToken: data.accessToken, ...(email ? { userEmail: email } : {}) });
-      } catch {
-        useAuthStore.setState({ accessToken: data.accessToken });
-      }
+      useAuthStore.setState({ accessToken: data.accessToken });
     }
   } catch {
     /* 네트워크 오류 시 다음 주기에 재시도 */

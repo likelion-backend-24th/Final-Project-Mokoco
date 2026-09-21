@@ -16,33 +16,17 @@ export async function loginUser(email, password) {
   }
 
   if (data.accessToken) {
-    let userEmail = email;
-
-    // accessToken 페이로드에서 sub(이메일) 추출
-    try {
-      const base64Payload = data.accessToken.split(".")[1];
-      const jsonPayload = decodeURIComponent(
-        atob(base64Payload)
-          .split("")
-          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-          .join("")
-      );
-      const payload = JSON.parse(jsonPayload);
-      userEmail = payload.sub || email;
-    } catch (e) {
-      console.error("토큰 파싱 실패", e);
-    }
-
     // Refresh Token은 localStorage에 백업용으로 보관 (선택 사항)
     if (data.refreshToken && typeof window !== "undefined") {
       localStorage.setItem("refresh_token", data.refreshToken);
     }
 
-    // Zustand 스토어 업데이트
+    // accessToken의 sub는 이제 이메일이 아니라 사용자 ID다 — 로그인 폼에서 받은 진짜
+    // 이메일(email 파라미터)을 그대로 쓴다.
     useAuthStore.getState().setLogin(
-      data.accessToken, 
-      userEmail, 
-      data.regionCode, 
+      data.accessToken,
+      email,
+      data.regionCode,
       data.regionName
     );
   }

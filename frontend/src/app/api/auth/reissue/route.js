@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { jwtDecode } from "jwt-decode";
 import { backendUrl, errorMessage, readBackendPayload } from "@/lib/backend";
 
 // 액세스 토큰 재발급. 클라이언트(AuthInitializer)가 만료 임박 시 호출한다.
@@ -13,20 +12,15 @@ export async function POST(request) {
     return NextResponse.json({ message: "세션이 없습니다. 다시 로그인해주세요." }, { status: 401 });
   }
 
-  // email 은 user_email 쿠키(30분 후 만료) -> 요청 본문 -> refresh_token 페이로드 순으로 확보
+  // email 은 user_email 쿠키(30분 후 만료) -> 요청 본문 순으로 확보. refresh_token 페이로드의
+  // sub는 이제 이메일이 아니라 사용자 ID라 더 이상 폴백으로 쓸 수 없다 — 둘 다 없으면
+  // 재로그인을 요구한다.
   let email = jar.get("user_email")?.value;
   if (!email) {
     try {
       email = (await request.json())?.email;
     } catch {
       /* 본문 없음 */
-    }
-  }
-  if (!email) {
-    try {
-      email = jwtDecode(refreshToken)?.sub;
-    } catch {
-      /* 디코드 실패 */
     }
   }
   if (!email) {
