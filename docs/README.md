@@ -1,6 +1,5 @@
-# [양식] 문서 원본·Git Snapshot 인덱스
+# 문서 원본·Git Snapshot 인덱스
 
-이 파일은 팀 Repository의 `docs/README.md`로 사용합니다. 첫날에는 아래 15종 Notion 원본 URL과 담당자만 등록하고, 15개 Markdown 본문은 만들지 않습니다. 이 인덱스는 15종 기준 문서 수에 포함하지 않으며 Git에서 직접 관리합니다.
 
 ## 원본·Snapshot 링크 목차
 
