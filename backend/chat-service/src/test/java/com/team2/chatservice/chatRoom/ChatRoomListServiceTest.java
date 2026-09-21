@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.*;
 
 class ChatRoomListServiceTest {
     final ChatRoomRepository rooms = mock(ChatRoomRepository.class);
-    final ChatRoomService service = new ChatRoomService(rooms, mock(com.team2.chatservice.client.PostClient.class), mock(org.springframework.transaction.PlatformTransactionManager.class));
+    final ChatRoomService service = new ChatRoomService(rooms, mock(org.springframework.transaction.PlatformTransactionManager.class));
 
     @Test void usesVerifiedUserId() {
         service.getMyRooms(7L, 0, 5);

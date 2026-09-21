@@ -140,7 +140,7 @@ INSERT INTO proposals (id,post_id,repairer_id,estimated_price,content,is_adopted
             while True:
                 assert process.poll() is None, f"Service exited; see {RUN}"
                 try:
-                    path = "/api/chat-rooms/proposals/1" if base == gateway else "/internal/chat-rooms/1" if base == chat else "/internal/fix-deals/1"
+                    path = "/api/chat-rooms/proposals/1" if base != chat else "/internal/chat-rooms/1"
                     request(base, path, expected=401)
                     break
                 except (OSError, AssertionError):
@@ -165,10 +165,10 @@ INSERT INTO proposals (id,post_id,repairer_id,estimated_price,content,is_adopted
         assert request(chat, f'/internal/chat-rooms/{room["chatRoomId"]}/text-messages?userId=1',
                        headers={"X-Internal-Service-Key": KEY}) == []
         request(post, "/posts/1/proposals/1/cancel", "PATCH", token="requester")
-        assert request(chat, room_path + "/detail", token="requester")["fixDealId"] is None
+        assert request(gateway, room_path + "/detail", token="requester")["fixDealId"] is None
         request(post, room_path + "/contract", token="requester", expected=409)
         request(post, "/posts/1/proposals/1/adopt", "PATCH", token="requester")
-        assert request(chat, room_path + "/detail", token="requester")["fixDealId"] != adopted["fixDealId"]
+        assert request(gateway, room_path + "/detail", token="requester")["fixDealId"] != adopted["fixDealId"]
         print("PASS: real Gateway/Post/Chat HTTP; separate H2; User stub; auth, concurrent create, delete guard, adoption, contract access, cancellation, re-adoption", flush=True)
         print(f"Logs: {RUN}", flush=True)
     finally:

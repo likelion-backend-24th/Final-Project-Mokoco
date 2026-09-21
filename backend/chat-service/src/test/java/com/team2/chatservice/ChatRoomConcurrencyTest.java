@@ -4,7 +4,6 @@ import com.team2.chatservice.chatRoom.entity.ChatRoom;
 import com.team2.chatservice.chatRoom.entity.ChatRoomStatus;
 import com.team2.chatservice.chatRoom.repository.ChatRoomRepository;
 import com.team2.chatservice.chatRoom.service.ChatRoomService;
-import com.team2.chatservice.client.PostClient;
 import com.team2.common.chat.ChatRoomInfo;
 import com.team2.common.chat.ProposalChatResponse;
 import com.team2.common.exception.CustomException;
@@ -25,7 +24,6 @@ import static org.assertj.core.api.Assertions.*;
 class ChatRoomConcurrencyTest extends FlywaySchemaTest {
     @Autowired ChatRoomService service;
     @Autowired ChatRoomRepository rooms;
-    @MockitoBean PostClient posts;
 
     @Test void concurrentCreationReturnsSameRoomAndDatabaseEnforcesBothUniqueKeys() throws Exception {
         ProposalChatResponse context = new ProposalChatResponse(700L, 300L, "Repair", 1L, 2L, 900L);

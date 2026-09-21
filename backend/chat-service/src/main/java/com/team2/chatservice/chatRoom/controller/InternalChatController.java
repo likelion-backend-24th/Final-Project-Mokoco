@@ -66,11 +66,11 @@ public class InternalChatController {
         return rooms.existsByProposalId(proposalId);
     }
 
-    @PostMapping("/proposals/{proposalId}/sync")
-    public void sync(@PathVariable Long proposalId,
+    @PutMapping("/proposals/sync")
+    public ChatRoomInfo sync(@RequestBody ProposalChatResponse context,
             @RequestHeader(value = "X-Internal-Service-Key", required = false) String key) {
         authenticate(key);
-        service.syncProposal(proposalId);
+        return service.syncProposal(context);
     }
 
     @GetMapping("/{roomId}/text-messages")

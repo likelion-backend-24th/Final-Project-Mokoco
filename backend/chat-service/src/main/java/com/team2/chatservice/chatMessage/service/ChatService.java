@@ -6,7 +6,6 @@ import com.team2.chatservice.chatMessage.repository.ChatMessageRepository;
 import com.team2.chatservice.chatRoom.entity.ChatRoom;
 import com.team2.chatservice.chatRoom.repository.ChatRoomRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -16,13 +15,13 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ChatService.class);
     private final ChatRoomRepository rooms;
     private final ChatMessageRepository messages;
-    private final com.team2.chatservice.client.PostClient posts;
+    private final com.team2.chatservice.client.ChatNotificationClient notifications;
 
     @Transactional(readOnly = true)
     public Long counterpartId(Long roomId, Long userId) {
@@ -75,7 +74,7 @@ public class ChatService {
         try {
             Long recipientId = userId.equals(room.getRequesterId())
                     ? room.getRepairerId() : room.getRequesterId();
-            posts.notifyChat(new com.team2.common.chat.ChatNotification(recipientId, room.getPostId(), roomId, trimmed));
+            notifications.notifyChat(new com.team2.common.chat.ChatNotification(recipientId, room.getPostId(), roomId, trimmed));
         } catch (Exception e) {
             log.warn("채팅 메시지 알림 전송 실패 roomId={}", roomId, e);
         }
