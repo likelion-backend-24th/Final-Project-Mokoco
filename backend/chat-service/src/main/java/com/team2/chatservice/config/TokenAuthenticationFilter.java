@@ -35,12 +35,12 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
             response.sendError(failure.status() == 401 ? 401 : 502);
             return;
         }
-        if (user == null || user.id() == null) {
+        if (user == null || user.id() == null || user.id() <= 0 || user.role() == null) {
             response.sendError(502);
             return;
         }
         SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(new LoginUser(user.id(), user.email()), null, List.of()));
+        context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(new LoginUser(user.id(), user.role()), null, List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.role().name()))));
         SecurityContextHolder.setContext(context);
         try { chain.doFilter(request, response); }
         finally { SecurityContextHolder.clearContext(); }

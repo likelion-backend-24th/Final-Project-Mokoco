@@ -18,34 +18,34 @@ public class FixDealController {
     @PatchMapping("/fix-deals/{fixDealId}/product-sent")
     public ResponseEntity<Void> markProductSent(@PathVariable Long fixDealId,
                                                  @AuthenticationPrincipal LoginUser loginUser) {
-        fixDealService.markProductSent(fixDealId, loginUser.email());
+        fixDealService.markProductSent(fixDealId, loginUser.userId());
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/fix-deals/{fixDealId}/repairing")
     public ResponseEntity<Void> markRepairing(@PathVariable Long fixDealId,
                                                @AuthenticationPrincipal LoginUser loginUser) {
-        fixDealService.markRepairing(fixDealId, loginUser.email());
+        fixDealService.markRepairing(fixDealId, loginUser.userId());
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/fix-deals/{fixDealId}")
     public ResponseEntity<FixDealDetailResponse> getFixDeal(@PathVariable Long fixDealId,
                                                              @AuthenticationPrincipal LoginUser loginUser) {
-        return ResponseEntity.ok(fixDealService.getFixDeal(fixDealId, loginUser.email()));
+        return ResponseEntity.ok(fixDealService.getFixDeal(fixDealId, loginUser.userId()));
     }
 
     @PatchMapping("/fix-deals/{fixDealId}/repair-done")
     public ResponseEntity<Void> requestCompletion(@PathVariable Long fixDealId,
                                                    @AuthenticationPrincipal LoginUser loginUser) {
-        fixDealService.requestCompletion(fixDealId, loginUser.email());
+        fixDealService.requestCompletion(fixDealId, loginUser.userId());
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/fix-deals/{fixDealId}/complete")
     public ResponseEntity<Void> acceptCompletion(@PathVariable Long fixDealId,
                                                   @AuthenticationPrincipal LoginUser loginUser) {
-        fixDealService.acceptCompletion(fixDealId, loginUser.email());
+        fixDealService.acceptCompletion(fixDealId, loginUser.userId());
         return ResponseEntity.ok().build();
     }
 

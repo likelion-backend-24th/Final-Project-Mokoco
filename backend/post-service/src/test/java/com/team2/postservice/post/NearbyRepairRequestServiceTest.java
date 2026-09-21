@@ -27,31 +27,27 @@ class NearbyRepairRequestServiceTest {
         service = new PostService(posts, mock(FileStorageService.class), viewer);
     }
 
-    void login() {
-        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(1L, "a@test.com", "a", "A"));
-    }
 
     @Test void usesVerifiedUsersCurrentRegionAndReflectsChanges() {
-        login();
-        when(users.getRegionByEmail("a@test.com")).thenReturn(new RegionResponse("1165053100", "서울 서초구 서초4동", "서울특별시", "서초구", "서초4동"), new RegionResponse("2611051000", "부산 중구 중앙동", "부산광역시", "중구", "중앙동"));
+        when(users.getRegionById(1L)).thenReturn(new RegionResponse("1165053100", "서울 서초구 서초4동", "서울특별시", "서초구", "서초4동"), new RegionResponse("2611051000", "부산 중구 중앙동", "부산광역시", "중구", "중앙동"));
         when(posts.findNearby(anyString(), isNull(), any())).thenReturn(Page.empty());
-        service.getNearbyPosts("Bearer valid", PostCategory.ALL, 0, 20, RegionScope.SIDO);
-        service.getNearbyPosts("Bearer valid", null, 0, 20, RegionScope.SIDO);
+        service.getNearbyPosts(1L, PostCategory.ALL, 0, 20, RegionScope.SIDO);
+        service.getNearbyPosts(1L, null, 0, 20, RegionScope.SIDO);
         verify(posts).findNearby(eq("11%"), isNull(), any());
         verify(posts).findNearby(eq("26%"), isNull(), any());
     }
 
     @Test void malformedAuthenticationIsNotTreatedAsGuest() {
         for (String header : new String[]{"Bearer ", "Basic fake"})
-            assertThatThrownBy(() -> service.getNearbyPosts(header, null, 0, 20, RegionScope.SIDO))
+            assertThatThrownBy(() -> viewer.requireUserId(header))
                     .isInstanceOfSatisfying(CustomException.class, e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.AUTHENTICATION_REQUIRED));
         verifyNoInteractions(users, posts);
     }
 
     @Test void guestsQueryAllRegionsWithoutCallingUserService() {
         when(posts.findNearby(isNull(), isNull(), any())).thenReturn(Page.empty());
-        for (String header : new String[]{null, "", " "}) {
-            NearbyRepairRequest.Result result = service.getNearbyPosts(header, PostCategory.ALL, 0, 20, RegionScope.DONG);
+        for (Long userId : new Long[]{null, null, null}) {
+            NearbyRepairRequest.Result result = service.getNearbyPosts(userId, PostCategory.ALL, 0, 20, RegionScope.DONG);
             assertThat(result.regionFilter()).isNull();
         }
         verify(posts, times(3)).findNearby(isNull(), isNull(), any());
@@ -59,14 +55,13 @@ class NearbyRepairRequestServiceTest {
     }
 
     @Test void selectedScopeUsesAdministrativeCodeAndReturnsStructuredRegionLabels() {
-        login();
-        when(users.getRegionByEmail("a@test.com")).thenReturn(
+        when(users.getRegionById(1L)).thenReturn(
                 new RegionResponse("1165053100", "서울특별시 서초구 서초4동", "서울특별시", "서초구", "서초4동"));
         when(posts.findNearby(anyString(), isNull(), any())).thenReturn(Page.empty());
 
-        NearbyRepairRequest.Result district = service.getNearbyPosts("Bearer valid", null, 0, 20, RegionScope.SIGUNGU);
+        NearbyRepairRequest.Result district = service.getNearbyPosts(1L, null, 0, 20, RegionScope.SIGUNGU);
 
-        service.getNearbyPosts("Bearer valid", null, 0, 20, RegionScope.DONG);
+        service.getNearbyPosts(1L, null, 0, 20, RegionScope.DONG);
 
         verify(posts).findNearby(eq("11650%"), isNull(), any());
         verify(posts).findNearby(eq("1165053100"), isNull(), any());
@@ -86,30 +81,28 @@ class NearbyRepairRequestServiceTest {
     }
 
     @Test void invalidPagesAreRejected() {
-        login();
         for (int[] args : new int[][]{{-1, 20}, {0, 0}, {0, 101}})
-            assertThatThrownBy(() -> service.getNearbyPosts("Bearer valid", null, args[0], args[1], RegionScope.SIDO))
+            assertThatThrownBy(() -> service.getNearbyPosts(1L, null, args[0], args[1], RegionScope.SIDO))
                     .isInstanceOfSatisfying(CustomException.class, e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.INVALID_INPUT));
         verifyNoInteractions(posts);
     }
 
     @Test void regionFailureNeverFallsBackToGlobalRequests() {
-        login();
-        when(users.getRegionByEmail("a@test.com")).thenThrow(failure(404));
-        assertThatThrownBy(() -> service.getNearbyPosts("Bearer valid", null, 0, 20, RegionScope.SIDO))
+        when(users.getRegionById(1L)).thenThrow(failure(404));
+        assertThatThrownBy(() -> service.getNearbyPosts(1L, null, 0, 20, RegionScope.SIDO))
                 .isInstanceOfSatisfying(CustomException.class, e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.ACTIVITY_REGION_REQUIRED));
-        doThrow(failure(503)).when(users).getRegionByEmail("a@test.com");
-        assertThatThrownBy(() -> service.getNearbyPosts("Bearer valid", null, 0, 20, RegionScope.SIDO))
+        doThrow(failure(503)).when(users).getRegionById(1L);
+        assertThatThrownBy(() -> service.getNearbyPosts(1L, null, 0, 20, RegionScope.SIDO))
                 .isInstanceOfSatisfying(CustomException.class, e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.USER_SERVICE_UNAVAILABLE));
         verifyNoInteractions(posts);
     }
 
     @Test void invalidTokenAndAuthOutageAreDistinct() {
         when(users.verifyToken("bad")).thenThrow(failure(401));
-        assertThatThrownBy(() -> viewer.requireEmail("Bearer bad"))
+        assertThatThrownBy(() -> viewer.requireUserId("Bearer bad"))
                 .isInstanceOfSatisfying(CustomException.class, e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.AUTHENTICATION_REQUIRED));
         doThrow(failure(503)).when(users).verifyToken("bad");
-        assertThatThrownBy(() -> viewer.requireEmail("Bearer bad"))
+        assertThatThrownBy(() -> viewer.requireUserId("Bearer bad"))
                 .isInstanceOfSatisfying(CustomException.class, e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.USER_SERVICE_UNAVAILABLE));
     }
 

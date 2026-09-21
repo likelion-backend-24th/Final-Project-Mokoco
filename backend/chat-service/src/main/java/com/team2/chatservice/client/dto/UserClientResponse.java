@@ -4,6 +4,7 @@ public record UserClientResponse(
         Long id,
         String email,
         String nickname,
-        String region
+        String region,
+        com.team2.common.security.Role role
 ) {
 }

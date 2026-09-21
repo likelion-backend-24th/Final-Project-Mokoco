@@ -45,11 +45,11 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         try {
             UserClientResponse user = users.verifyToken(auth.substring(7));
 
-            if (user == null || user.id() == null || user.id() <= 0 || user.email() == null || user.email().isBlank()) {
+            if (user == null || user.id() == null || user.id() <= 0 || user.role() == null) {
                 error(response,502,"AUTH_FAILED","로그인 정보를 확인하지 못했습니다."); return;
             }
 
-            loginUser = new LoginUser(user.id(), user.email());
+            loginUser = new LoginUser(user.id(), user.role());
 
         } catch (feign.FeignException e) {
             error(response,e.status() == 401 ? 401 : 502,"AUTH_FAILED","로그인 정보를 확인하지 못했습니다."); return;
@@ -60,7 +60,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         context.setAuthentication(
                 UsernamePasswordAuthenticationToken.authenticated(
                         loginUser,
-                        null,List.of())
+                        null,List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + loginUser.role().name())))
         );
 
         SecurityContextHolder.setContext(context);

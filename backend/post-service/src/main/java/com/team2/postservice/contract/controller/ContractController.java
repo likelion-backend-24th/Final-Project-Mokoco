@@ -27,7 +27,7 @@ public class ContractController {
             @PathVariable Long roomId,
             @AuthenticationPrincipal LoginUser user
     ) {
-        return service.get(roomId, user.id());
+        return service.get(roomId, user.userId());
     }
 
     @PostMapping
@@ -36,7 +36,7 @@ public class ContractController {
             @AuthenticationPrincipal LoginUser user,
             @Valid @RequestBody DraftRequest request
     ) {
-        return service.draft(roomId, user.id(), request.baseId(), request.terms());
+        return service.draft(roomId, user.userId(), request.baseId(), request.terms());
     }
 
     @PostMapping("/{action}")
@@ -46,7 +46,7 @@ public class ContractController {
             @AuthenticationPrincipal LoginUser user,
             @Valid @RequestBody ActionRequest request
     ) {
-        Long userId = user.id();
+        Long userId = user.userId();
         switch (action) {
             case "request" -> service.request(roomId, userId, request.versionId());
             case "sign" -> service.sign(roomId, userId, request.versionId(), request.documentHash(), request.signerName(), request.consent());

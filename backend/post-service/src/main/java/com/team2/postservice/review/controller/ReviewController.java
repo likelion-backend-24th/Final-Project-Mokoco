@@ -29,19 +29,19 @@ public class ReviewController {
     public ResponseEntity<Long> createReview(@RequestPart("review") ReviewRequestDto.Create request,
                                               @RequestPart(value = "images", required = false) List<MultipartFile> images,
                                               @AuthenticationPrincipal LoginUser loginUser) {
-        Long reviewId = reviewService.createReview(request, images, loginUser.email());
+        Long reviewId = reviewService.createReview(request, images, loginUser.userId());
         return ResponseEntity.ok(reviewId);
     }
 
     @GetMapping
     public ResponseEntity<UserReviewsResponseDto> getUserReviews(
-            @RequestParam String revieweeEmail,
+            @RequestParam Long revieweeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         int safeSize = Math.min(size, MAX_PAGE_SIZE);
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(safeSize, 1));
-        return ResponseEntity.ok(reviewService.getUserReviews(revieweeEmail, pageable));
+        return ResponseEntity.ok(reviewService.getUserReviews(revieweeId, pageable));
     }
 
     @GetMapping("/{reviewId}")

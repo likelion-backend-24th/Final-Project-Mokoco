@@ -28,7 +28,7 @@ public class ProfileController {
             @RequestParam(defaultValue = "10") int size
     ) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE));
-        return ResponseEntity.ok(profileService.getMyTransactions(loginUser.email(), role, pageable));
+        return ResponseEntity.ok(profileService.getMyTransactions(loginUser.userId(), role, pageable));
     }
 
     @GetMapping("/reviews")
@@ -38,17 +38,17 @@ public class ProfileController {
             @RequestParam(defaultValue = "10") int size
     ) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE));
-        return ResponseEntity.ok(profileService.getMyWrittenReviews(loginUser.email(), pageable));
+        return ResponseEntity.ok(profileService.getMyWrittenReviews(loginUser.userId(), pageable));
     }
 
-    @GetMapping("/{email}/transactions")
-    public ResponseEntity<TransactionHistoryResponse> getTransactionsByEmail(
-            @PathVariable String email,
+    @GetMapping("/{userId}/transactions")
+    public ResponseEntity<TransactionHistoryResponse> getTransactionsByUserId(
+            @PathVariable Long userId,
             @RequestParam(defaultValue = "repairer") String role,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE));
-        return ResponseEntity.ok(profileService.getMyTransactions(email, role, pageable));
+        return ResponseEntity.ok(profileService.getMyTransactions(userId, role, pageable));
     }
 }

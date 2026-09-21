@@ -24,10 +24,10 @@ public class Review {
     private Long postId;
 
     @Column(nullable = false)
-    private String reviewerEmail;
+    private Long reviewerId;
 
     @Column(nullable = false)
-    private String revieweeEmail;
+    private Long revieweeId;
 
     @Column(nullable = false)
     private Integer rating;
@@ -42,10 +42,10 @@ public class Review {
     private LocalDateTime createdAt;
 
     @Builder
-    public Review(Long postId, String reviewerEmail, String revieweeEmail, Integer rating, String content) {
+    public Review(Long postId, Long reviewerId, Long revieweeId, Integer rating, String content) {
         this.postId = postId;
-        this.reviewerEmail = reviewerEmail;
-        this.revieweeEmail = revieweeEmail;
+        this.reviewerId = reviewerId;
+        this.revieweeId = revieweeId;
         this.rating = rating;
         this.content = content;
         this.createdAt = LocalDateTime.now();

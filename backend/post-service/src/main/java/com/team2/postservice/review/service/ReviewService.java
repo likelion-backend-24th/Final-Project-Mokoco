@@ -1,7 +1,5 @@
 package com.team2.postservice.review.service;
 
-import com.team2.postservice.client.UserClient;
-import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.common.exception.CustomException;
 import com.team2.common.exception.ErrorCode;
 import com.team2.postservice.fixDeal.entity.FixDeal;
@@ -34,11 +32,10 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final FixDealRepository fixDealRepository;
-    private final UserClient userClient;
     private final FileStorageService fileStorageService;
 
     @Transactional
-    public Long createReview(ReviewRequestDto.Create request, List<MultipartFile> images, String reviewerEmail) {
+    public Long createReview(ReviewRequestDto.Create request, List<MultipartFile> images, Long reviewerId) {
         if (request.rating() == null || request.rating() < 1 || request.rating() > 5) {
             throw new CustomException(ErrorCode.INVALID_RATING);
         }
@@ -49,8 +46,7 @@ public class ReviewService {
         FixDeal fixDeal = fixDealRepository.findByPostId(request.postId())
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND_FOR_REVIEW));
 
-        UserClientResponse reviewer = userClient.getUserByEmail(reviewerEmail);
-        if (!fixDeal.getRequesterId().equals(reviewer.id())) {
+        if (!fixDeal.getRequesterId().equals(reviewerId)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_REVIEW_CREATE);
         }
 
@@ -66,14 +62,11 @@ public class ReviewService {
             throw new CustomException(ErrorCode.DUPLICATE_REVIEW);
         }
 
-        // FixDeal은 이메일이 아니라 userId(Long)로 당사자를 저장하므로,
-        // 후기 대상(수리자)의 이메일은 user-service에 역조회해서 복원한다.
-        UserClientResponse repairer = userClient.getUserById(fixDeal.getRepairerId());
 
         Review review = Review.builder()
                 .postId(request.postId())
-                .reviewerEmail(reviewerEmail)
-                .revieweeEmail(repairer.email())
+                .reviewerId(reviewerId)
+                .revieweeId(fixDeal.getRepairerId())
                 .rating(request.rating())
                 .content(request.content())
                 .build();
@@ -91,9 +84,9 @@ public class ReviewService {
         return review.getId();
     }
 
-    public UserReviewsResponseDto getUserReviews(String revieweeEmail, Pageable pageable) {
-        Page<Review> page = reviewRepository.findByRevieweeEmailOrderByCreatedAtDesc(revieweeEmail, pageable);
-        Double average = reviewRepository.findAverageRatingByRevieweeEmail(revieweeEmail);
+    public UserReviewsResponseDto getUserReviews(Long revieweeId, Pageable pageable) {
+        Page<Review> page = reviewRepository.findByRevieweeIdOrderByCreatedAtDesc(revieweeId, pageable);
+        Double average = reviewRepository.findAverageRatingByRevieweeId(revieweeId);
 
         return new UserReviewsResponseDto(
                 average,

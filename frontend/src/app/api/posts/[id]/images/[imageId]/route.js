@@ -8,7 +8,7 @@ export async function DELETE(_request, { params }) {
   const accessToken = cookieStore.get("access_token")?.value;
   const userEmail = cookieStore.get("user_email")?.value;
 
-  if (!accessToken || !userEmail) {
+  if (!accessToken) {
     return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
   }
 

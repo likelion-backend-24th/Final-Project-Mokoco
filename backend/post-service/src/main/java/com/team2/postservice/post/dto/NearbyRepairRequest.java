@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
 
-public record NearbyRepairRequest(Long id, String title, String content, String authorEmail,
+public record NearbyRepairRequest(Long id, String title, String content, Long authorId,
         PostCategory category, PostStatus status, String regionCode, String regionName, LocalDateTime createdAt,
         String thumbnailUrl) {
     public record Result(List<NearbyRepairRequest> content, int number, int size,

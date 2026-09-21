@@ -49,19 +49,17 @@ class ProfileServiceTest {
     @Test void returnsRequesterHistoryWithReview() {
         FixDeal deal = fixDeal(FixDealStatus.COMPLETED, LocalDateTime.now().minusHours(2));
         Pageable pageable = PageRequest.of(0, 10);
-        when(users.getUserByEmail("requester@test.com"))
-                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
         when(fixDeals.findByRequesterIdOrderByCreatedAtDesc(100L, pageable))
                 .thenReturn(new PageImpl<>(List.of(deal), pageable, 1));
         when(posts.findById(10L)).thenReturn(Optional.of(samplePost()));
         when(users.getUserById(200L))
-                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
+                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region", com.team2.common.security.Role.USER));
         Review review = Review.builder()
-                .postId(10L).reviewerEmail("requester@test.com").revieweeEmail("repairer@test.com")
+                .postId(10L).reviewerId(100L).revieweeId(200L)
                 .rating(5).content("좋았어요").build();
         when(reviews.findByPostId(10L)).thenReturn(Optional.of(review));
 
-        TransactionHistoryResponse result = service.getMyTransactions("requester@test.com", "requester", pageable);
+        TransactionHistoryResponse result = service.getMyTransactions(100L, "requester", pageable);
 
         assertThat(result.totalCount()).isEqualTo(1);
         var item = result.items().get(0);
@@ -75,16 +73,14 @@ class ProfileServiceTest {
     @Test void returnsRepairerHistoryWithoutReviewWhenNotWritten() {
         FixDeal deal = fixDeal(FixDealStatus.COMPLETED, LocalDateTime.now().minusHours(2));
         Pageable pageable = PageRequest.of(0, 10);
-        when(users.getUserByEmail("repairer@test.com"))
-                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
         when(fixDeals.findByRepairerIdOrderByCreatedAtDesc(200L, pageable))
                 .thenReturn(new PageImpl<>(List.of(deal), pageable, 1));
         when(posts.findById(10L)).thenReturn(Optional.of(samplePost()));
         when(users.getUserById(100L))
-                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
+                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region", com.team2.common.security.Role.USER));
         when(reviews.findByPostId(10L)).thenReturn(Optional.empty());
 
-        TransactionHistoryResponse result = service.getMyTransactions("repairer@test.com", "repairer", pageable);
+        TransactionHistoryResponse result = service.getMyTransactions(200L, "repairer", pageable);
 
         var item = result.items().get(0);
         assertThat(item.role()).isEqualTo("REPAIRER");
@@ -94,12 +90,10 @@ class ProfileServiceTest {
 
     @Test void defaultsToRequesterRoleWhenRoleParamMissingOrUnknown() {
         Pageable pageable = PageRequest.of(0, 10);
-        when(users.getUserByEmail("requester@test.com"))
-                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
         when(fixDeals.findByRequesterIdOrderByCreatedAtDesc(100L, pageable))
                 .thenReturn(new PageImpl<>(List.of(), pageable, 0));
 
-        service.getMyTransactions("requester@test.com", "something-else", pageable);
+        service.getMyTransactions(100L, "something-else", pageable);
 
         verify(fixDeals).findByRequesterIdOrderByCreatedAtDesc(100L, pageable);
         verify(fixDeals, never()).findByRepairerIdOrderByCreatedAtDesc(any(), any());
@@ -108,16 +102,14 @@ class ProfileServiceTest {
     @Test void fallsBackToPlaceholderWhenPostDeleted() {
         FixDeal deal = fixDeal(FixDealStatus.MATCHED, null);
         Pageable pageable = PageRequest.of(0, 10);
-        when(users.getUserByEmail("requester@test.com"))
-                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
         when(fixDeals.findByRequesterIdOrderByCreatedAtDesc(100L, pageable))
                 .thenReturn(new PageImpl<>(List.of(deal), pageable, 1));
         when(posts.findById(10L)).thenReturn(Optional.empty());
         when(users.getUserById(200L))
-                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
+                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region", com.team2.common.security.Role.USER));
         when(reviews.findByPostId(10L)).thenReturn(Optional.empty());
 
-        TransactionHistoryResponse result = service.getMyTransactions("requester@test.com", "requester", pageable);
+        TransactionHistoryResponse result = service.getMyTransactions(100L, "requester", pageable);
 
         assertThat(result.items().get(0).postTitle()).isEqualTo("(삭제된 게시글)");
     }
@@ -125,22 +117,22 @@ class ProfileServiceTest {
     @Test void returnsMyWrittenReviews() {
         Pageable pageable = PageRequest.of(0, 10);
         Review review = Review.builder()
-                .postId(10L).reviewerEmail("requester@test.com").revieweeEmail("repairer@test.com")
+                .postId(10L).reviewerId(100L).revieweeId(200L)
                 .rating(4).content("만족합니다").build();
-        when(reviews.findByReviewerEmailOrderByCreatedAtDesc("requester@test.com", pageable))
+        when(reviews.findByReviewerIdOrderByCreatedAtDesc(100L, pageable))
                 .thenReturn(new PageImpl<>(List.of(review), pageable, 1));
 
-        MyWrittenReviewsResponse result = service.getMyWrittenReviews("requester@test.com", pageable);
+        MyWrittenReviewsResponse result = service.getMyWrittenReviews(100L, pageable);
 
         assertThat(result.totalCount()).isEqualTo(1);
-        assertThat(result.reviews().get(0).reviewerEmail()).isEqualTo("requester@test.com");
+        assertThat(result.reviews().get(0).reviewerId()).isEqualTo(100L);
     }
 
     private Post samplePost() {
         return Post.builder()
                 .title("선풍기 고쳐주세요")
                 .content("전원이 안 켜져요")
-                .authorEmail("requester@test.com")
+                .authorId(100L)
                 .regionName("서울 강남구")
                 .category(PostCategory.HOME_APPLIANCE)
                 .build();

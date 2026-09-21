@@ -1,9 +1,7 @@
 package com.team2.postservice.fixDeal.service;
 
 import com.team2.postservice.client.PaymentClient;
-import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.PaymentClientResponse;
-import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.common.exception.CustomException;
 import com.team2.common.exception.ErrorCode;
 import com.team2.postservice.fixDeal.dto.FixDealDetailResponse;
@@ -22,16 +20,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class FixDealService {
 
     private final FixDealRepository fixDealRepository;
-    private final UserClient userClient;
     private final PaymentClient paymentClient;
 
     @Transactional
-    public void markProductSent(Long fixDealId, String repairerEmail) {
+    public void markProductSent(Long fixDealId, Long repairerId) {
         FixDeal fixDeal = fixDealRepository.lockById(fixDealId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
 
-        UserClientResponse repairer = userClient.getUserByEmail(repairerEmail);
-        if (!fixDeal.getRepairerId().equals(repairer.id())) {
+        if (!fixDeal.getRepairerId().equals(repairerId)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
         }
 
@@ -44,12 +40,11 @@ public class FixDealService {
     }
 
     @Transactional
-    public void markRepairing(Long fixDealId, String repairerEmail) {
+    public void markRepairing(Long fixDealId, Long repairerId) {
         FixDeal fixDeal = fixDealRepository.lockById(fixDealId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
 
-        UserClientResponse repairer = userClient.getUserByEmail(repairerEmail);
-        if (!fixDeal.getRepairerId().equals(repairer.id())) {
+        if (!fixDeal.getRepairerId().equals(repairerId)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
         }
 
@@ -61,12 +56,11 @@ public class FixDealService {
         fixDeal.changeStatus(FixDealStatus.REPAIRING);
     }
 
-    public FixDealDetailResponse getFixDeal(Long fixDealId, String userEmail) {
+    public FixDealDetailResponse getFixDeal(Long fixDealId, Long userId) {
         FixDeal fixDeal = fixDealRepository.findById(fixDealId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
 
-        UserClientResponse user = userClient.getUserByEmail(userEmail);
-        boolean isParticipant = fixDeal.getRequesterId().equals(user.id()) || fixDeal.getRepairerId().equals(user.id());
+        boolean isParticipant = fixDeal.getRequesterId().equals(userId) || fixDeal.getRepairerId().equals(userId);
         if (!isParticipant) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
         }
@@ -75,12 +69,11 @@ public class FixDealService {
     }
 
     @Transactional
-    public void requestCompletion(Long fixDealId, String repairerEmail) {
+    public void requestCompletion(Long fixDealId, Long repairerId) {
         FixDeal fixDeal = fixDealRepository.lockById(fixDealId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
 
-        UserClientResponse repairer = userClient.getUserByEmail(repairerEmail);
-        if (!fixDeal.getRepairerId().equals(repairer.id())) {
+        if (!fixDeal.getRepairerId().equals(repairerId)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
         }
 
@@ -93,12 +86,11 @@ public class FixDealService {
     }
 
     @Transactional
-    public void acceptCompletion(Long fixDealId, String requesterEmail) {
+    public void acceptCompletion(Long fixDealId, Long requesterId) {
         FixDeal fixDeal = fixDealRepository.lockById(fixDealId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
 
-        UserClientResponse requester = userClient.getUserByEmail(requesterEmail);
-        if (!fixDeal.getRequesterId().equals(requester.id())) {
+        if (!fixDeal.getRequesterId().equals(requesterId)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
         }
 

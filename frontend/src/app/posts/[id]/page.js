@@ -1,3 +1,4 @@
+import { userIdFromToken } from "@/lib/user-id";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -47,6 +48,7 @@ function formatDate(value) {
 export default async function PostDetailPage({ params }) {
   const { id } = await params;
   const cookieStore = await cookies();
+  const userId = userIdFromToken(cookieStore.get("access_token")?.value);
   const userEmail = cookieStore.get("user_email")?.value ?? null;
   
   const [{ post, error }, proposals] = await Promise.all([
@@ -58,7 +60,7 @@ export default async function PostDetailPage({ params }) {
     notFound();
   }
 
-  const isMine = post && userEmail && post.authorEmail === userEmail;
+  const isMine = post && userId && String(post.authorId) === userId;
 
   return (
     <div className="min-h-screen bg-[#f7f9fc]">
@@ -96,7 +98,7 @@ export default async function PostDetailPage({ params }) {
               </div>
 
               <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">
-                <span>{post.authorEmail || "작성자 정보 없음"}</span>
+                <span>{post.authorId || "작성자 정보 없음"}</span>
                 <span aria-hidden>·</span>
                 <span>{formatDate(post.createdAt)}</span>
               </div>
@@ -128,7 +130,7 @@ export default async function PostDetailPage({ params }) {
               <h3 className="text-lg font-extrabold text-slate-900 mb-4">
                 받은 수리 제안 <span className="text-blue-600">{proposals.length}</span>
               </h3>
-              <ProposalList postId={post.id} proposals={proposals} isMine={isMine} userEmail={userEmail} />
+              <ProposalList postId={post.id} proposals={proposals} isMine={isMine} userEmail={userEmail} userId={userId} />
             </div>
           </div>
         )}

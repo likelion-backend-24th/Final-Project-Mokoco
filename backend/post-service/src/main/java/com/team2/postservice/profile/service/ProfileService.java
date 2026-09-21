@@ -27,15 +27,14 @@ public class ProfileService {
     private final ReviewRepository reviewRepository;
     private final UserClient userClient;
 
-    public TransactionHistoryResponse getMyTransactions(String email, String role, Pageable pageable) {
-        Long userId = userClient.getUserByEmail(email).id();
+    public TransactionHistoryResponse getMyTransactions(Long userId, String role, Pageable pageable) {
 
         boolean asRequester = !"repairer".equalsIgnoreCase(role);
         Page<FixDeal> page = asRequester
                 ? fixDealRepository.findByRequesterIdOrderByCreatedAtDesc(userId, pageable)
                 : fixDealRepository.findByRepairerIdOrderByCreatedAtDesc(userId, pageable);
 
-        var items = page.getContent().stream()
+        java.util.List<TransactionHistoryItemResponse> items = page.getContent().stream()
                 .map(deal -> toItem(deal, asRequester))
                 .toList();
 
@@ -76,9 +75,9 @@ public class ProfileService {
         }
     }
 
-    public MyWrittenReviewsResponse getMyWrittenReviews(String reviewerEmail, Pageable pageable) {
+    public MyWrittenReviewsResponse getMyWrittenReviews(Long reviewerId, Pageable pageable) {
         Page<com.team2.postservice.review.entity.Review> page =
-                reviewRepository.findByReviewerEmailOrderByCreatedAtDesc(reviewerEmail, pageable);
+                reviewRepository.findByReviewerIdOrderByCreatedAtDesc(reviewerId, pageable);
 
         return new MyWrittenReviewsResponse(
                 page.getTotalElements(),

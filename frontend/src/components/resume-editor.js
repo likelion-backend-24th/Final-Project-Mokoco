@@ -334,7 +334,7 @@ export default function ResumeEditor() {
       <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-5 text-white">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-semibold text-blue-100">{resume.userEmail}</p>
+            <p className="text-xs font-semibold text-blue-100">{resume.userId}</p>
             <h3 className="mt-0.5 text-lg font-extrabold">{resume.headline}</h3>
           </div>
           <div className="flex gap-1">

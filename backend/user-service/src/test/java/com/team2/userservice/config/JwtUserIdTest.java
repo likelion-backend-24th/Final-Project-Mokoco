@@ -54,17 +54,18 @@ class JwtUserIdTest {
         assertThat(tokens.validateAccessToken(tokens.createAccessToken(42L, "USER") + "x")).isFalse();
     }
 
-    @Test void filterLooksUpIdAndKeepsExistingEmailPrincipal() throws Exception {
+    @Test void filterStoresIdAndVerifiedRole() throws Exception {
         UserRepository users = mock(UserRepository.class);
         User user = mock(User.class);
-        when(user.getEmail()).thenReturn("current@example.com");
+        when(user.getId()).thenReturn(42L);
+        when(user.getRole()).thenReturn(Role.ADMIN);
         when(users.findById(42L)).thenReturn(Optional.of(user));
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader("Authorization", "Bearer " + tokens.createAccessToken(42L, "USER"));
         try {
             new JwtAuthenticationFilter(tokens, users).doFilter(request, new MockHttpServletResponse(),
                     (req, res) -> assertThat(SecurityContextHolder.getContext().getAuthentication().getPrincipal())
-                            .isEqualTo("current@example.com"));
+                            .isEqualTo(new com.team2.common.security.LoginUser(42L, com.team2.common.security.Role.ADMIN)));
             verify(users).findById(42L);
             verify(users, never()).findByEmail(anyString());
         } finally {
@@ -80,7 +81,7 @@ class JwtUserIdTest {
         assertThat(controller.verifyToken("invalid").getStatusCode().value()).isEqualTo(401);
     }
 
-    @Test void reissueUsesVerifiedSubjectAndRejectsAnotherEmail() throws Exception {
+    @Test void reissueUsesVerifiedSubjectRegardlessOfContactEmail() throws Exception {
         UserRepository users = mock(UserRepository.class);
         RefreshTokenRepository refreshTokens = mock(RefreshTokenRepository.class);
         User user = mock(User.class);
@@ -89,15 +90,15 @@ class JwtUserIdTest {
         when(user.getRole()).thenReturn(Role.USER);
         when(users.findById(42L)).thenReturn(Optional.of(user));
         String refresh = tokens.createRefreshToken(42L);
-        when(refreshTokens.findByEmail("user@example.com"))
-                .thenReturn(Optional.of(new RefreshToken("user@example.com", refresh)));
+        when(refreshTokens.findByUserId(42L))
+                .thenReturn(Optional.of(new RefreshToken(42L, refresh)));
         UserService service = new UserService(users, mock(PasswordEncoder.class), tokens, refreshTokens, mock(RegionRepository.class));
         ObjectMapper mapper = new ObjectMapper();
-        TokenReissueRequest request = mapper.readValue("{\"email\":\"user@example.com\",\"refreshToken\":\"" + refresh + "\"}", TokenReissueRequest.class);
+        TokenReissueRequest request = mapper.readValue("{\"refreshToken\":\"" + refresh + "\"}", TokenReissueRequest.class);
         com.team2.userservice.user.dto.TokenResponse response = service.reissue(request);
         assertThat(tokens.getUserIdFromAccessToken(response.getAccessToken())).isEqualTo(42L);
         TokenReissueRequest wrong = mapper.readValue("{\"email\":\"other@example.com\",\"refreshToken\":\"" + refresh + "\"}", TokenReissueRequest.class);
-        assertThatThrownBy(() -> service.reissue(wrong)).isInstanceOf(CustomException.class);
+        assertThat(tokens.getUserIdFromAccessToken(service.reissue(wrong).getAccessToken())).isEqualTo(42L);
         verify(users, never()).findByEmail(anyString());
     }
 }

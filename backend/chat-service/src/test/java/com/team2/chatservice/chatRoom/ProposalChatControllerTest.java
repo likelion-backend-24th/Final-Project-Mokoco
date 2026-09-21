@@ -33,7 +33,7 @@ class ProposalChatControllerTest {
         verifyNoInteractions(service,users);
     }
     @Test void creationUsesVerifiedUserAndReturnsNullableDeal() throws Exception {
-        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(20L,"repairer@test.invalid","repairer",null));
+        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(20L, "repairer@test.invalid", "repairer", null, com.team2.common.security.Role.USER));
         when(service.createForProposal(5L,20L)).thenReturn(new ChatRoomResponse(8L,null,5L,LocalDateTime.now()));
         mvc.perform(post("/api/chat-rooms/proposals/5").header("Authorization","Bearer valid").header("X-User-Email","forged@test.invalid"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.chatRoomId").value(8))

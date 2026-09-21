@@ -9,7 +9,7 @@ import FixDealProgress from "@/components/fix-deal-progress";
 import RatingBadge from "@/components/rating-badge";
 import RepairerMenu from "@/components/repairer-menu";
 
-export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail }) {
+export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail, userId }) {
   const [proposals, setProposals] = useState(initialProposals);
   const [previousProposals, setPreviousProposals] = useState(initialProposals);
   const [loadingId, setLoadingId] = useState(null);
@@ -141,7 +141,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
   return (
     <div className="space-y-4">
       {sortedProposals.map((proposal) => {
-        const isMyProposal = userEmail && proposal.repairerEmail === userEmail;
+        const isMyProposal = userId && String(proposal.repairerId) === String(userId);
         const isAdopted = proposal.isAdopted;
 
         return (
@@ -154,8 +154,8 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <RepairerMenu email={proposal.repairerEmail} nickname={proposal.repairerNickname} />
-                <RatingBadge email={proposal.repairerEmail} postId={postId} />
+                <RepairerMenu userId={proposal.repairerId} nickname={proposal.repairerNickname} />
+                <RatingBadge userId={proposal.repairerId} postId={postId} />
                 {isAdopted && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
                     <CheckCircle size={14} weight="bold" />
@@ -223,7 +223,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                   isRequester={Boolean(isMine)}
                   isRepairer={Boolean(isMyProposal)}
                   estimatedPrice={proposal.estimatedPrice}
-                  repairerEmail={proposal.repairerEmail}
+                  repairerId={proposal.repairerId}
                   userEmail={userEmail}
                 />
               </>

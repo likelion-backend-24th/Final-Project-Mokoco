@@ -56,7 +56,7 @@ public class ChatWebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
                     UserClientResponse user = users.verifyToken(auth.substring(7));
 
-                    headers.setUser(() -> user.id().toString());
+                    headers.setUser(new com.team2.common.security.LoginUser(user.id(), user.role()));
                     Objects.requireNonNull(headers.getSessionAttributes()).put("accessToken", auth.substring(7));
 
                 } else if (command == StompCommand.SEND || command == StompCommand.SUBSCRIBE) {

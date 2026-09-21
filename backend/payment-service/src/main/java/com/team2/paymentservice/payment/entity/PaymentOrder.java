@@ -17,8 +17,7 @@ public class PaymentOrder {
     @Column(nullable = false, unique = true) private Long postId;
     @Column(nullable = false) private Long fixDealId;
     @Column(nullable = false) private Long payerId;
-    @Column(nullable = false) private String payerEmail;
-    @Column(nullable = false) private String payeeEmail;
+    @Column(nullable = false) private Long payeeId;
     @Column(nullable = false) private int baseAmount;
     @Column(nullable = false) private int totalAmount;
     @Column(nullable = false) private LocalDateTime createdAt;
@@ -26,7 +25,7 @@ public class PaymentOrder {
     public PaymentOrder(PaymentContext context) {
         paymentId = "payment-" + UUID.randomUUID();
         postId = context.postId(); fixDealId = context.fixDealId(); payerId = context.payerId();
-        payerEmail = context.payerEmail(); payeeEmail = context.payeeEmail();
+        payeeId = context.payeeId();
         baseAmount = context.baseAmount(); totalAmount = Payment.calculateTotalAmount(baseAmount);
         createdAt = LocalDateTime.now();
     }

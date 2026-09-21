@@ -1,7 +1,7 @@
 import { backendUrl, readBackendPayload, errorMessage } from "@/lib/backend";
 
 export async function GET(request, { params }) {
-  const { email } = await params;
+  const { userId } = await params;
   const { searchParams } = new URL(request.url);
   const role = searchParams.get("role") ?? "repairer";
   const page = searchParams.get("page") ?? "0";
@@ -9,7 +9,7 @@ export async function GET(request, { params }) {
 
   try {
     const response = await fetch(
-      backendUrl(`/profile/${encodeURIComponent(email)}/transactions?role=${role}&page=${page}&size=${size}`),
+      backendUrl(`/profile/${encodeURIComponent(userId)}/transactions?role=${role}&page=${page}&size=${size}`),
       { cache: "no-store", signal: AbortSignal.timeout(8000) },
     );
     const payload = await readBackendPayload(response);

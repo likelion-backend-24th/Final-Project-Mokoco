@@ -35,7 +35,7 @@ class FlywaySchemaTest {
     @Test
     void schemaMatchesEntitiesAndMigrationIsRepeatable() {
         flyway.validate();
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("1");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("2");
         assertThat(flyway.migrate().migrationsExecuted).isZero();
         assertThat(flyway.getConfiguration().isBaselineOnMigrate()).isFalse();
         assertThat(flyway.getConfiguration().isCleanDisabled()).isTrue();

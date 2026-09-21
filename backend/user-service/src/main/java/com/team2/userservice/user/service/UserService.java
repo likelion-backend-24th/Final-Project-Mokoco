@@ -69,11 +69,11 @@ public class UserService {
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
         // Refresh Token 저장 (이미 존재하면 갱신, 없으면 새로 저장)
-        RefreshToken tokenEntity = refreshTokenRepository.findByEmail(user.getEmail())
+        RefreshToken tokenEntity = refreshTokenRepository.findByUserId(user.getId())
                 .orElse(null);
 
         if (tokenEntity == null) {
-            refreshTokenRepository.save(new RefreshToken(user.getEmail(), refreshToken));
+            refreshTokenRepository.save(new RefreshToken(user.getId(), refreshToken));
         } else {
             tokenEntity.updateToken(refreshToken);
         }
@@ -90,11 +90,8 @@ public class UserService {
         Long userId = jwtTokenProvider.getUserIdFromRefreshToken(request.getRefreshToken());
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        if (!user.getEmail().equals(request.getEmail())) {
-            throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
-        }
 
-        RefreshToken savedToken = refreshTokenRepository.findByEmail(user.getEmail())
+        RefreshToken savedToken = refreshTokenRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.EXPIRED_SESSION));
         if (!savedToken.getToken().equals(request.getRefreshToken())) {
             throw new CustomException(ErrorCode.INVALID_TOKEN_VALUE);
@@ -116,30 +113,21 @@ public class UserService {
         return String.format("%s %s %s", region.getSido(), region.getSigungu(), region.getDong()).trim();
     }
 
-    public UserResponse findUserByEmail(String email) {
-        // 1. Repository를 통해 유저 엔티티 조회 (유저가 없으면 예외 처리)
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다: " + email));
-
-        // 2. 엔티티를 UserResponse DTO로 변환해서 반환 (id·nickname·region 포함 전체 매핑)
-        return new UserResponse(user);
-    }
-
     public UserResponse findUserById(Long id) {
         return new UserResponse(findById(id));
     }
 
-    public UserResponse getMyInfo(String email) {
-        return findUserByEmail(email);
+    public UserResponse getMyInfo(Long userId) {
+        return findUserById(userId);
     }
 
     @Transactional
-    public UserResponse updateMyProfile(String email, UpdateProfileRequest request) {
-        User user = userRepository.findByEmail(email)
+    public UserResponse updateMyProfile(Long userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         userRepository.findByNickname(request.getNickname())
-                .filter(other -> !other.getEmail().equals(email))
+                .filter(other -> !other.getId().equals(userId))
                 .ifPresent(other -> { throw new CustomException(ErrorCode.DUPLICATE_NICKNAME); });
 
         user.updateProfile(request.getName(), request.getNickname());
@@ -147,8 +135,8 @@ public class UserService {
     }
 
     @Transactional
-    public void changePassword(String email, ChangePasswordRequest request) {
-        User user = userRepository.findByEmail(email)
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {

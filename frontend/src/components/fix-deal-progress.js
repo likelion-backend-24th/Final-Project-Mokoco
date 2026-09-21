@@ -22,7 +22,7 @@ function calculateTotalWithFee(baseAmount) {
   return { base, fee, total: base + fee };
 }
 
-export default function FixDealProgress({ fixDealId, postId, isRequester, isRepairer, estimatedPrice, repairerEmail, userEmail }) {
+export default function FixDealProgress({ fixDealId, postId, isRequester, isRepairer, estimatedPrice, repairerId, userEmail }) {
   const [deal, setDeal] = useState(null);
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);

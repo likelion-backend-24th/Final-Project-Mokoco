@@ -24,7 +24,7 @@ class ChatAttachmentRangeTest {
 
         UserClient users = mock(UserClient.class);
 
-        when(users.verifyToken("token")).thenReturn(new UserClientResponse(2L, "u", "u", null));
+        when(users.verifyToken("token")).thenReturn(new UserClientResponse(2L, "u", "u", null, com.team2.common.security.Role.USER));
         when(service.download(1L, 3L, 2L)).thenReturn(ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("video/mp4")).body(new FileSystemResource(file)));
 

@@ -2,8 +2,8 @@ import { cookies } from "next/headers";
 import { backendUrl } from "@/lib/backend";
 
 export async function GET() {
-  const userEmail = (await cookies()).get("user_email")?.value;
-  if (!userEmail) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  const accessToken = (await cookies()).get("access_token")?.value;
+  if (!accessToken) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
   try {
     const response = await fetch(backendUrl("/notifications/settings"), {
       headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,  },
@@ -18,8 +18,8 @@ export async function GET() {
 }
 
 export async function PUT(request) {
-  const userEmail = (await cookies()).get("user_email")?.value;
-  if (!userEmail) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  const accessToken = (await cookies()).get("access_token")?.value;
+  if (!accessToken) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
   let body;
   try {
     body = await request.json();

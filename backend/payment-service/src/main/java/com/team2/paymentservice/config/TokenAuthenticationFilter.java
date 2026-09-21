@@ -16,7 +16,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     private final RestClient users;
     public TokenAuthenticationFilter(RestClient users) { this.users = users; }
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record VerifiedUser(Long id, String email) {}
+    public record VerifiedUser(Long id, com.team2.common.security.Role role) {}
 
     @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
@@ -35,11 +35,11 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         } catch (RestClientException failure) {
             response.sendError(502); return;
         }
-        if (user == null || user.id() == null || user.id() <= 0 || user.email() == null || user.email().isBlank()) {
+        if (user == null || user.id() == null || user.id() <= 0 || user.role() == null) {
             response.sendError(502); return;
         }
         SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(new LoginUser(user.id(), user.email()), null, List.of()));
+        context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(new LoginUser(user.id(), user.role()), null, List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.role().name()))));
         SecurityContextHolder.setContext(context);
         try { chain.doFilter(request, response); }
         finally { SecurityContextHolder.clearContext(); }

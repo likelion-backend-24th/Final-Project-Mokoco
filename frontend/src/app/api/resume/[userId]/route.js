@@ -1,10 +1,10 @@
 import { backendUrl, readBackendPayload, errorMessage } from "@/lib/backend";
 
 export async function GET(request, { params }) {
-  const { email } = await params;
+  const { userId } = await params;
 
   try {
-    const response = await fetch(backendUrl(`/resumes/${encodeURIComponent(email)}`), {
+    const response = await fetch(backendUrl(`/resumes/${encodeURIComponent(userId)}`), {
       cache: "no-store",
       signal: AbortSignal.timeout(8000),
     });

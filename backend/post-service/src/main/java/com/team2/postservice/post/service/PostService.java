@@ -32,15 +32,15 @@ public class PostService {
     private final PostViewerService postViewerService;
 
     @Transactional
-    public Long createPost(PostRequestDto.Create request, List<MultipartFile> images, String authorEmail) {
-        // 💡 User-Service에서 이메일로 최신 지역 정보를 Feign을 통해 조회
-        RegionResponse response = postViewerService.requireRegion(authorEmail);
+    public Long createPost(PostRequestDto.Create request, List<MultipartFile> images, Long authorId) {
+        // 사용자 ID로 최신 지역 정보를 조회한다.
+        RegionResponse response = postViewerService.requireRegion(authorId);
 
         Post post = Post.builder()
                 .title(request.title())
                 .content(request.content())
                 .category(request.category())
-                .authorEmail(authorEmail)
+                .authorId(authorId)
                 .regionName(response.regionName())
                 .regionCode(response.regionCode())
                 .build();
@@ -51,13 +51,11 @@ public class PostService {
     }
 
     public NearbyRepairRequest.Result getNearbyPosts(
-            String authorization, PostCategory category, int page, int size, RegionScope regionScope) {
-        String email = authorization == null || authorization.isBlank()
-                ? null : postViewerService.requireEmail(authorization);
+            Long viewerId, PostCategory category, int page, int size, RegionScope regionScope) {
         if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE)
             throw new CustomException(ErrorCode.INVALID_INPUT);
-        var region = email == null ? null : postViewerService.requireRegion(email);
-        var pageable = PageRequest.of(page, size,
+        RegionResponse region = viewerId == null ? null : postViewerService.requireRegion(viewerId);
+        PageRequest pageable = PageRequest.of(page, size,
                 Sort.by(Sort.Direction.DESC, "createdAt", "id"));
         return NearbyRepairRequest.Result.from(
                 postRepository.findNearby(region == null ? null : regionScope.queryPattern(region.regionCode()),
@@ -71,25 +69,24 @@ public class PostService {
     }
 
     @Transactional
-    public void changeVisibility(Long id, boolean publiclyVisible, String authorization) {
-        String email = postViewerService.requireEmail(authorization);
+    public void changeVisibility(Long id, boolean publiclyVisible, Long viewerId) {
         Post post = getPostOrThrow(id);
-        validateAuthor(post, email, ErrorCode.UNAUTHORIZED_POST_UPDATE);
+        validateAuthor(post, viewerId, ErrorCode.UNAUTHORIZED_POST_UPDATE);
         post.changeVisibility(publiclyVisible);
     }
 
     @Transactional
-    public void updatePost(Long id, PostRequestDto.Update request, String userEmail) {
+    public void updatePost(Long id, PostRequestDto.Update request, Long userId) {
         Post post = getPostOrThrow(id);
-        validateAuthor(post, userEmail, ErrorCode.UNAUTHORIZED_POST_UPDATE);
+        validateAuthor(post, userId, ErrorCode.UNAUTHORIZED_POST_UPDATE);
 
         post.update(request.title(), request.content(), request.category());
     }
 
     @Transactional
-    public void deletePost(Long id, String userEmail) {
+    public void deletePost(Long id, Long userId) {
         Post post = getPostOrThrow(id);
-        validateAuthor(post, userEmail, ErrorCode.UNAUTHORIZED_POST_DELETE);
+        validateAuthor(post, userId, ErrorCode.UNAUTHORIZED_POST_DELETE);
 
         List<String> storedFileNames = post.getImages().stream()
                 .map(PostImage::getStoredFileName)
@@ -100,9 +97,9 @@ public class PostService {
     }
 
     @Transactional
-    public PostResponseDto.Detail addImages(Long postId, List<MultipartFile> images, String userEmail) {
+    public PostResponseDto.Detail addImages(Long postId, List<MultipartFile> images, Long userId) {
         Post post = getPostOrThrow(postId);
-        validateAuthor(post, userEmail, ErrorCode.UNAUTHORIZED_POST_UPDATE);
+        validateAuthor(post, userId, ErrorCode.UNAUTHORIZED_POST_UPDATE);
 
         attachImages(post, images);
 
@@ -110,9 +107,9 @@ public class PostService {
     }
 
     @Transactional
-    public void deleteImage(Long postId, Long imageId, String userEmail) {
+    public void deleteImage(Long postId, Long imageId, Long userId) {
         Post post = getPostOrThrow(postId);
-        validateAuthor(post, userEmail, ErrorCode.UNAUTHORIZED_POST_UPDATE);
+        validateAuthor(post, userId, ErrorCode.UNAUTHORIZED_POST_UPDATE);
 
         PostImage image = post.getImages().stream()
                 .filter(postImage -> postImage.getId().equals(imageId))
@@ -145,8 +142,8 @@ public class PostService {
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
     }
 
-    private void validateAuthor(Post post, String userEmail, ErrorCode errorCode) {
-        if (!post.getAuthorEmail().equals(userEmail)) {
+    private void validateAuthor(Post post, Long userId, ErrorCode errorCode) {
+        if (!post.getAuthorId().equals(userId)) {
             throw new CustomException(errorCode);
         }
     }

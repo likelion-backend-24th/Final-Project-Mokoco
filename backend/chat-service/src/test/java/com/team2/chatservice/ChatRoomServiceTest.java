@@ -5,7 +5,6 @@ import com.team2.chatservice.chatRoom.repository.ChatRoomRepository;
 import com.team2.chatservice.chatRoom.service.ChatRoomService;
 import com.team2.chatservice.client.PostClient;
 import com.team2.chatservice.client.PostClientConfig;
-import com.team2.chatservice.client.UserClient;
 import com.team2.common.chat.ProposalChatResponse;
 import com.team2.common.exception.CustomException;
 import com.team2.common.exception.ErrorCode;
@@ -25,7 +24,7 @@ import static org.mockito.Mockito.*;
 class ChatRoomServiceTest {
     final ChatRoomRepository rooms = mock(ChatRoomRepository.class);
     final PostClient posts = mock(PostClient.class);
-    final ChatRoomService service = new ChatRoomService(rooms, mock(UserClient.class), posts, mock(org.springframework.transaction.PlatformTransactionManager.class));
+    final ChatRoomService service = new ChatRoomService(rooms, posts, mock(org.springframework.transaction.PlatformTransactionManager.class));
 
     ProposalChatResponse context(Long dealId) {
         return new ProposalChatResponse(7L, 3L, "Repair", 1L, 2L, dealId);
@@ -79,16 +78,13 @@ class ChatRoomServiceTest {
     }
 
     @Test void dealCreationUsesRemoteProposalAndRequiresRequester() {
-        UserClient users = mock(UserClient.class);
-        ChatRoomService service = new ChatRoomService(rooms, users, posts, mock(org.springframework.transaction.PlatformTransactionManager.class));
-        when(users.getUserByEmail("requester@test")).thenReturn(
-                new com.team2.chatservice.client.dto.UserClientResponse(1L, "requester@test", "Requester", null));
+        ChatRoomService service = new ChatRoomService(rooms, posts, mock(org.springframework.transaction.PlatformTransactionManager.class));
         when(posts.getFixDeal(9L)).thenReturn(
                 new com.team2.chatservice.client.dto.FixDealResponse(9L, 3L, 7L, 1L, 2L));
         when(posts.getProposalChat(7L)).thenReturn(context(9L));
         when(posts.ensureRoom(7L, 1L)).thenReturn(new com.team2.common.chat.ChatRoomInfo(8L, 9L, 7L, 1L, 2L, java.time.LocalDateTime.now()));
         when(rooms.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
-        assertThat(service.createChatRoom(9L, "requester@test").proposalId()).isEqualTo(7L);
+        assertThat(service.createChatRoom(9L, 1L).proposalId()).isEqualTo(7L);
         assertThatThrownBy(() -> service.createChatRoom(9L, 2L))
                 .isInstanceOfSatisfying(CustomException.class,
                         e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.UNAUTHORIZED_CHAT_ROOM_CREATE));

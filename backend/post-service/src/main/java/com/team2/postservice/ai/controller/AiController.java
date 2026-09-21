@@ -25,7 +25,7 @@ public class AiController {
             @RequestParam(defaultValue="") String content,
             @RequestParam(defaultValue="") String category
     ) {
-        return service.post(user.id(), images, title, content, category);
+        return service.post(user.userId(), images, title, content, category);
     }
     @PostMapping("/api/chat-rooms/{roomId}/contract/ai-draft")
     public JsonNode contract(
@@ -33,6 +33,6 @@ public class AiController {
             @AuthenticationPrincipal LoginUser user,
             @Valid @RequestBody ContractDraftRequest input
     ) {
-        return service.contract(user.id(), roomId, input.baseId(), input.currentTerms(), input.instructions());
+        return service.contract(user.userId(), roomId, input.baseId(), input.currentTerms(), input.instructions());
     }
 }

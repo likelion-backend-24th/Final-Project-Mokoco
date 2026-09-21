@@ -1,82 +1,43 @@
-// store/authStore.js
 import { create } from "zustand";
-import { jwtDecode } from "jwt-decode";
+import { userIdFromToken } from "@/lib/user-id";
 
+function storeToken(token) {
+  localStorage.setItem("access_token", token);
+  document.cookie = `access_token=${token}; path=/; max-age=1800; SameSite=Lax`;
+}
+async function currentEmail() {
+  const response = await fetch("/api/users/me", { cache: "no-store" });
+  if (!response.ok) return null;
+  const user = await response.json();
+  return user.email ?? null;
+}
 export const useAuthStore = create((set) => ({
-  accessToken: null,
-  userEmail: null,
-  
+  accessToken: null, userId: null, userEmail: null,
   setLogin: (token, email) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("access_token", token);
-      document.cookie = `access_token=${token}; path=/; max-age=604800; SameSite=Lax`;
-      if (email) {
-        document.cookie = `user_email=${encodeURIComponent(email)}; path=/; max-age=604800; SameSite=Lax`;
-      }
-    }
-    set({ accessToken: token, userEmail: email });
+    storeToken(token);
+    if (email) document.cookie = `user_email=${encodeURIComponent(email)}; path=/; max-age=1800; SameSite=Lax`;
+    set({ accessToken: token, userId: userIdFromToken(token), userEmail: email });
   },
-
-  socialLogin: (token, refreshToken) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("access_token", token);
-      document.cookie = `access_token=${token}; path=/; max-age=604800; SameSite=Lax`;
-      
-      if (refreshToken) {
-        localStorage.setItem("refresh_token", refreshToken);
-        document.cookie = `refresh_token=${refreshToken}; path=/; max-age=604800; SameSite=Lax`;
-      }
-      
-      try {
-        const payload = jwtDecode(token);
-        const email = payload.sub;
-
-        if (email) {
-          document.cookie = `user_email=${encodeURIComponent(email)}; path=/; max-age=604800; SameSite=Lax`;
-        }
-
-        set({ accessToken: token, userEmail: email });
-        return;
-      } catch (e) {
-        console.error("소셜 토큰 파싱 실패", e);
-      }
+  socialLogin: async (token, refreshToken) => {
+    storeToken(token);
+    if (refreshToken) {
+      localStorage.setItem("refresh_token", refreshToken);
+      document.cookie = `refresh_token=${refreshToken}; path=/; max-age=604800; SameSite=Lax`;
     }
-    set({ accessToken: token });
+    const email = await currentEmail().catch(() => null);
+    if (!email) throw new Error("사용자 정보를 확인할 수 없습니다.");
+    document.cookie = `user_email=${encodeURIComponent(email)}; path=/; max-age=1800; SameSite=Lax`;
+    set({ accessToken: token, userId: userIdFromToken(token), userEmail: email });
   },
-
   setLogout: () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-    }
-    document.cookie = "user_email=; path=/; max-age=0;";
-    document.cookie = "access_token=; path=/; max-age=0;";
-    document.cookie = "refresh_token=; path=/; max-age=0;";
-    set({ accessToken: null, userEmail: null });
+    localStorage.removeItem("access_token"); localStorage.removeItem("refresh_token");
+    for (const key of ["user_email", "access_token", "refresh_token"]) document.cookie = `${key}=; path=/; max-age=0;`;
+    set({ accessToken: null, userId: null, userEmail: null });
   },
-
-  initAuth: () => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("access_token");
-      if (token) {
-        document.cookie = `access_token=${token}; path=/; max-age=604800; SameSite=Lax`;
-
-        try {
-          const payload = jwtDecode(token);
-          const email = payload.sub;
-          if (email) {
-            document.cookie = `user_email=${encodeURIComponent(email)}; path=/; max-age=604800; SameSite=Lax`;
-          }
-
-          set({ 
-            accessToken: token, 
-            userEmail: email,
-          });
-        } catch (e) {
-          console.error("Auth 복원 실패", e);
-          set({ accessToken: token });
-        }
-      }
-    }
+  initAuth: async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) return;
+    const email = await currentEmail().catch(() => null);
+    set({ accessToken: token, userId: userIdFromToken(token), userEmail: email });
   },
 }));

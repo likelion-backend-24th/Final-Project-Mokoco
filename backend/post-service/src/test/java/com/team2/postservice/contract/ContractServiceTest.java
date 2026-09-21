@@ -36,9 +36,9 @@ class ContractServiceTest {
     @MockitoBean com.team2.postservice.client.PaymentClient payments;
 
     @BeforeEach void setup() {
-        Post post = em.persist(Post.builder().title("Repair").content("Repair").authorEmail("requester@test")
+        Post post = em.persist(Post.builder().title("Repair").content("Repair").authorId(10L)
                 .regionName("Seoul").category(PostCategory.values()[0]).build());
-        Proposal proposal = em.persist(Proposal.builder().post(post).repairerEmail("repairer@test").estimatedPrice(50000).content("Repair").build());
+        Proposal proposal = em.persist(Proposal.builder().post(post).repairerId(20L).estimatedPrice(50000).content("Repair").build());
         proposal.adopt();
         FixDeal deal = em.persist(FixDeal.builder().postId(post.getId()).proposalId(proposal.getId()).requesterId(10L).repairerId(20L).build());
         roomId = 100L;

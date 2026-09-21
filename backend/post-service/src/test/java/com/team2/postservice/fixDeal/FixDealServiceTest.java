@@ -1,8 +1,6 @@
 package com.team2.postservice.fixDeal;
 
 import com.team2.postservice.client.PaymentClient;
-import com.team2.postservice.client.UserClient;
-import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.common.exception.CustomException;
 import com.team2.common.exception.ErrorCode;
 import com.team2.postservice.fixDeal.entity.FixDeal;
@@ -19,9 +17,8 @@ import static org.mockito.Mockito.*;
 class FixDealServiceTest {
 
     final FixDealRepository fixDeals = mock(FixDealRepository.class);
-    final UserClient users = mock(UserClient.class);
     final PaymentClient payments = mock(PaymentClient.class);
-    final FixDealService service = new FixDealService(fixDeals, users, payments);
+    final FixDealService service = new FixDealService(fixDeals, payments);
 
     private FixDeal fixDeal(FixDealStatus status) {
         return FixDeal.builder()
@@ -37,10 +34,7 @@ class FixDealServiceTest {
     @Test void repairerMarksProductSentFromMatched() {
         FixDeal deal = fixDeal(FixDealStatus.MATCHED);
         when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
-        when(users.getUserByEmail("repairer@test.com"))
-                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
-
-        service.markProductSent(1L, "repairer@test.com");
+        service.markProductSent(1L, 200L);
 
         assertThat(deal.getStatus()).isEqualTo(FixDealStatus.PRODUCT_SENT);
     }
@@ -48,10 +42,7 @@ class FixDealServiceTest {
     @Test void rejectsWhenRequesterAttemptsProductSent() {
         FixDeal deal = fixDeal(FixDealStatus.MATCHED);
         when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
-        when(users.getUserByEmail("requester@test.com"))
-                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
-
-        assertThatThrownBy(() -> service.markProductSent(1L, "requester@test.com"))
+        assertThatThrownBy(() -> service.markProductSent(1L, 100L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
@@ -62,30 +53,24 @@ class FixDealServiceTest {
     @Test void repeatedProductSentIsIdempotent() {
         FixDeal deal = fixDeal(FixDealStatus.PRODUCT_SENT);
         when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
-        when(users.getUserByEmail("repairer@test.com"))
-                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
-        service.markProductSent(1L, "repairer@test.com");
+        service.markProductSent(1L, 200L);
         assertThat(deal.getStatus()).isEqualTo(FixDealStatus.PRODUCT_SENT);
     }
 
     @Test void rejectsProductSentWhenFixDealNotFound() {
         when(fixDeals.lockById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.markProductSent(99L, "repairer@test.com"))
+        assertThatThrownBy(() -> service.markProductSent(99L, 200L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.FIX_DEAL_NOT_FOUND);
 
-        verifyNoInteractions(users);
     }
 
     @Test void repairerMarksRepairingFromProductSent() {
         FixDeal deal = fixDeal(FixDealStatus.PRODUCT_SENT);
         when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
-        when(users.getUserByEmail("repairer@test.com"))
-                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
-
-        service.markRepairing(1L, "repairer@test.com");
+        service.markRepairing(1L, 200L);
 
         assertThat(deal.getStatus()).isEqualTo(FixDealStatus.REPAIRING);
     }
@@ -93,10 +78,7 @@ class FixDealServiceTest {
     @Test void rejectsRepairingWhenMatchedStepSkipped() {
         FixDeal deal = fixDeal(FixDealStatus.MATCHED);
         when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
-        when(users.getUserByEmail("repairer@test.com"))
-                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
-
-        assertThatThrownBy(() -> service.markRepairing(1L, "repairer@test.com"))
+        assertThatThrownBy(() -> service.markRepairing(1L, 200L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.INVALID_FIX_DEAL_STATUS);
@@ -105,10 +87,7 @@ class FixDealServiceTest {
     @Test void rejectsRepairingWhenRequesterAttempts() {
         FixDeal deal = fixDeal(FixDealStatus.PRODUCT_SENT);
         when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
-        when(users.getUserByEmail("requester@test.com"))
-                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
-
-        assertThatThrownBy(() -> service.markRepairing(1L, "requester@test.com"))
+        assertThatThrownBy(() -> service.markRepairing(1L, 100L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
@@ -117,22 +96,14 @@ class FixDealServiceTest {
     @Test void requesterAndRepairerCanBothViewFixDeal() {
         FixDeal deal = fixDeal(FixDealStatus.REPAIRING);
         when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
-        when(users.getUserByEmail("requester@test.com"))
-                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
-        when(users.getUserByEmail("repairer@test.com"))
-                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
-
-        assertThat(service.getFixDeal(1L, "requester@test.com").status()).isEqualTo(FixDealStatus.REPAIRING);
-        assertThat(service.getFixDeal(1L, "repairer@test.com").status()).isEqualTo(FixDealStatus.REPAIRING);
+        assertThat(service.getFixDeal(1L, 100L).status()).isEqualTo(FixDealStatus.REPAIRING);
+        assertThat(service.getFixDeal(1L, 200L).status()).isEqualTo(FixDealStatus.REPAIRING);
     }
 
     @Test void rejectsFixDealViewByThirdParty() {
         FixDeal deal = fixDeal(FixDealStatus.REPAIRING);
         when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
-        when(users.getUserByEmail("stranger@test.com"))
-                .thenReturn(new UserClientResponse(999L, "stranger@test.com", "stranger", "region"));
-
-        assertThatThrownBy(() -> service.getFixDeal(1L, "stranger@test.com"))
+        assertThatThrownBy(() -> service.getFixDeal(1L, 999L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
@@ -141,10 +112,7 @@ class FixDealServiceTest {
     @Test void repairerRequestsCompletionFromRepairing() {
         FixDeal deal = fixDeal(FixDealStatus.REPAIRING);
         when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
-        when(users.getUserByEmail("repairer@test.com"))
-                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
-
-        service.requestCompletion(1L, "repairer@test.com");
+        service.requestCompletion(1L, 200L);
 
         assertThat(deal.getStatus()).isEqualTo(FixDealStatus.REPAIR_DONE);
     }
@@ -152,10 +120,7 @@ class FixDealServiceTest {
     @Test void rejectsCompletionRequestWhenMatchedStepsSkipped() {
         FixDeal deal = fixDeal(FixDealStatus.MATCHED);
         when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
-        when(users.getUserByEmail("repairer@test.com"))
-                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
-
-        assertThatThrownBy(() -> service.requestCompletion(1L, "repairer@test.com"))
+        assertThatThrownBy(() -> service.requestCompletion(1L, 200L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.INVALID_FIX_DEAL_STATUS);
@@ -164,10 +129,7 @@ class FixDealServiceTest {
     @Test void rejectsCompletionRequestWhenProductSentStepSkipped() {
         FixDeal deal = fixDeal(FixDealStatus.PRODUCT_SENT);
         when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
-        when(users.getUserByEmail("repairer@test.com"))
-                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
-
-        assertThatThrownBy(() -> service.requestCompletion(1L, "repairer@test.com"))
+        assertThatThrownBy(() -> service.requestCompletion(1L, 200L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.INVALID_FIX_DEAL_STATUS);
@@ -176,10 +138,7 @@ class FixDealServiceTest {
     @Test void rejectsCompletionRequestByRequester() {
         FixDeal deal = fixDeal(FixDealStatus.REPAIRING);
         when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
-        when(users.getUserByEmail("requester@test.com"))
-                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
-
-        assertThatThrownBy(() -> service.requestCompletion(1L, "requester@test.com"))
+        assertThatThrownBy(() -> service.requestCompletion(1L, 100L))
                 .isInstanceOf(CustomException.class)
                 .extracting(e -> ((CustomException) e).getErrorCode())
                 .isEqualTo(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
@@ -190,9 +149,6 @@ class FixDealServiceTest {
     @Test void requesterConfirmsCompletionRequestThroughGetFixDeal() {
         FixDeal deal = fixDeal(FixDealStatus.REPAIR_DONE);
         when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
-        when(users.getUserByEmail("requester@test.com"))
-                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
-
-        assertThat(service.getFixDeal(1L, "requester@test.com").status()).isEqualTo(FixDealStatus.REPAIR_DONE);
+        assertThat(service.getFixDeal(1L, 100L).status()).isEqualTo(FixDealStatus.REPAIR_DONE);
     }
 }

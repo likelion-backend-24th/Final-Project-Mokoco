@@ -31,10 +31,10 @@ class LoginUserSecurityTest {
         verifyNoInteractions(proposals, users);
     }
     @Test void adoptsUsingVerifiedEmailOnly() throws Exception {
-        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(10L, "verified@test", "name", null));
+        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(10L, "verified@test", "name", null, com.team2.common.security.Role.USER));
         mvc.perform(patch("/posts/1/proposals/2/adopt").header("Authorization", "Bearer valid")
                 .header("X-User-Email", "victim@test")).andExpect(status().isOk());
-        verify(proposals).adoptProposal(1L, 2L, "verified@test");
+        verify(proposals).adoptProposal(1L, 2L, 10L);
     }
     @Test void guestReadRemainsPublicButMalformedTokenIsNotGuest() throws Exception {
         when(proposals.getProposals(1L)).thenReturn(List.of());
