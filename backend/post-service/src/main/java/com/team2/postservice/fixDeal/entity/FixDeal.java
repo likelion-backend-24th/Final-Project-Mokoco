@@ -1,6 +1,8 @@
 package com.team2.postservice.fixDeal.entity;
 
 import jakarta.persistence.*;
+import com.team2.common.exception.CustomException;
+import com.team2.common.exception.ErrorCode;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -42,6 +44,17 @@ public class FixDeal {
 
 
     public void changeStatus(FixDealStatus status) {
+        if (status == null) throw new CustomException(ErrorCode.INVALID_FIX_DEAL_STATUS);
+        if (this.status == status) return;
+        boolean allowed = switch (this.status) {
+            case MATCHED -> status == FixDealStatus.PRODUCT_SENT
+                    || status == FixDealStatus.REPAIRING || status == FixDealStatus.CANCELED;
+            case PRODUCT_SENT -> status == FixDealStatus.REPAIRING;
+            case REPAIRING -> status == FixDealStatus.REPAIR_DONE;
+            case REPAIR_DONE -> status == FixDealStatus.COMPLETED;
+            case COMPLETED, CANCELED -> false;
+        };
+        if (!allowed) throw new CustomException(ErrorCode.INVALID_FIX_DEAL_STATUS);
         this.status = status;
 
         if (status == FixDealStatus.COMPLETED) {

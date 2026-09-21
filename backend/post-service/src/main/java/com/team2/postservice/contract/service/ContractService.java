@@ -239,6 +239,7 @@ public class ContractService {
             default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
 
+        if (deal.getStatus() == to) return;
         if (deal.getStatus() != from) {
             throw conflict("거래 상태가 변경되었습니다. 새로고침해주세요.");
         }

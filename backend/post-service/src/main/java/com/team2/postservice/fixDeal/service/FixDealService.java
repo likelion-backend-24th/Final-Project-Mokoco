@@ -27,7 +27,7 @@ public class FixDealService {
 
     @Transactional
     public void markProductSent(Long fixDealId, String repairerEmail) {
-        FixDeal fixDeal = fixDealRepository.findById(fixDealId)
+        FixDeal fixDeal = fixDealRepository.lockById(fixDealId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
 
         UserClientResponse repairer = userClient.getUserByEmail(repairerEmail);
@@ -35,6 +35,7 @@ public class FixDealService {
             throw new CustomException(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
         }
 
+        if (fixDeal.getStatus() == FixDealStatus.PRODUCT_SENT) return;
         if (fixDeal.getStatus() != FixDealStatus.MATCHED) {
             throw new CustomException(ErrorCode.INVALID_FIX_DEAL_STATUS);
         }
@@ -44,7 +45,7 @@ public class FixDealService {
 
     @Transactional
     public void markRepairing(Long fixDealId, String repairerEmail) {
-        FixDeal fixDeal = fixDealRepository.findById(fixDealId)
+        FixDeal fixDeal = fixDealRepository.lockById(fixDealId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
 
         UserClientResponse repairer = userClient.getUserByEmail(repairerEmail);
@@ -52,6 +53,7 @@ public class FixDealService {
             throw new CustomException(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
         }
 
+        if (fixDeal.getStatus() == FixDealStatus.REPAIRING) return;
         if (fixDeal.getStatus() != FixDealStatus.PRODUCT_SENT) {
             throw new CustomException(ErrorCode.INVALID_FIX_DEAL_STATUS);
         }
@@ -74,7 +76,7 @@ public class FixDealService {
 
     @Transactional
     public void requestCompletion(Long fixDealId, String repairerEmail) {
-        FixDeal fixDeal = fixDealRepository.findById(fixDealId)
+        FixDeal fixDeal = fixDealRepository.lockById(fixDealId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
 
         UserClientResponse repairer = userClient.getUserByEmail(repairerEmail);
@@ -82,6 +84,7 @@ public class FixDealService {
             throw new CustomException(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
         }
 
+        if (fixDeal.getStatus() == FixDealStatus.REPAIR_DONE) return;
         if (fixDeal.getStatus() != FixDealStatus.REPAIRING) {
             throw new CustomException(ErrorCode.INVALID_FIX_DEAL_STATUS);
         }
@@ -91,7 +94,7 @@ public class FixDealService {
 
     @Transactional
     public void acceptCompletion(Long fixDealId, String requesterEmail) {
-        FixDeal fixDeal = fixDealRepository.findById(fixDealId)
+        FixDeal fixDeal = fixDealRepository.lockById(fixDealId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
 
         UserClientResponse requester = userClient.getUserByEmail(requesterEmail);
@@ -99,6 +102,7 @@ public class FixDealService {
             throw new CustomException(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
         }
 
+        if (fixDeal.getStatus() == FixDealStatus.COMPLETED) return;
         if (fixDeal.getStatus() != FixDealStatus.REPAIR_DONE) {
             throw new CustomException(ErrorCode.INVALID_FIX_DEAL_STATUS);
         }
