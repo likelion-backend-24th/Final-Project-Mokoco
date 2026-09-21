@@ -9,7 +9,7 @@ export async function PATCH(request, { params }) {
   try {
     const response = await fetch(backendUrl(`/notifications/${id}/read`), {
       method: "PATCH",
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,  },
       signal: AbortSignal.timeout(10000),
     });
     if (!response.ok) return Response.json({ error: "읽음 처리에 실패했습니다." }, { status: response.status });

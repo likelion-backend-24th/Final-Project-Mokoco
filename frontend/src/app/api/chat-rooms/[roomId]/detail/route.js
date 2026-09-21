@@ -1,16 +1,28 @@
 import { cookies } from "next/headers";
-import { backendUrl } from "@/lib/backend";
+import { backendUrl, readBackendPayload, errorMessage } from "@/lib/backend";
 
-export async function GET(request, { params }) {
+async function forward(method, { params }) {
   const { roomId } = await params;
-  if (!/^\d+$/.test(roomId)) return Response.json({ error: "잘못된 요청입니다." }, { status: 400 });
+  if (!/^\d+$/.test(roomId)) {
+    return Response.json({ error: "잘못된 견적 번호입니다." }, { status: 400 });
+  }
   const token = (await cookies()).get("access_token")?.value;
   if (!token) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
   try {
     const response = await fetch(backendUrl(`/api/chat-rooms/${roomId}/detail`), {
-      headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: AbortSignal.timeout(10000),
+      method,
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(10000),
     });
-    if (!response.ok) return Response.json({ error: "채팅방 정보를 불러오지 못했습니다." }, { status: response.status });
-    return Response.json(await response.json(), { headers: { "Cache-Control": "no-store" } });
-  } catch { return Response.json({ error: "서버에 연결하지 못했습니다." }, { status: 502 }); }
+    const payload = await readBackendPayload(response);
+    if (!response.ok) {
+      return Response.json({ error: errorMessage(payload, "채팅방 요청에 실패했습니다."), code: payload?.code }, { status: response.status });
+    }
+    return Response.json(payload);
+  } catch {
+    return Response.json({ error: "서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요." }, { status: 502 });
+  }
 }
+
+export function GET(request, context) { return forward("GET", context); }

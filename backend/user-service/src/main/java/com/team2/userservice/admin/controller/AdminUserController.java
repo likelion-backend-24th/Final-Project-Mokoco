@@ -23,7 +23,7 @@ public class AdminUserController {
 
     @GetMapping
     public ResponseEntity<List<UserResponse>> listUsers(@AuthenticationPrincipal LoginUser user) {
-        return ResponseEntity.ok(userService.listUsers(user.email()));
+        return ResponseEntity.ok(userService.listUsers(user.userId()));
     }
 
     @PatchMapping("/{id}/role")
@@ -32,7 +32,7 @@ public class AdminUserController {
             @PathVariable Long id,
             @RequestBody RoleChangeRequest request
     ) {
-        return ResponseEntity.ok(userService.changeUserRole(user.email(), id, request.role()));
+        return ResponseEntity.ok(userService.changeUserRole(user.userId(), id, request.role()));
     }
 
     @PatchMapping("/{id}/status")
@@ -41,6 +41,6 @@ public class AdminUserController {
             @PathVariable Long id,
             @RequestBody StatusChangeRequest request
     ) {
-        return ResponseEntity.ok(userService.changeUserStatus(user.email(), id, request.status()));
+        return ResponseEntity.ok(userService.changeUserStatus(user.userId(), id, request.status()));
     }
 }

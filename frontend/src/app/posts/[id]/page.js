@@ -1,16 +1,15 @@
+import { userIdFromToken } from "@/lib/user-id";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle, Wrench, MapPin } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
 import PostActions from "@/components/post-actions";
-import AdminPostDelete from "@/components/admin-post-delete";
-import ReportButton from "@/components/report-button";
 import RepairProposalForm from "@/components/proposal-form";
 import ProposalList from "@/components/proposal-list";
-import { backendUrl, imageSrc } from "@/lib/backend";
+import { backendUrl } from "@/lib/backend";
 
-const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "거래 완료" };
+const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "수리 완료" };
 
 async function getPost(id) {
   try {
@@ -33,22 +32,6 @@ async function getProposals(id) {
   }
 }
 
-async function getIsAdmin(token) {
-  if (!token) return false;
-  try {
-    const response = await fetch(backendUrl("/api/users/me"), {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!response.ok) return false;
-    const me = await response.json();
-    return me?.role === "ADMIN";
-  } catch {
-    return false;
-  }
-}
-
 function formatDate(value) {
   if (!value) return "시간 정보 없음";
   let date;
@@ -59,28 +42,25 @@ function formatDate(value) {
     date = new Date(value);
   }
   if (Number.isNaN(date.getTime())) return "시간 정보 없음";
-  // 이 페이지는 서버(프론트 컨테이너) 안에서 렌더링되는데, 컨테이너 기본 타임존이
-  // 브라우저(한국)와 다를 수 있어 timeZone을 명시적으로 고정한다.
-  return date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Seoul" });
+  return date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
 }
 
 export default async function PostDetailPage({ params }) {
   const { id } = await params;
   const cookieStore = await cookies();
+  const userId = userIdFromToken(cookieStore.get("access_token")?.value);
   const userEmail = cookieStore.get("user_email")?.value ?? null;
-  const accessToken = cookieStore.get("access_token")?.value ?? null;
 
-  const [{ post, error }, proposals, isAdmin] = await Promise.all([
+  const [{ post, error }, proposals] = await Promise.all([
     getPost(id),
     getProposals(id),
-    getIsAdmin(accessToken),
   ]);
 
   if (!post && !error) {
     notFound();
   }
 
-  const isMine = post && userEmail && post.authorEmail === userEmail;
+  const isMine = post && userId && String(post.authorId) === userId;
 
   return (
     <div className="min-h-screen bg-[#f7f9fc]">
@@ -115,11 +95,10 @@ export default async function PostDetailPage({ params }) {
                   <h1 className="mt-3 text-[28px] font-extrabold tracking-[-0.03em] text-slate-950">{post.title}</h1>
                 </div>
                 {isMine && <PostActions postId={post.id} />}
-                {isAdmin && !isMine && <AdminPostDelete postId={post.id} />}
               </div>
 
               <div className="mt-2 flex items-center gap-2 text-sm text-slate-400">
-                <span>{post.authorNickname || post.authorEmail || "작성자 정보 없음"}</span>
+                <span>{post.authorId || "작성자 정보 없음"}</span>
                 <span aria-hidden>·</span>
                 <span>{formatDate(post.createdAt)}</span>
               </div>
@@ -127,25 +106,19 @@ export default async function PostDetailPage({ params }) {
               <p className="mt-6 whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{post.content}</p>
 
               {post.images && post.images.length > 0 && (
-                <div className={`mt-6 grid gap-3 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {post.images.map((img, index) => {
                     const imgUrl = typeof img === "string" ? img : img.imageUrl;
                     return (
-                      <div key={index} className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                      <div key={index} className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
                         <img
-                          src={imageSrc(imgUrl)}
+                          src={backendUrl(imgUrl)}
                           alt={`수리 요청 이미지 ${index + 1}`}
-                          className="block w-full h-auto"
+                          className="object-cover w-full h-full"
                         />
                       </div>
                     );
                   })}
-                </div>
-              )}
-
-              {!isMine && userEmail && (
-                <div className="mt-6 flex justify-end">
-                  <ReportButton postId={post.id} authorEmail={post.authorEmail} />
                 </div>
               )}
 
@@ -157,7 +130,7 @@ export default async function PostDetailPage({ params }) {
               <h3 className="text-lg font-extrabold text-slate-900 mb-4">
                 받은 수리 제안 <span className="text-blue-600">{proposals.length}</span>
               </h3>
-              <ProposalList postId={post.id} proposals={proposals} isMine={isMine} userEmail={userEmail} />
+              <ProposalList postId={post.id} proposals={proposals} isMine={isMine} userEmail={userEmail} userId={userId} />
             </div>
           </div>
         )}

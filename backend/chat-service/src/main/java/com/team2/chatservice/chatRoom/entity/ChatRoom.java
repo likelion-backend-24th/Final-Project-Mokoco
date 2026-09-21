@@ -4,10 +4,19 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Entity
-@Table(name = "chat_rooms")
+@org.hibernate.annotations.DynamicUpdate
+@Table(
+        name = "chat_room",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_chat_room_fix_deal",
+                        columnNames = "fix_deal_id"
+                ),
+                @UniqueConstraint(name = "uk_chat_room_proposal", columnNames = "proposal_id")
+        }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -18,42 +27,97 @@ public class ChatRoom {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // FixDeal은 post-service가 소유한 엔티티라 여기서는 JPA 연관관계 없이 id만 들고 있는다
-    // (같은 DB를 공유하지만 서비스 경계를 넘는 연관관계는 맺지 않는다).
-    @Column(name = "fix_deal_id", unique = true)
+    // post-service의 FixDeal ID
+    @Column(name = "fix_deal_id")
     private Long fixDealId;
 
-    // 채택 전부터 채팅을 열 수 있도록 방을 제안(Proposal) 기준으로 식별한다.
-    @Column(name = "proposal_id", unique = true)
+    @Column(name = "proposal_id")
     private Long proposalId;
 
-    private Long requesterId;
-    private Long repairerId;
     private Long postId;
+    private String postTitle;
 
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    // user-service의 User ID
+    @Column(name = "requester_id", nullable = false)
+    private Long requesterId;
 
-    public boolean hasParticipant(Long userId) {
-        return userId != null && (userId.equals(requesterId) || userId.equals(repairerId));
+    // user-service의 User ID
+    @Column(name = "repairer_id", nullable = false)
+    private Long repairerId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ChatRoomStatus status;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    private LocalDateTime closedAt;
+
+    public static ChatRoom create(
+            Long fixDealId,
+            Long requesterId,
+            Long repairerId
+    ) {
+        validateParticipants(requesterId, repairerId);
+
+        ChatRoom chatRoom = new ChatRoom();
+        chatRoom.fixDealId = fixDealId;
+        chatRoom.requesterId = requesterId;
+        chatRoom.repairerId = repairerId;
+        chatRoom.status = ChatRoomStatus.ACTIVE;
+        chatRoom.createdAt = LocalDateTime.now();
+
+        return chatRoom;
     }
 
-    // 제안이 채택돼 FixDeal이 생기면, 이미 열려있던(채택 전) 채팅방에 그 거래를 이어붙인다.
-    // 멱등: 이미 같은 거래에 연결돼 있으면 조용히 성공 처리(after-commit 비동기 재시도가 안전하도록).
-    public void attachDeal(Long dealId, Long dealProposalId, Long dealRequesterId, Long dealRepairerId, Long dealPostId) {
-        if (fixDealId != null && fixDealId.equals(dealId)) return;
-        if (!Objects.equals(proposalId, dealProposalId) || !Objects.equals(requesterId, dealRequesterId)
-                || !Objects.equals(repairerId, dealRepairerId) || !Objects.equals(postId, dealPostId))
-            throw new IllegalArgumentException("Deal does not match chat participants and proposal");
-        if (fixDealId != null)
-            throw new IllegalStateException("Chat room already linked to a deal");
-        this.fixDealId = dealId;
-    }
-
-    // 채택 취소로 거래가 무효화되면 채팅방과의 연결을 끊는다 — 방(대화 기록) 자체는 유지된다. 멱등.
-    public void detachDeal(Long dealId) {
-        if (fixDealId != null && fixDealId.equals(dealId)) {
-            this.fixDealId = null;
+    private static void validateParticipants(
+            Long requesterId,
+            Long repairerId
+    ) {
+        if (requesterId == null || repairerId == null) {
+            throw new IllegalArgumentException("채팅 참여자 ID는 필수입니다.");
         }
+
+        if (requesterId.equals(repairerId)) {
+            throw new IllegalArgumentException(
+                    "의뢰자와 수리자는 동일할 수 없습니다."
+            );
+        }
+    }
+
+    public boolean isParticipant(Long userId) {
+        return requesterId.equals(userId)
+                || repairerId.equals(userId);
+    }
+
+    public void updateContext(Long proposalId, Long postId, String postTitle, Long fixDealId) {
+        if ((this.proposalId != null && !this.proposalId.equals(proposalId))
+                || (this.postId != null && !this.postId.equals(postId)))
+            throw new com.team2.common.exception.CustomException(com.team2.chatservice.common.exception.ErrorCode.INVALID_INPUT);
+        this.proposalId = proposalId;
+        this.postId = postId;
+        this.postTitle = postTitle;
+        this.fixDealId = fixDealId;
+    }
+
+    public void attachDeal(Long fixDealId, Long proposalId, Long requesterId, Long repairerId, Long postId) {
+        validateParticipants(requesterId, repairerId);
+        if (!this.requesterId.equals(requesterId) || !this.repairerId.equals(repairerId)) {
+            throw new com.team2.common.exception.CustomException(com.team2.chatservice.common.exception.ErrorCode.INVALID_INPUT);
+        }
+        this.fixDealId = fixDealId;
+        this.proposalId = proposalId;
+        this.postId = postId;
+    }
+
+    public void detachDeal(Long fixDealId) {
+        if (this.fixDealId != null && this.fixDealId.equals(fixDealId)) this.fixDealId = null;
+    }
+
+    public void close() {
+        if (this.status == ChatRoomStatus.CLOSED) return;
+        this.status = ChatRoomStatus.CLOSED;
+        this.closedAt = LocalDateTime.now();
     }
 }

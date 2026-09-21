@@ -14,7 +14,6 @@ public record TransactionHistoryItemResponse(
         FixDealStatus status,
         LocalDateTime createdAt,
         LocalDateTime completedAt,
-        ReviewResponseDto review,
-        Long chatRoomId
+        ReviewResponseDto review
 ) {
 }

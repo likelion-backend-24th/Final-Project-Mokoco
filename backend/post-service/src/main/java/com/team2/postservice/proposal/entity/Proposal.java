@@ -22,7 +22,7 @@ public class Proposal {
     private Post post;
 
     @Column(nullable = false)
-    private String repairerEmail; // 수리공 이메일
+    private Long repairerId; // 수리공 사용자 ID
 
     @Column(nullable = false)
     private Integer estimatedPrice; // 희망 견적 금액
@@ -34,12 +34,12 @@ public class Proposal {
     private boolean isAdopted = false; // 채택 여부
 
     @Column(nullable = false)
-    private boolean attachResume = false; // 이 제안에 내 이력서를 보여줄지 여부
+    private boolean attachResume = false;
 
     @Builder
-    public Proposal(Post post, int estimatedPrice, String repairerEmail, String content, boolean attachResume) {
+    public Proposal(Post post, int estimatedPrice, Long repairerId, String content, boolean attachResume) {
         this.post = post;
-        this.repairerEmail = repairerEmail;
+        this.repairerId = repairerId;
         this.estimatedPrice = estimatedPrice;
         this.content = content;
         this.isAdopted = false;

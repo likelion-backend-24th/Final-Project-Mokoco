@@ -33,13 +33,13 @@ public class InternalFixDealController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
-    public record ProposalInfo(Long id, Long postId, String requesterEmail, String repairerEmail) {}
+    public record ProposalInfo(Long id, Long postId, Long requesterId, Long repairerId) {}
 
     @GetMapping("/proposals/{id}")
     public ProposalInfo getProposal(@PathVariable Long id) {
         Proposal proposal = proposalRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         return new ProposalInfo(proposal.getId(), proposal.getPost().getId(),
-                proposal.getPost().getAuthorEmail(), proposal.getRepairerEmail());
+                proposal.getPost().getAuthorId(), proposal.getRepairerId());
     }
 }

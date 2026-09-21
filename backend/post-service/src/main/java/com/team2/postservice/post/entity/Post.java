@@ -1,6 +1,8 @@
 package com.team2.postservice.post.entity;
 
 import jakarta.persistence.*;
+import com.team2.common.exception.CustomException;
+import com.team2.postservice.common.exception.ErrorCode;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,7 +33,7 @@ public class Post {
     private String content;
 
     @Column(nullable = false)
-    private String authorEmail;
+    private Long authorId;
 
     @Column(nullable = false, length = 100)
     private String regionName; // 지역 이름 필드
@@ -61,10 +63,10 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Post(String title, String content, String authorEmail, String regionName, String regionCode, PostCategory category) {
+    public Post(String title, String content, Long authorId, String regionName, String regionCode, PostCategory category) {
         this.title = title;
         this.content = content;
-        this.authorEmail = authorEmail;
+        this.authorId = authorId;
         this.regionName = regionName; // 빌더에 지역 이름 추가
         this.regionCode = regionCode;
         this.category = category;
@@ -78,16 +80,16 @@ public class Post {
     }
 
     public void updateStatusToMatched() {
-        this.status = PostStatus.MATCHED;
+        changeStatus(PostStatus.MATCHED);
     }
 
-    // 채택 취소로 거래가 무효화되면 다시 제안을 받을 수 있는 상태로 되돌린다.
-    public void updateStatusToWaiting() {
-        this.status = PostStatus.WAITING;
-    }
-
-    public void updateStatusToCompleted() {
-        this.status = PostStatus.COMPLETED;
+    public void changeStatus(PostStatus status) {
+        if (status == null) throw new CustomException(ErrorCode.INVALID_INPUT);
+        if (this.status == status) return;
+        boolean allowed = this.status == PostStatus.WAITING && status == PostStatus.MATCHED
+                || this.status == PostStatus.MATCHED && (status == PostStatus.WAITING || status == PostStatus.COMPLETED);
+        if (!allowed) throw new CustomException(ErrorCode.INVALID_FIX_DEAL_STATUS);
+        this.status = status;
     }
 
     public void changeVisibility(boolean publiclyVisible) {

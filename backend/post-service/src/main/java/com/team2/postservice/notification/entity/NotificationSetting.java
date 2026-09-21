@@ -19,7 +19,7 @@ public class NotificationSetting {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String userEmail;
+    private Long userId;
 
     @Column(nullable = false)
     private boolean proposalReceived = true;
@@ -30,8 +30,8 @@ public class NotificationSetting {
     @Column(nullable = false)
     private boolean chatMessage = true;
 
-    public NotificationSetting(String userEmail) {
-        this.userEmail = userEmail;
+    public NotificationSetting(Long userId) {
+        this.userId = userId;
         this.proposalReceived = true;
         this.proposalAdopted = true;
         this.chatMessage = true;

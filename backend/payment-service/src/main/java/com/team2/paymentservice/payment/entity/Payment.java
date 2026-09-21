@@ -31,19 +31,19 @@ public class Payment {
     private String portonePaymentId;
 
     @Column(nullable = false)
-    private String payerEmail; // 의뢰자 (결제자)
+    private Long payerId; // 의뢰자 (결제자)
 
     @Column(nullable = false)
-    private String payeeEmail; // 수리자 (정산 대상)
+    private Long payeeId; // 수리자 (정산 대상)
 
     @Column(nullable = false)
-    private Integer amount; // 의뢰자가 실제 결제한 총액 = 견적 금액(baseAmount) 그대로
+    private Integer amount; // 의뢰자가 실제 결제한 총액 (baseAmount + feeAmount)
 
     @Column(nullable = false)
-    private Integer feeAmount; // 플랫폼 수수료 (견적 금액의 10%, 수리자 정산액에서 차감)
+    private Integer feeAmount; // 플랫폼 수수료 (baseAmount의 10%, 의뢰자가 추가로 부담)
 
     @Column(nullable = false)
-    private Integer netAmount; // 수리자가 받는 금액 = 견적 금액 - 플랫폼 수수료(10%)
+    private Integer netAmount; // 수리자가 받는 금액 = 수리자가 제안한 금액(baseAmount) 그대로
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -54,36 +54,32 @@ public class Payment {
 
     private LocalDateTime paidAt;
 
-    // 거래가 COMPLETED 되어 플랫폼이 수리자 몫을 '정산 확정'했음을 기록하는 장부용 타임스탬프.
-    // 실제 PG 에스크로 해제나 수리자 계좌 송금 연동은 이번 범위 밖이며, 이 필드는 그 지점을
-    // 표시만 해둔다 — 나중에 실제 지급 연동을 붙일 때 settle() 호출부가 그 자리다.
     private LocalDateTime settledAt;
 
     @Builder
-    public Payment(Long postId, String portonePaymentId, String payerEmail, String payeeEmail,
+    public Payment(Long postId, String portonePaymentId, Long payerId, Long payeeId,
                    Integer totalAmount, Integer baseAmount) {
         this.postId = postId;
         this.portonePaymentId = portonePaymentId;
-        this.payerEmail = payerEmail;
-        this.payeeEmail = payeeEmail;
-        // 의뢰자는 견적 금액(baseAmount) 그대로 결제한다 — 수수료를 얹어 더 받지 않는다.
+        this.payerId = payerId;
+        this.payeeId = payeeId;
         this.amount = totalAmount;
-        this.feeAmount = calculateFee(baseAmount);
-        this.netAmount = baseAmount - this.feeAmount;
+        this.netAmount = baseAmount;
+        this.feeAmount = totalAmount - baseAmount;
         this.status = PaymentStatus.COMPLETED;
         this.createdAt = LocalDateTime.now();
         this.paidAt = LocalDateTime.now();
     }
 
-    public void settle() {
-        if (settledAt == null) settledAt = LocalDateTime.now();
-    }
-
-    // 플랫폼 수수료 = 견적 금액의 10% (수리자에게 정산될 때 이 금액만큼 차감된다)
-    public static int calculateFee(int baseAmount) {
-        return BigDecimal.valueOf(baseAmount)
+    public static int calculateTotalAmount(int baseAmount) {
+        if (baseAmount <= 0) throw new com.team2.common.exception.CustomException(com.team2.paymentservice.common.exception.ErrorCode.INVALID_INPUT);
+        int fee = BigDecimal.valueOf(baseAmount)
                 .multiply(FEE_RATE)
                 .setScale(0, RoundingMode.HALF_UP)
-                .intValue();
+                .intValueExact();
+        try { return Math.addExact(baseAmount, fee); }
+        catch (ArithmeticException overflow) {
+            throw new com.team2.common.exception.CustomException(com.team2.paymentservice.common.exception.ErrorCode.INVALID_INPUT);
+        }
     }
 }

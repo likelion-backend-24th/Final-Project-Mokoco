@@ -1,13 +1,11 @@
 package com.team2.userservice.config;
 
-import com.team2.common.security.LoginUser;
-import com.team2.userservice.user.entity.AccountStatus;
-import com.team2.userservice.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import com.team2.userservice.user.repository.UserRepository;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,20 +26,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = resolveToken(request);
 
-        if (token != null && jwtTokenProvider.validateAccessToken(token)) {
-            Long userId = jwtTokenProvider.getUserIdFromAccessToken(token);
-            var user = userRepository.findById(userId).orElse(null);
-
-            // 토큰 자체는 아직 유효해도, 그 사이 관리자가 계정을 정지시켰을 수 있으므로
-            // 요청마다 DB에서 현재 상태를 다시 확인한다(정지되면 인증을 아예 심지 않아 401로 막힘).
-            if (user != null && user.getStatus() != AccountStatus.SUSPENDED) {
-                // post/chat/payment-service와 같은 LoginUser(id, email) principal을 심는다.
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(new LoginUser(user.getId(), user.getEmail()), null,
-                                List.of(new SimpleGrantedAuthority("ROLE_USER")));
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+        if (token != null) {
+            if (!jwtTokenProvider.validateAccessToken(token)) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
+            Long userId;
+            try {
+                userId = jwtTokenProvider.getUserIdFromAccessToken(token);
+            } catch (io.jsonwebtoken.JwtException | IllegalArgumentException failure) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+            com.team2.userservice.user.entity.User user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+            com.team2.common.security.LoginUser loginUser = new com.team2.common.security.LoginUser(
+                    user.getId(), com.team2.common.security.Role.valueOf(user.getRole().name()));
+
+            // 계정 식별자와 검증된 역할만 principal에 저장한다.
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(loginUser, null, List.of(new SimpleGrantedAuthority("ROLE_" + loginUser.role().name())));
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);

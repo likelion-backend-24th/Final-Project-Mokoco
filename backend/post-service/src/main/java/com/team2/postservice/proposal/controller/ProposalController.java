@@ -23,8 +23,8 @@ public class ProposalController {
     @PostMapping
     public ResponseEntity<Long> createProposal(@PathVariable Long postId,
                                                @RequestBody @Valid ProposalRequestDto.Create request,
-                                               @AuthenticationPrincipal LoginUser user) {
-        Long proposalId = proposalService.createProposal(postId, request, user.email());
+                                               @AuthenticationPrincipal LoginUser loginUser) {
+        Long proposalId = proposalService.createProposal(postId, request, loginUser.userId());
         return ResponseEntity.ok(proposalId);
     }
 
@@ -32,17 +32,19 @@ public class ProposalController {
     @PatchMapping("/{proposalId}/adopt")
     public ResponseEntity<Void> adoptProposal(@PathVariable Long postId,
                                               @PathVariable Long proposalId,
-                                              @AuthenticationPrincipal LoginUser user) {
-        proposalService.adoptProposal(postId, proposalId, user.email());
+                                              @AuthenticationPrincipal LoginUser loginUser) {
+        proposalService.adoptProposal(postId, proposalId, loginUser.userId());
         return ResponseEntity.ok().build();
     }
 
-    // 제안 채택 취소 (의뢰인) — 결제 전(MATCHED)에만 가능
+    // 제안 취소 (의뢰인)
     @PatchMapping("/{proposalId}/cancel")
-    public ResponseEntity<Void> cancelProposal(@PathVariable Long postId,
-                                               @PathVariable Long proposalId,
-                                               @AuthenticationPrincipal LoginUser user) {
-        proposalService.cancelProposal(postId, proposalId, user.email());
+    public ResponseEntity<Void> cancelProposal(
+            @PathVariable Long postId,
+            @PathVariable Long proposalId,
+            @AuthenticationPrincipal LoginUser loginUser
+    ){
+        proposalService.cancelProposal(postId, proposalId, loginUser.userId());
         return ResponseEntity.ok().build();
     }
 
@@ -57,8 +59,8 @@ public class ProposalController {
     @DeleteMapping("/{proposalId}")
     public ResponseEntity<Void> deleteProposal(@PathVariable Long postId,
                                                @PathVariable Long proposalId,
-                                               @AuthenticationPrincipal LoginUser user) {
-        proposalService.deleteProposal(postId, proposalId, user.email());
+                                               @AuthenticationPrincipal LoginUser loginUser) {
+        proposalService.deleteProposal(postId, proposalId, loginUser.userId());
         return ResponseEntity.ok().build();
     }
 }

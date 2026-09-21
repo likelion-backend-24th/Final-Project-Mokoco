@@ -5,7 +5,7 @@ import { Star, Image as ImageIcon, X } from "@phosphor-icons/react";
 
 const MAX_IMAGES = 5;
 
-export default function ReviewForm({ postId, onSubmitted }) {
+export default function ReviewForm({ postId, userEmail, onSubmitted }) {
   const [rating, setRating] = useState(5);
   const [content, setContent] = useState("");
   const [files, setFiles] = useState([]);
@@ -37,21 +37,14 @@ export default function ReviewForm({ postId, onSubmitted }) {
     setSubmitting(true);
     setError("");
     try {
-      // 이미지 업로드는 게이트웨이의 멀티파트 유실 문제를 피해 post-service로 직결되므로(Caddyfile
-      // 참고), 백엔드가 기대하는 review(JSON 파트) + images(파일 파트) 형태를 여기서 직접 만든다.
-      const formData = new FormData();
-      formData.append(
-        "review",
-        new Blob([JSON.stringify({ postId: Number(postId), rating: Number(rating), content })], {
-          type: "application/json",
-        }),
-      );
-      files.forEach((file) => formData.append("images", file, file.name));
+      const reviewDto = { postId: Number(postId), rating, content };
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-      const res = await fetch("/api/reviews", {
+      const formData = new FormData();
+      formData.append("review", new Blob([JSON.stringify(reviewDto)], { type: "application/json" }));
+      files.forEach((file) => formData.append("images", file));
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_API_URL}/reviews`, {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       });
       const data = await res.json().catch(() => ({}));

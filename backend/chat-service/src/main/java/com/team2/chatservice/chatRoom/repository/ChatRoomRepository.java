@@ -2,49 +2,43 @@ package com.team2.chatservice.chatRoom.repository;
 
 import com.team2.chatservice.chatRoom.dto.ChatRoomListItem;
 import com.team2.chatservice.chatRoom.entity.ChatRoom;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
-    @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select room from ChatRoom room where room.id = :id")
     Optional<ChatRoom> lockById(@Param("id") Long id);
 
-    // Post는 post-service가 소유한 엔티티라 여기서는 JPA 매핑을 못 하므로, 같은 DB의 posts 테이블을
-    // 네이티브 SQL로 직접 조회한다(쓰기는 안 함 — 읽기 전용 same-DB 커플링).
-    @Query(value = """
-            select
-                cr.id as chatRoomId,
-                cr.fix_deal_id as fixDealId,
-                cr.post_id as postId,
-                p.title as postTitle,
-                case when cr.requester_id = :userId then cr.repairer_id else cr.requester_id end as counterpartId,
-                m.content as lastMessage,
-                m.created_at as lastMessageAt,
-                cr.created_at as createdAt
-            from chat_rooms cr
-            left join posts p on p.id = cr.post_id
-            left join chat_messages m on m.id = (
-                select max(m2.id) from chat_messages m2 where m2.chat_room_id = cr.id
-            )
-            where cr.requester_id = :userId or cr.repairer_id = :userId
-            order by coalesce(m.created_at, cr.created_at) desc, cr.id desc
-            """, nativeQuery = true)
-    List<ChatRoomListItem> findMyRooms(@Param("userId") Long userId, Pageable pageable);
-
-    Optional<ChatRoom> findByFixDealId(Long fixDealId);
-
-    boolean existsByFixDealId(Long fixDealId);
+    @Query("""
+            select new com.team2.chatservice.chatRoom.dto.ChatRoomListItem(
+                room.id, room.fixDealId, room.postId, room.postTitle,
+                case when room.requesterId = :userId then room.repairerId else room.requesterId end,
+                message.content, message.createdAt, room.createdAt)
+            from ChatRoom room
+            left join ChatMessage message on message.chatRoom.id = room.id
+                and message.id = (select max(latest.id) from ChatMessage latest where latest.chatRoom.id = room.id)
+            where room.requesterId = :userId or room.repairerId = :userId
+            order by coalesce(message.createdAt, room.createdAt) desc, room.id desc
+            """)
+    List<ChatRoomListItem> findMyRooms(
+            @Param("userId") Long userId,
+            Pageable pageable);
 
     Optional<ChatRoom> findByProposalId(Long proposalId);
 
     boolean existsByProposalId(Long proposalId);
 
+    Optional<ChatRoom> findByFixDealId(Long fixDealId);
+
     List<ChatRoom> findByFixDealIdIn(List<Long> fixDealIds);
+
+    boolean existsByFixDealId(Long fixDealId);
 }

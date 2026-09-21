@@ -18,6 +18,7 @@ public interface UserClient {
     @PostMapping("/api/internal/users/verify-token")
     UserClientResponse verifyToken(@RequestBody String token);
 
-    @GetMapping("/api/internal/users/by-email")
-    UserClientResponse getUserByEmail(@RequestParam("email") String email);
+    @GetMapping("/api/internal/users/by-id")
+    UserClientResponse getUserById(@RequestParam("id") Long id);
+
 }

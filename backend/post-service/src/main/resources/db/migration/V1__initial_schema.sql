@@ -1,0 +1,81 @@
+CREATE TABLE posts (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ title VARCHAR(100) NOT NULL, content TEXT NOT NULL, author_email VARCHAR(255) NOT NULL,
+ region_name VARCHAR(100) NOT NULL, region_code VARCHAR(20),
+ publicly_visible BOOLEAN NOT NULL DEFAULT TRUE,
+ category ENUM('ALL','ELECTRIC_LIGHT','PLUMBING','FURNITURE_INSTALL','HOME_APPLIANCE','DOOR_WINDOW','LIVING_ETC') NOT NULL,
+ status ENUM('WAITING','MATCHED','COMPLETED') NOT NULL,
+ created_at DATETIME(6), updated_at DATETIME(6),
+ INDEX idx_posts_nearby (region_code, publicly_visible, status, created_at, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE post_images (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, post_id BIGINT NOT NULL,
+ image_url VARCHAR(255) NOT NULL, stored_file_name VARCHAR(255) NOT NULL,
+ sort_order INTEGER NOT NULL, created_at DATETIME(6),
+ CONSTRAINT fk_post_image_post FOREIGN KEY (post_id) REFERENCES posts(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE proposals (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, post_id BIGINT,
+ repairer_email VARCHAR(255) NOT NULL, estimated_price INTEGER NOT NULL,
+ content TEXT NOT NULL, is_adopted BOOLEAN NOT NULL, attach_resume BOOLEAN NOT NULL,
+ CONSTRAINT fk_proposal_post FOREIGN KEY (post_id) REFERENCES posts(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE fix_deals (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ post_id BIGINT NOT NULL, proposal_id BIGINT NOT NULL,
+ requester_id BIGINT NOT NULL, repairer_id BIGINT NOT NULL,
+ status ENUM('MATCHED','PRODUCT_SENT','REPAIRING','REPAIR_DONE','COMPLETED','CANCELED') NOT NULL,
+ created_at DATETIME(6) NOT NULL, completed_at DATETIME(6)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE repair_contract_versions (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ chat_room_id BIGINT NOT NULL, revision INTEGER NOT NULL, author_id BIGINT NOT NULL,
+ terms_json LONGTEXT NOT NULL, document_hash VARCHAR(64) NOT NULL, status VARCHAR(255) NOT NULL,
+ created_at DATETIME(6) NOT NULL, requested_at DATETIME(6), signed_at DATETIME(6),
+ CONSTRAINT uk_contract_revision UNIQUE (chat_room_id, revision)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE contract_signatures (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ contract_id BIGINT NOT NULL, signer_id BIGINT NOT NULL, signer_name VARCHAR(80) NOT NULL,
+ document_hash VARCHAR(64) NOT NULL, consent_text VARCHAR(500) NOT NULL,
+ signed_at DATETIME(6) NOT NULL,
+ CONSTRAINT uk_contract_signer UNIQUE (contract_id, signer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE notifications (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ recipient_email VARCHAR(255) NOT NULL,
+ type ENUM('PROPOSAL_RECEIVED','PROPOSAL_ADOPTED','CHAT_MESSAGE') NOT NULL,
+ post_id BIGINT, proposal_id BIGINT, chat_room_id BIGINT,
+ message VARCHAR(255) NOT NULL, is_read BOOLEAN NOT NULL, created_at DATETIME(6)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE notification_settings (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ user_email VARCHAR(255) NOT NULL UNIQUE,
+ proposal_received BOOLEAN NOT NULL, proposal_adopted BOOLEAN NOT NULL, chat_message BOOLEAN NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE resumes (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ user_email VARCHAR(255) NOT NULL UNIQUE, headline VARCHAR(100) NOT NULL,
+ introduction VARCHAR(2000), created_at DATETIME(6) NOT NULL, updated_at DATETIME(6) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE resume_skills (
+ resume_id BIGINT NOT NULL, skill_name VARCHAR(30), sort_order INTEGER NOT NULL,
+ PRIMARY KEY (resume_id, sort_order),
+ CONSTRAINT fk_resume_skill_resume FOREIGN KEY (resume_id) REFERENCES resumes(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE resume_careers (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, resume_id BIGINT NOT NULL,
+ period VARCHAR(50) NOT NULL, description VARCHAR(300) NOT NULL, sort_order INTEGER NOT NULL,
+ CONSTRAINT fk_resume_career_resume FOREIGN KEY (resume_id) REFERENCES resumes(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE reviews (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, post_id BIGINT NOT NULL UNIQUE,
+ reviewer_email VARCHAR(255) NOT NULL, reviewee_email VARCHAR(255) NOT NULL,
+ rating INTEGER NOT NULL, content VARCHAR(1000) NOT NULL, created_at DATETIME(6) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE review_images (
+ id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, review_id BIGINT NOT NULL,
+ image_url VARCHAR(255) NOT NULL, stored_file_name VARCHAR(255) NOT NULL,
+ sort_order INTEGER NOT NULL, created_at DATETIME(6) NOT NULL,
+ CONSTRAINT fk_review_image_review FOREIGN KEY (review_id) REFERENCES reviews(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -1,40 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CheckCircle, Trash, MapPin, Wrench, FileText, XCircle } from "@phosphor-icons/react";
+import { useState, useEffect } from "react";
+import { CheckCircle, Trash } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
+import { XCircle } from 'lucide-react';
 import ProposalChatRoom from "@/components/proposal-chat-room";
 import FixDealProgress from "@/components/fix-deal-progress";
 import RatingBadge from "@/components/rating-badge";
-import RepairerEmailMenu from "@/components/repairer-email-menu";
-import ResumeViewModal from "@/components/resume-view-modal";
+import RepairerMenu from "@/components/repairer-menu";
 
-export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail }) {
+export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail, userId }) {
   const [proposals, setProposals] = useState(initialProposals);
   const [previousProposals, setPreviousProposals] = useState(initialProposals);
   const [loadingId, setLoadingId] = useState(null);
-  const [resumeEmail, setResumeEmail] = useState(null);
   const [adoptedDealStatus, setAdoptedDealStatus] = useState(null);
   const router = useRouter();
+
+  const adoptedFixDealId = proposals?.find((p) => p.isAdopted)?.fixDealId ?? null;
+
+  useEffect(() => {
+    if (!adoptedFixDealId) return;
+    const controller = new AbortController();
+    fetch(`/api/fix-deals/${adoptedFixDealId}`, { signal: controller.signal, cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!controller.signal.aborted) setAdoptedDealStatus(data?.status ?? null);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [adoptedFixDealId]);
 
   // 부모 컴포넌트에서 router.refresh()로 새로운 데이터가 내려올 때 상태 동기화
   if (previousProposals !== initialProposals) {
     setPreviousProposals(initialProposals);
     setProposals(initialProposals);
   }
-
-  const adoptedFixDealId = proposals?.find((p) => p.isAdopted)?.fixDealId ?? null;
-
-  // 채택 취소 버튼은 거래가 아직 결제 전(MATCHED)일 때만 의미가 있어서, 실제 거래 상태를 확인해 노출 여부를 정한다.
-  useEffect(() => {
-    if (!adoptedFixDealId) return;
-    const controller = new AbortController();
-    fetch(`/api/fix-deals/${adoptedFixDealId}`, { signal: controller.signal, cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => { if (!controller.signal.aborted) setAdoptedDealStatus(data?.status ?? null); })
-      .catch(() => {});
-    return () => controller.abort();
-  }, [adoptedFixDealId]);
 
   if (!proposals || proposals.length === 0) {
     return (
@@ -46,6 +46,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
 
   // 이미 채택된 제안이 하나라도 존재하는지 확인
   const hasAdopted = proposals.some((p) => p.isAdopted);
+
 
   // 채택된 제안(isAdopted === true)이 맨 위로 오도록 정렬
   const sortedProposals = [...proposals].sort((a, b) => {
@@ -76,24 +77,37 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
     }
   };
 
-  const handleCancelAdoption = async (proposalId) => {
-    if (!confirm("채택을 취소하시겠습니까? 취소하면 다시 다른 제안을 받을 수 있어요.")) return;
+
+  const handleCancelAdopt = async (proposalId) => {
+    if (!confirm("이 제안 채택을 취소하시겠습니까?")) return;
+
     setLoadingId(proposalId);
 
     try {
-      const response = await fetch(`/api/posts/${postId}/proposals/${proposalId}/cancel`, {
-        method: "PATCH",
-      });
-      const payload = await response.json().catch(() => ({}));
-
+      const response = await fetch(
+        `/api/posts/${postId}/proposals/${proposalId}/cancel`,
+        {
+          method: "PATCH",
+          credentials: "include",
+        }
+      );
       if (response.ok) {
-        setProposals((current) => current.map((proposal) => proposal.id === proposalId ? { ...proposal, isAdopted: false } : proposal));
-        alert("채택이 취소되었습니다.");
+        setProposals((current) =>
+          current.map((proposal) =>
+            proposal.id === proposalId
+              ? { ...proposal, isAdopted: false }
+              : proposal
+          )
+        );
+
+        alert("제안 채택이 취소되었습니다.");
         router.refresh();
       } else {
-        alert(payload.error || payload.message || "채택을 취소하지 못했습니다.");
+        console.error("채택 취소 실패:", response.status);
+        alert("제안 채택 취소에 실패했습니다.");
       }
-    } catch {
+    } catch (error) {
+      console.error(error);
       alert("서버 연결에 실패했습니다.");
     } finally {
       setLoadingId(null);
@@ -127,76 +141,42 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
   return (
     <div className="space-y-4">
       {sortedProposals.map((proposal) => {
-        const isMyProposal = userEmail && proposal.repairerEmail === userEmail;
+        const isMyProposal = userId && String(proposal.repairerId) === String(userId);
         const isAdopted = proposal.isAdopted;
 
         return (
           <div
             key={proposal.id}
-            className={`rounded-2xl border-2 p-5 transition ${
-              isAdopted
-                ? "border-emerald-400 bg-emerald-50 shadow-md"
-                : "border-slate-200 bg-white shadow-sm hover:border-blue-300 hover:shadow-md"
-            }`}
+            className={`rounded-2xl border p-5 transition ${isAdopted
+              ? "border-emerald-500 bg-emerald-50/40 shadow-sm"
+              : "border-slate-100 bg-slate-50/50 hover:border-slate-200"
+              }`}
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <RepairerEmailMenu email={proposal.repairerEmail} nickname={proposal.repairerNickname} />
-                <RatingBadge email={proposal.repairerEmail} postId={postId} />
-                {proposal.attachResume && proposal.repairerEmail && (
-                  <button
-                    type="button"
-                    onClick={() => setResumeEmail(proposal.repairerEmail)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100"
-                  >
-                    <FileText size={13} weight="duotone" /> 이력서 보기
-                  </button>
-                )}
+                <RepairerMenu userId={proposal.repairerId} nickname={proposal.repairerNickname} />
+                <RatingBadge userId={proposal.repairerId} postId={postId} />
                 {isAdopted && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white">
-                    <CheckCircle size={14} weight="bold" /> {adoptedDealStatus === "COMPLETED" ? "거래 완료" : "채택 완료"}
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                    <CheckCircle size={14} weight="bold" />
+                    {adoptedDealStatus === "COMPLETED" ? "거래 완료" : "채택 완료"}
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium text-slate-400">
+              <span className="text-xs text-slate-400">
                 {proposal.createdAt ? new Date(proposal.createdAt).toLocaleDateString() : ""}
               </span>
             </div>
 
-            {(proposal.repairerRegion || proposal.repairerCompletedCount > 0) && (
-              <div className="mb-3 flex items-center gap-3 text-xs font-semibold text-slate-500">
-                {proposal.repairerRegion && (
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin size={12} weight="duotone" /> {proposal.repairerRegion}
-                  </span>
-                )}
-                {proposal.repairerCompletedCount > 0 && (
-                  <span className="inline-flex items-center gap-1">
-                    <Wrench size={12} weight="duotone" /> 완료한 수리 {proposal.repairerCompletedCount}건
-                  </span>
-                )}
-              </div>
-            )}
-
             {proposal.estimatedPrice !== undefined && proposal.estimatedPrice !== null && (
-              <div className="mb-3 inline-flex items-baseline gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5">
-                <span className="text-xs font-bold text-blue-500">희망 견적</span>
-                <span className="text-lg font-extrabold text-blue-700">{proposal.estimatedPrice.toLocaleString()}원</span>
+              <div className="mb-2 text-sm font-bold text-blue-600">
+                희망 견적: {proposal.estimatedPrice.toLocaleString()}원
               </div>
             )}
 
-            <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line mb-4">{proposal.content}</p>
+            <p className="text-sm text-slate-700 whitespace-pre-line mb-4">{proposal.content}</p>
 
-            <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
-              {/* 채택 전이고, 이 제안의 당사자(글쓴이 또는 이 제안을 보낸 수리공)만 미리 채팅 가능 */}
-              {!isAdopted && (isMine || isMyProposal) && (
-                <ProposalChatRoom
-                  key={`compact-${proposal.id}`}
-                  proposalId={proposal.id}
-                  compact
-                />
-              )}
-
+            <div className="flex justify-end gap-2">
               {/* 본인 제안이고 채택되지 않았을 때만 삭제 가능 */}
               {isMyProposal && !isAdopted && (
                 <button
@@ -221,31 +201,36 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 </button>
               )}
 
-              {/* 채택한 글쓴이만 취소 가능 — 결제 전(MATCHED) 단계에서만 의미가 있어서 그때만 보여준다 */}
+              {/* 게시글 작성자이고, 현재 해당 제안이 채택된 상태(MATCHED, 결제 전)일 때만 채택 취소 버튼 */}
               {isMine && isAdopted && adoptedDealStatus === "MATCHED" && (
                 <button
-                  onClick={() => handleCancelAdoption(proposal.id)}
+                  onClick={() => handleCancelAdopt(proposal.id)}
                   disabled={loadingId !== null}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-300 transition disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-red-500 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-600 transition disabled:opacity-50"
                 >
                   <XCircle size={16} weight="bold" />
                   {loadingId === proposal.id ? "처리 중..." : "채택 취소"}
                 </button>
               )}
+
             </div>
+            {(isMine || isMyProposal) && <ProposalChatRoom key={proposal.id} proposalId={proposal.id} />}
             {isAdopted && (isMine || isMyProposal) && (
               <>
-                <ProposalChatRoom
-                  key={`${proposal.id}-${proposal.fixDealId}`}
-                  proposalId={proposal.id}
+                <FixDealProgress
+                  fixDealId={proposal.fixDealId}
+                  postId={postId}
+                  isRequester={Boolean(isMine)}
+                  isRepairer={Boolean(isMyProposal)}
+                  estimatedPrice={proposal.estimatedPrice}
+                  repairerId={proposal.repairerId}
+                  userEmail={userEmail}
                 />
-                <FixDealProgress fixDealId={proposal.fixDealId} />
               </>
             )}
           </div>
         );
       })}
-      {resumeEmail && <ResumeViewModal email={resumeEmail} onClose={() => setResumeEmail(null)} />}
     </div>
   );
 }

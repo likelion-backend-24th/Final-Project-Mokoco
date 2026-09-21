@@ -1,15 +1,16 @@
+import { userIdFromToken } from "@/lib/user-id";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import SiteHeader from "@/components/site-header";
 import ProfileTabs from "@/components/profile-tabs";
+import ResumeEditor from "@/components/resume-editor";
 import AccountSettings from "@/components/account-settings";
 
 export default async function ProfilePage() {
   const cookieStore = await cookies();
   const userEmail = cookieStore.get("user_email")?.value ?? null;
 
-  if (!userEmail) {
+  if (!cookieStore.get("access_token")?.value) {
     redirect("/login");
   }
 
@@ -18,28 +19,20 @@ export default async function ProfilePage() {
       <SiteHeader userEmail={userEmail} />
       <main className="page-shell auth-main">
         <p className="section-kicker">PROFILE</p>
-        <h2 className="mt-1 text-3xl font-extrabold tracking-[-0.03em] text-slate-950">내 프로필</h2>
-        <p className="mt-2 mb-8 text-base text-slate-500">참여했던 거래와 후기를 확인할 수 있어요.</p>
+        <h2 className="mt-1 text-2xl font-extrabold tracking-[-0.03em] text-slate-950">내 프로필</h2>
+        <p className="mt-1 mb-6 text-sm text-slate-500">참여했던 거래와 후기를 확인할 수 있어요.</p>
 
-        <section className="mb-10">
-          <h3 className="mb-3 text-base font-bold text-slate-700">내 정보</h3>
+        <section className="mb-8">
+          <h3 className="mb-2 text-sm font-bold text-slate-700">내 정보</h3>
           <AccountSettings />
         </section>
 
-        <section className="mb-10 flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4">
-          <div>
-            <h3 className="text-base font-bold text-slate-700">정산 내역</h3>
-            <p className="mt-0.5 text-sm text-slate-500">수리자로 참여해 받은 결제 내역을 확인할 수 있어요.</p>
-          </div>
-          <Link
-            href="/settlements"
-            className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            정산 내역 보기
-          </Link>
+        <section className="mb-8">
+          <h3 className="mb-2 text-sm font-bold text-slate-700">내 이력서</h3>
+          <ResumeEditor />
         </section>
 
-        <ProfileTabs userEmail={userEmail} />
+        <ProfileTabs userEmail={userEmail} userId={userIdFromToken(cookieStore.get("access_token")?.value)} />
       </main>
     </div>
   );

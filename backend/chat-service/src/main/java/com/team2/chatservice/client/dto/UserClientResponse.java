@@ -5,9 +5,6 @@ public record UserClientResponse(
         String email,
         String nickname,
         String region,
-        String role
+        com.team2.common.security.Role role
 ) {
-    public boolean isAdmin() {
-        return "ADMIN".equals(role);
-    }
 }

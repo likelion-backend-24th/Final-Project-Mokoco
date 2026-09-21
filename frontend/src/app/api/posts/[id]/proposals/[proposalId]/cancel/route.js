@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { backendUrl, readBackendPayload, errorMessage } from "@/lib/backend";
+import { backendUrl } from "@/lib/backend";
 
 export async function PATCH(request, { params }) {
   try {
@@ -14,14 +14,18 @@ export async function PATCH(request, { params }) {
       return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
     }
 
-    const response = await fetch(backendUrl(`/posts/${postId}/proposals/${proposalId}/cancel`), {
+    const targetUrl = backendUrl(`/posts/${postId}/proposals/${proposalId}/cancel`);
+
+    const response = await fetch(targetUrl, {
       method: "PATCH",
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,
+
+      },
     });
 
-    const payload = await readBackendPayload(response);
     if (!response.ok) {
-      return Response.json({ error: errorMessage(payload, "채택을 취소하지 못했습니다.") }, { status: response.status });
+      const errorText = await response.text();
+      return Response.json({ error: "제안 채택취소 실패", details: errorText }, { status: response.status });
     }
 
     return Response.json({ success: true });

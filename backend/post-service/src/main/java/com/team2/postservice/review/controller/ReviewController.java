@@ -1,5 +1,6 @@
 package com.team2.postservice.review.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.team2.common.security.LoginUser;
 import com.team2.postservice.review.dto.ReviewRequestDto;
 import com.team2.postservice.review.dto.ReviewResponseDto;
@@ -10,7 +11,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,25 +25,23 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    // 이미지 업로드가 껴 있어 게이트웨이를 우회해 post-service로 직결되는 엔드포인트라,
-    // 클라이언트가 실어 보내는 헤더를 그대로 믿지 않고 Authorization Bearer 토큰을 직접 검증한다.
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Long> createReview(@RequestPart("review") ReviewRequestDto.Create request,
                                               @RequestPart(value = "images", required = false) List<MultipartFile> images,
-                                              @AuthenticationPrincipal LoginUser user) {
-        Long reviewId = reviewService.createReview(request, images, user.email());
+                                              @AuthenticationPrincipal LoginUser loginUser) {
+        Long reviewId = reviewService.createReview(request, images, loginUser.userId());
         return ResponseEntity.ok(reviewId);
     }
 
     @GetMapping
     public ResponseEntity<UserReviewsResponseDto> getUserReviews(
-            @RequestParam String revieweeEmail,
+            @RequestParam Long revieweeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         int safeSize = Math.min(size, MAX_PAGE_SIZE);
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(safeSize, 1));
-        return ResponseEntity.ok(reviewService.getUserReviews(revieweeEmail, pageable));
+        return ResponseEntity.ok(reviewService.getUserReviews(revieweeId, pageable));
     }
 
     @GetMapping("/{reviewId}")
@@ -54,10 +52,5 @@ public class ReviewController {
     @GetMapping("/exists")
     public ResponseEntity<Boolean> existsByPostId(@RequestParam Long postId) {
         return ResponseEntity.ok(reviewService.existsByPostId(postId));
-    }
-
-    @GetMapping("/by-post")
-    public ResponseEntity<ReviewResponseDto> getReviewByPostId(@RequestParam Long postId) {
-        return ResponseEntity.ok(reviewService.getReviewByPostId(postId));
     }
 }
