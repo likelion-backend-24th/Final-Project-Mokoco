@@ -70,10 +70,14 @@ public class Payment {
     }
 
     public static int calculateTotalAmount(int baseAmount) {
+        if (baseAmount <= 0) throw new com.team2.paymentservice.common.exception.CustomException(com.team2.paymentservice.common.exception.ErrorCode.INVALID_INPUT);
         int fee = BigDecimal.valueOf(baseAmount)
                 .multiply(FEE_RATE)
                 .setScale(0, RoundingMode.HALF_UP)
-                .intValue();
-        return baseAmount + fee;
+                .intValueExact();
+        try { return Math.addExact(baseAmount, fee); }
+        catch (ArithmeticException overflow) {
+            throw new com.team2.paymentservice.common.exception.CustomException(com.team2.paymentservice.common.exception.ErrorCode.INVALID_INPUT);
+        }
     }
 }

@@ -139,14 +139,14 @@ class ProposalConcurrencyTest extends FlywaySchemaTest {
         dealService.markProductSent(dealId, "repair@test");
         dealService.markRepairing(dealId, "repair@test");
         dealService.requestCompletion(dealId, "repair@test");
-        when(payments.getPaymentByPostId(postId, "requester@test"))
+        when(payments.getPaymentByPostId(postId))
                 .thenReturn(new com.team2.postservice.client.dto.PaymentClientResponse(1L, postId, "COMPLETED"));
         assertThat(race(() -> dealService.acceptCompletion(dealId, "owner@test"),
                 () -> dealService.acceptCompletion(dealId, "owner@test"))).containsOnly(true);
         java.time.LocalDateTime completedAt = deals.findById(dealId).orElseThrow().getCompletedAt();
         dealService.acceptCompletion(dealId, "owner@test");
         assertThat(deals.findById(dealId).orElseThrow().getCompletedAt()).isNotNull().isEqualTo(completedAt);
-        verify(payments, times(1)).getPaymentByPostId(postId, "requester@test");
+        verify(payments, times(1)).getPaymentByPostId(postId);
         assertThatThrownBy(() -> service.cancelProposal(postId, firstId, "owner@test")).isInstanceOf(CustomException.class);
         assertThatThrownBy(() -> deals.saveAndFlush(FixDeal.builder().postId(postId).proposalId(secondId)
                 .requesterId(1L).repairerId(2L).build())).isInstanceOf(DataIntegrityViolationException.class);

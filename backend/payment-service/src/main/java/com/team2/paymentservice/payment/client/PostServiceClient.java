@@ -1,41 +1,24 @@
 package com.team2.paymentservice.payment.client;
 
+import com.team2.common.payment.PaymentContext;
 import com.team2.paymentservice.common.exception.CustomException;
 import com.team2.paymentservice.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 @Component
 @RequiredArgsConstructor
 public class PostServiceClient {
-
     private final RestClient postServiceRestClient;
-
-    public PostInfoResponse getPost(Long postId) {
+    public PaymentContext getPaymentContext(Long postId) {
         try {
-            return postServiceRestClient.get()
-                    .uri("/posts/{id}", postId)
-                    .retrieve()
-                    .body(PostInfoResponse.class);
-        } catch (HttpClientErrorException.NotFound e) {
-            throw new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PAYMENT);
-        } catch (RestClientException e) {
-            throw new CustomException(ErrorCode.POST_SERVICE_UNAVAILABLE);
-        }
-    }
-
-    public FixDealStatusResponse getFixDealStatus(Long postId) {
-        try {
-            return postServiceRestClient.get()
-                    .uri("/posts/{postId}/fix-deal", postId)
-                    .retrieve()
-                    .body(FixDealStatusResponse.class);
-        } catch (HttpClientErrorException.NotFound e) {
-            throw new CustomException(ErrorCode.INVALID_PAYMENT_STATUS);
-        } catch (RestClientException e) {
+            PaymentContext context = postServiceRestClient.get().uri("/internal/payments/posts/{postId}", postId)
+                    .retrieve().body(PaymentContext.class);
+            if (context == null || !postId.equals(context.postId())) throw new CustomException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
+            return context;
+        } catch (RestClientException failure) {
             throw new CustomException(ErrorCode.POST_SERVICE_UNAVAILABLE);
         }
     }

@@ -109,7 +109,7 @@ public class FixDealService {
 
         PaymentClientResponse payment;
         try {
-            payment = paymentClient.getPaymentByPostId(fixDeal.getPostId(), requesterEmail);
+            payment = paymentClient.getPaymentByPostId(fixDeal.getPostId());
         } catch (FeignException.NotFound e) {
             throw new CustomException(ErrorCode.PAYMENT_NOT_COMPLETED);
         } catch (FeignException e) {

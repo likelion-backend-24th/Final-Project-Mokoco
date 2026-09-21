@@ -107,8 +107,12 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
     setActionLoading(true);
     setError("");
     try {
-      const paymentId = `payment-${crypto.randomUUID()}`;
-      const { base, total } = calculateTotalWithFee(estimatedPrice);
+      const prepareRes = await fetch("/api/payments/prepare", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ postId }),
+      });
+      const order = await prepareRes.json();
+      if (!prepareRes.ok) { setError(order.error ?? "결제를 준비하지 못했습니다."); return; }
+      const { paymentId, totalAmount: total } = order;
 
       const paymentResult = await PortOne.requestPayment({
         storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID,
@@ -120,9 +124,7 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
         payMethod: "CARD",
         isEscrow: true, // 안전거래(에스크로)
         customer: userEmail ? { email: userEmail } : undefined,
-        // 웹훅이 프론트 응답보다 먼저 도착하거나, 프론트 응답을 못 받는 경우에도
-        // 백엔드가 이 값으로 결제-거래를 연결하고 기준액을 복원할 수 있도록 실어 보낸다.
-        customData: JSON.stringify({ postId, payerEmail: userEmail, payeeEmail: repairerEmail, baseAmount: base }),
+        // paymentId is linked to the authoritative order stored by the server.
       });
 
       // 사용자가 결제창을 닫았거나 결제가 실패한 경우
@@ -138,9 +140,6 @@ export default function FixDealProgress({ fixDealId, postId, isRequester, isRepa
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           postId,
-          payeeEmail: repairerEmail,
-          amount: total,
-          baseAmount: base,
           paymentId,
         }),
       });

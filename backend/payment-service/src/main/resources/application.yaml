@@ -36,3 +36,6 @@ post-service:
 
 portone:
   base-url: https://api.portone.io
+
+internal:
+  service-key: ${INTERNAL_SERVICE_KEY}

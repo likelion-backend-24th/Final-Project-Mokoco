@@ -8,10 +8,11 @@ import org.springframework.web.bind.annotation.RequestHeader;
 
 @FeignClient(
         name = "payment-service",
-        url = "${services.payment-service.url:http://localhost:8083}"
+        url = "${services.payment-service.url:http://localhost:8083}",
+        configuration = UserClientConfig.class
 )
 public interface PaymentClient {
 
-    @GetMapping("/payments/post/{postId}")
-    PaymentClientResponse getPaymentByPostId(@PathVariable Long postId, @RequestHeader("X-User-Email") String userEmail);
+    @GetMapping("/internal/payments/post/{postId}")
+    PaymentClientResponse getPaymentByPostId(@PathVariable Long postId);
 }
