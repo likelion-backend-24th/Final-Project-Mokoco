@@ -43,7 +43,7 @@ class FlywayUpgradeTest {
         flyway.validate();
     }
 
-    @Test void migratesLegacyChatDataWithoutChangingIds() throws Exception {
+    @Test void keepsLegacyChatTableAndDataWithoutChangingIds() throws Exception {
         String url = "jdbc:mysql://" + MYSQL.getHost() + ":" + MYSQL.getMappedPort(3306)
                 + "/legacy_chat_test?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true";
         Flyway.configure().dataSource(url, "root", MYSQL.getPassword()).target("4").load().migrate();
@@ -86,7 +86,7 @@ class FlywayUpgradeTest {
 
             try (ResultSet rows = statement.executeQuery("""
                     SELECT r.id, r.status, m.id, m.content
-                    FROM chat_room r JOIN chat_messages m ON m.chat_room_id = r.id
+                    FROM chat_rooms r JOIN chat_messages m ON m.chat_room_id = r.id
                     """)) {
                 assertThat(rows.next()).isTrue();
                 assertThat(rows.getLong(1)).isEqualTo(42);
@@ -96,7 +96,7 @@ class FlywayUpgradeTest {
             }
             try (ResultSet rows = statement.executeQuery("""
                     SELECT COUNT(*) FROM information_schema.tables
-                    WHERE table_schema = DATABASE() AND table_name = 'chat_rooms'
+                    WHERE table_schema = DATABASE() AND table_name = 'chat_room'
                     """)) {
                 assertThat(rows.next()).isTrue();
                 assertThat(rows.getInt(1)).isZero();

@@ -8,13 +8,13 @@ import java.time.LocalDateTime;
 @Entity
 @org.hibernate.annotations.DynamicUpdate
 @Table(
-        name = "chat_room",
+        name = "chat_rooms",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_chat_room_fix_deal",
+                        name = "uk_chat_rooms_fix_deal",
                         columnNames = "fix_deal_id"
                 ),
-                @UniqueConstraint(name = "uk_chat_room_proposal", columnNames = "proposal_id")
+                @UniqueConstraint(name = "uk_chat_rooms_proposal", columnNames = "proposal_id")
         }
 )
 @Getter
