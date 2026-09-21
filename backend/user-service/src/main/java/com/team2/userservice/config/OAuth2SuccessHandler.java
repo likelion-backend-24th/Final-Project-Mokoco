@@ -32,9 +32,9 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         String role = user.getRole().name();
 
-        // 토큰 생성 시 이메일과 권한만 전달
-        String accessToken = jwtTokenProvider.createAccessToken(email, role);
-        String refreshToken = jwtTokenProvider.createRefreshToken(email);
+        // 토큰 생성 시 사용자 ID와 권한 전달
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), role);
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
         String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:3000/oauth2/redirect")
                 .queryParam("token", accessToken)

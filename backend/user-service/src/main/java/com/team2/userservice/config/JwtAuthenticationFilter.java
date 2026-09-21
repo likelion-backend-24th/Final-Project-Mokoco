@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import com.team2.userservice.user.repository.UserRepository;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +18,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -24,10 +26,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = resolveToken(request);
 
-        if (token != null && jwtTokenProvider.validateAccessToken(token)) {
-            String email = jwtTokenProvider.getEmailFromAccessToken(token);
+        if (token != null) {
+            if (!jwtTokenProvider.validateAccessToken(token)) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+            Long userId;
+            try {
+                userId = jwtTokenProvider.getUserIdFromAccessToken(token);
+            } catch (io.jsonwebtoken.JwtException | IllegalArgumentException failure) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+            com.team2.userservice.user.entity.User user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+            String email = user.getEmail();
 
-            // 임시 인증 객체 생성 (권한 정보 등 필요 시 확장 가능)
+            // 기존 내 정보·지역 API의 이메일 principal 계약을 유지한다.
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(email, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
