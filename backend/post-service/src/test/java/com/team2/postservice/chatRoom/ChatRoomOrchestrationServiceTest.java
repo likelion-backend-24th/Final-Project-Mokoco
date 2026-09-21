@@ -30,7 +30,10 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DataJpaTest
+// Flyway가 이제 이 모듈 클래스패스에 있어서(V1이 MySQL 전용 문법이라) 기본 설정 그대로면
+// @DataJpaTest의 내장 H2에도 그 SQL을 실행하려다 실패한다 — 이 테스트는 스키마 마이그레이션
+// 자체를 검증하는 게 아니므로 예전처럼 Flyway를 끄고 Hibernate가 즉석에서 스키마를 만들게 한다.
+@DataJpaTest(properties = {"spring.flyway.enabled=false", "spring.jpa.hibernate.ddl-auto=create-drop"})
 @Import(ChatRoomOrchestrationService.class)
 class ChatRoomOrchestrationServiceTest {
     @Autowired TestEntityManager em;
