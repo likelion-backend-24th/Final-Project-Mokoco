@@ -69,3 +69,8 @@ Thumbs.db
 **/uploads/
 .npm-cache/
 **/private-chat-files/
+
+# 서비스별 실 시크릿(PortOne 키, 서비스 간 내부 인증 키 등) — CI가 배포 직전에 GitHub Secrets
+# 값으로 덮어써서 만드는 파일이라 로컬/git에는 절대 안 남아야 한다.
+**/src/main/resources/application-secret.yml
+**/src/main/resources/application-secret.yaml
