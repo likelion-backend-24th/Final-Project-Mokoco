@@ -1,22 +1,19 @@
 package com.team2.postservice.chatRoom;
 
-import com.team2.postservice.chatMessage.dto.ChatMessageResponse;
-import com.team2.postservice.chatRoom.dto.ChatRoomListItem;
-import com.team2.postservice.chatRoom.dto.ChatRoomResponse;
-import com.team2.postservice.chatRoom.entity.ChatRoom;
-import com.team2.postservice.chatRoom.service.ChatRoomService;
-import com.team2.postservice.chatRoom.repository.ChatRoomRepository;
-import com.team2.postservice.chatMessage.service.ChatService;
+import com.team2.common.chat.ChatRoomInfo;
+import com.team2.common.chat.ProposalChatResponse;
+import com.team2.postservice.client.ChatClient;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.fixDeal.entity.FixDeal;
+import com.team2.postservice.fixDeal.repository.FixDealRepository;
+import com.team2.postservice.internal.controller.InternalChatContextController;
 import com.team2.postservice.notification.service.NotificationService;
 import com.team2.postservice.post.entity.*;
 import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
 import com.team2.postservice.proposal.service.ProposalService;
-import com.team2.postservice.fixDeal.repository.FixDealRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -25,159 +22,118 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.*;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.concurrent.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@DataJpaTest
-@Import({ChatRoomService.class, ProposalService.class, ChatService.class})
+@DataJpaTest(properties = {"spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false", "internal.service-key=test-key"})
+@Import({InternalChatContextController.class, ProposalService.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class ProposalChatIntegrationTest {
-    @Autowired ChatRoomService chatRooms;
-    @Autowired ChatService chat;
+    @Autowired InternalChatContextController internal;
     @Autowired ProposalService proposals;
     @Autowired ProposalRepository proposalRepo;
     @Autowired PostRepository posts;
-    @Autowired ChatRoomRepository rooms;
     @Autowired FixDealRepository deals;
     @Autowired PlatformTransactionManager transactions;
     @MockitoBean UserClient users;
+    @MockitoBean ChatClient chat;
     @MockitoBean NotificationService notifications;
-    Long postId, first, second;
+    Long postId, proposalId;
+    final ConcurrentMap<Long, ChatRoomInfo> remoteRooms = new ConcurrentHashMap<>();
+
     @BeforeEach void setup() {
-        when(users.getUserByEmail("requester@test.invalid")).thenReturn(
-                new UserClientResponse(10L,"requester@test.invalid","requester",null)
-        );
-        when(users.getUserByEmail("repairer@test.invalid")).thenReturn(
-                new UserClientResponse(20L,"repairer@test.invalid","repairer",null)
-        );
-        when(users.getUserByEmail("other@test.invalid")).thenReturn(
-                new UserClientResponse(30L,"other@test.invalid","other",null)
-        );
-
+        when(users.getUserByEmail("requester@test")).thenReturn(new UserClientResponse(10L, "requester@test", "Requester", null));
+        when(users.getUserByEmail("repairer@test")).thenReturn(new UserClientResponse(20L, "repairer@test", "Repairer", null));
         new TransactionTemplate(transactions).executeWithoutResult(status -> {
-            Post post = posts.save(Post.builder()
-                    .title("수리 요청")
-                    .content("다리 수리")
-                    .authorEmail("requester@test.invalid")
-                    .regionName("서울")
-                    .category(PostCategory.values()[0])
-                    .build());
-
+            Post post = posts.save(Post.builder().title("Repair").content("Repair").authorEmail("requester@test")
+                    .regionName("Seoul").category(PostCategory.values()[0]).build());
             postId = post.getId();
-
-            first = proposalRepo.save(Proposal.builder()
-                    .post(post)
-                    .repairerEmail("repairer@test.invalid")
-                    .estimatedPrice(50000)
-                    .content("수리")
-                    .build())
-                    .getId();
-            second = proposalRepo.save(Proposal.builder().post(post).repairerEmail("other@test.invalid").estimatedPrice(60000).content("수리").build()).getId();
+            proposalId = proposalRepo.save(Proposal.builder().post(post).repairerEmail("repairer@test")
+                    .estimatedPrice(50000).content("Repair").build()).getId();
         });
+        when(chat.ensureRoom(any())).thenAnswer(call -> {
+            ProposalChatResponse context = call.getArgument(0);
+            return remoteRooms.computeIfAbsent(context.proposalId(), id ->
+                    new ChatRoomInfo(id + 1000, context.fixDealId(), id, context.requesterId(), context.repairerId(), LocalDateTime.now()));
+        });
+        when(chat.existsForProposal(anyLong())).thenAnswer(call -> remoteRooms.containsKey(call.getArgument(0)));
     }
-    @Test void eitherParticipantCanOpenBeforeAdoptionAndEachProposalHasItsOwnRoom() {
-        ChatRoomResponse one = chatRooms.createForProposal(first,20L);
-        assertThat(one.fixDealId()).isNull();
-        assertThat(chatRooms.createForProposal(first,10L).chatRoomId()).isEqualTo(one.chatRoomId());
 
-        ChatRoomResponse two = chatRooms.createForProposal(second,10L);
-        assertThat(two.chatRoomId()).isNotEqualTo(one.chatRoomId());
-        assertThatThrownBy(() -> chatRooms.createForProposal(first,30L)).isInstanceOf(RuntimeException.class);
-        assertThatThrownBy(() -> chat.history(one.chatRoomId(),30L,null)).isInstanceOf(ResponseStatusException.class);
-
-        chat.send(one.chatRoomId(),20L,"채택 전 상담");
-        assertThat(chat.history(one.chatRoomId(),10L,null)).hasSize(1);
-        assertThat(chat.counterpartId(one.chatRoomId(),10L)).isEqualTo(20L);
-
-        assertThat(rooms.findMyRooms(10L,PageRequest.of(0,50)))
-                .extracting(ChatRoomListItem::chatRoomId).contains(one.chatRoomId(),two.chatRoomId());
-
-        assertThat(rooms.findMyRooms(30L,PageRequest.of(0,50)))
-                .extracting(ChatRoomListItem::chatRoomId).doesNotContain(one.chatRoomId());
-        verify(notifications).notifyChatMessage(10L,postId,one.chatRoomId(),"채택 전 상담");
+    @Test void participantsCreateAndReuseBeforeAdoptionButOutsiderCannot() {
+        ChatRoomInfo first = internal.ensureRoom(proposalId, 20L, "test-key");
+        assertThat(first.fixDealId()).isNull();
+        assertThat(internal.ensureRoom(proposalId, 10L, "test-key").chatRoomId()).isEqualTo(first.chatRoomId());
+        assertThatThrownBy(() -> internal.ensureRoom(proposalId, 99L, "test-key"))
+                .isInstanceOf(ResponseStatusException.class);
+        verify(chat, times(2)).ensureRoom(any());
     }
-    @Test void adoptionLinksExistingRoomAndPreservesMessages() {
-        ChatRoomResponse room = chatRooms.createForProposal(first,20L);
-        ChatMessageResponse message = chat.send(room.chatRoomId(),10L,"상담 이력");
 
-        proposals.adoptProposal(postId,first,"requester@test.invalid");
-        ChatRoomResponse adopted = chatRooms.createForProposal(first,10L);
-
-        assertThat(adopted.chatRoomId()).isEqualTo(room.chatRoomId());
-        assertThat(adopted.fixDealId()).isNotNull();
-
-        assertThat(chat.history(room.chatRoomId(),20L,null))
-                .extracting(ChatMessageResponse::messageId).contains(message.messageId());
-
-        assertThat(chatRooms.getChatRoom(adopted.fixDealId(),"requester@test.invalid")
-                .chatRoomId()).isEqualTo(room.chatRoomId());
-
-        assertThat(chatRooms.createForProposal(second,30L).fixDealId()).isNull();
-    }
-    @Test void simultaneousCreationReturnsOneRoom() throws Exception {
+    @Test void simultaneousCreationIsSerializedBeforeCallingChat() throws Exception {
         CountDownLatch start = new CountDownLatch(1);
         try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
-
-            Future<ChatRoomResponse> a = pool.submit(() -> {
-                start.await(); return chatRooms.createForProposal(first,10L);
-            });
-
-            Future<ChatRoomResponse> b = pool.submit(() -> {
-                start.await(); return chatRooms.createForProposal(first,20L);
-            });
-
+            Future<ChatRoomInfo> first = pool.submit(() -> { start.await(); return internal.ensureRoom(proposalId, 10L, "test-key"); });
+            Future<ChatRoomInfo> second = pool.submit(() -> { start.await(); return internal.ensureRoom(proposalId, 20L, "test-key"); });
             start.countDown();
-            assertThat(a.get(10,TimeUnit.SECONDS).chatRoomId()).isEqualTo(b.get(10,TimeUnit.SECONDS).chatRoomId());
-        }
-    }
-    @Test void simultaneousAdoptionAndCreationUseSameRoom() throws Exception {
-        CountDownLatch start = new CountDownLatch(1);
-        try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
-
-            Future<ChatRoomResponse> a = pool.submit(() -> {
-                start.await();
-                return chatRooms.createForProposal(first,20L);
-            });
-
-            Future<Boolean> b = pool.submit(() -> {
-                start.await();
-                proposals.adoptProposal(postId,first,"requester@test.invalid");
-                return true; }
-            );
-
-            start.countDown();
-            ChatRoomResponse created = a.get(10,TimeUnit.SECONDS);
-            b.get(10,TimeUnit.SECONDS);
-
-            ChatRoomResponse linked = chatRooms.getForProposal(first,10L);
-            assertThat(linked.chatRoomId()).isEqualTo(created.chatRoomId());
-            assertThat(linked.fixDealId()).isNotNull();
+            assertThat(first.get(10, TimeUnit.SECONDS).chatRoomId()).isEqualTo(second.get(10, TimeUnit.SECONDS).chatRoomId());
         }
     }
 
-    @Test void cannotDeleteProposalWithConversation() {
-        chatRooms.createForProposal(first,20L);
-        assertThatThrownBy(() -> proposals.deleteProposal(postId,first,"repairer@test.invalid"))
-                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
-        assertThat(proposalRepo.existsById(first)).isTrue();
+    @Test void deletionWaitsForRoomCreationAndThenRejectsIt() throws Exception {
+        CountDownLatch remoteEntered = new CountDownLatch(1);
+        CountDownLatch remoteRelease = new CountDownLatch(1);
+        doAnswer(call -> {
+            ProposalChatResponse context = call.getArgument(0);
+            remoteEntered.countDown();
+            assertThat(remoteRelease.await(5, TimeUnit.SECONDS)).isTrue();
+            ChatRoomInfo room = new ChatRoomInfo(100L, null, context.proposalId(), 10L, 20L, LocalDateTime.now());
+            remoteRooms.put(context.proposalId(), room);
+            return room;
+        }).when(chat).ensureRoom(any());
+        try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
+            Future<ChatRoomInfo> create = pool.submit(() -> internal.ensureRoom(proposalId, 10L, "test-key"));
+            assertThat(remoteEntered.await(5, TimeUnit.SECONDS)).isTrue();
+            Future<?> delete = pool.submit(() -> proposals.deleteProposal(postId, proposalId, "repairer@test"));
+            remoteRelease.countDown();
+            create.get(10, TimeUnit.SECONDS);
+            assertThatThrownBy(() -> delete.get(10, TimeUnit.SECONDS))
+                    .hasCauseInstanceOf(ResponseStatusException.class);
+            assertThat(proposalRepo.existsById(proposalId)).isTrue();
+        } finally { remoteRelease.countDown(); }
     }
 
-    @Test void legacyDealRoomIsReusedByProposalEndpoint() {
-        proposals.adoptProposal(postId,first,"requester@test.invalid");
+    @Test void unavailableChatCannotBypassDeletionGuard() {
+        when(chat.existsForProposal(proposalId)).thenThrow(new IllegalStateException("unavailable"));
+        assertThatThrownBy(() -> proposals.deleteProposal(postId, proposalId, "repairer@test")).isInstanceOf(IllegalStateException.class);
+        assertThat(proposalRepo.existsById(proposalId)).isTrue();
+    }
 
-        Long legacyId = new TransactionTemplate(transactions).execute(status -> {
-            FixDeal deal = deals.findByProposalId(first).orElseThrow();
-            return rooms.saveAndFlush(ChatRoom.builder()
-                    .fixDeal(deal)
-                    .build())
-                    .getId();
+    @Test void adoptionAndCancellationSyncOnlyAfterCommit() {
+        doAnswer(call -> {
+            ProposalChatResponse context = internal.proposal(proposalId, "test-key");
+            assertThat(context.fixDealId()).isNotNull();
+            return null;
+        }).when(chat).syncProposal(proposalId);
+        proposals.adoptProposal(postId, proposalId, "requester@test");
+        FixDeal first = deals.findByProposalId(proposalId).orElseThrow();
+        verify(chat).syncProposal(proposalId);
+        doNothing().when(chat).syncProposal(proposalId);
+        proposals.cancelProposal(postId, proposalId, "requester@test");
+        assertThat(internal.proposal(proposalId, "test-key").fixDealId()).isNull();
+        verify(chat, times(2)).syncProposal(proposalId);
+        proposals.adoptProposal(postId, proposalId, "requester@test");
+        assertThat(deals.findByProposalId(proposalId).orElseThrow().getId()).isNotEqualTo(first.getId());
+    }
+
+    @Test void rolledBackAdoptionDoesNotPublishSync() {
+        new TransactionTemplate(transactions).executeWithoutResult(status -> {
+            proposals.adoptProposal(postId, proposalId, "requester@test");
+            status.setRollbackOnly();
         });
-
-        assertThat(chatRooms.createForProposal(first,20L).chatRoomId()).isEqualTo(legacyId);
-        assertThat(chatRooms.getForProposal(first,10L).proposalId()).isEqualTo(first);
+        verify(chat, never()).syncProposal(anyLong());
+        assertThat(deals.findByProposalId(proposalId)).isEmpty();
     }
 }

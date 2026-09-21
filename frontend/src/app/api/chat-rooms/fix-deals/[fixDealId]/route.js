@@ -11,7 +11,7 @@ async function forward(method, { params }) {
   try {
     const response = await fetch(backendUrl(`/api/chat-rooms/fix-deals/${fixDealId}`), {
       method,
-      headers: { "X-User-Email": email },
+      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,  },
       cache: "no-store",
       signal: AbortSignal.timeout(10000),
     });

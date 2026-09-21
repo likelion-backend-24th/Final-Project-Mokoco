@@ -1,0 +1,38 @@
+package com.team2.chatservice.chatMessage.dto;
+
+import com.team2.chatservice.chatMessage.entity.ChatMessage;
+import com.team2.chatservice.chatMessage.entity.MessageType;
+
+import java.time.LocalDateTime;
+
+public record ChatMessageResponse(
+        Long messageId,
+        Long chatRoomId,
+        Long senderId,
+        String content,
+        MessageType type,
+        LocalDateTime createdAt,
+        String attachmentName,
+        String attachmentMime,
+        Long attachmentSize,
+        String attachmentUrl,
+        boolean deleted
+) {
+
+    public static ChatMessageResponse from(ChatMessage message) {
+        return new ChatMessageResponse(
+                message.getId(),
+                message.getChatRoom().getId(),
+                message.getSenderId(),
+                message.getContent(),
+                message.getMessageType(),
+                message.getCreatedAt(),
+                message.getDeletedAt() == null ? message.getAttachmentName() : null,
+                message.getDeletedAt() == null ? message.getAttachmentMime() : null,
+                message.getDeletedAt() == null ? message.getAttachmentSize() : null,
+                message.getAttachmentKey() == null || message.getDeletedAt() != null ? null : "/api/chat-rooms/" + message.getChatRoom().getId()
+                        + "/attachments/" + message.getId(),
+                message.getDeletedAt() != null
+        );
+    }
+}

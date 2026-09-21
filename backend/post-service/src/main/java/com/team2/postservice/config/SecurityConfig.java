@@ -25,9 +25,7 @@ public class SecurityConfig {
         return http
                 .securityMatcher(
                         "/api/ai/**",
-                        "/api/chat-rooms/*/contract/ai-draft",
-                        "/api/chat-rooms/proposals/*",
-                        "/api/chat-rooms/*/detail"
+                        "/api/chat-rooms/*/contract/ai-draft"
                 )
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())

@@ -8,7 +8,7 @@ function chatWsUrl() {
   if (process.env.NEXT_PUBLIC_CHAT_WS_URL) return process.env.NEXT_PUBLIC_CHAT_WS_URL;
   return window.location.protocol === "https:"
     ? `wss://${window.location.host}/ws/chat`
-    : "ws://localhost:8082/ws/chat";
+    : "ws://localhost:8000/ws/chat";
 }
 
 /**
