@@ -94,7 +94,7 @@ public class ChatRoom {
     public void updateContext(Long proposalId, Long postId, String postTitle, Long fixDealId) {
         if ((this.proposalId != null && !this.proposalId.equals(proposalId))
                 || (this.postId != null && !this.postId.equals(postId)))
-            throw new com.team2.common.exception.CustomException(com.team2.common.exception.ErrorCode.INVALID_INPUT);
+            throw new com.team2.common.exception.CustomException(com.team2.chatservice.common.exception.ErrorCode.INVALID_INPUT);
         this.proposalId = proposalId;
         this.postId = postId;
         this.postTitle = postTitle;

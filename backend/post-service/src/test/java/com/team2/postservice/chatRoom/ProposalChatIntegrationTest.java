@@ -13,9 +13,9 @@ import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
 import com.team2.postservice.proposal.service.ProposalService;
+import com.team2.postservice.FlywaySchemaTest;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.*;
@@ -28,10 +28,10 @@ import java.util.concurrent.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@DataJpaTest(properties = {"spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false", "internal.service-key=test-key"})
 @Import({ChatRoomOrchestrationService.class, ProposalService.class})
+@org.springframework.test.context.TestPropertySource(properties = "internal.service-key=test-key")
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-class ProposalChatIntegrationTest {
+class ProposalChatIntegrationTest extends FlywaySchemaTest {
     @Autowired ChatRoomOrchestrationService chatRooms;
     @Autowired ProposalService proposals;
     @Autowired ProposalRepository proposalRepo;

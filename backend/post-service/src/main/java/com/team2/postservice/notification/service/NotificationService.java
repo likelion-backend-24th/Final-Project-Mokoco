@@ -2,7 +2,7 @@ package com.team2.postservice.notification.service;
 
 import com.team2.postservice.client.UserClient;
 import com.team2.common.exception.CustomException;
-import com.team2.common.exception.ErrorCode;
+import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.notification.dto.NotificationResponseDto;
 import com.team2.postservice.notification.dto.NotificationSettingDto;
 import com.team2.postservice.notification.entity.Notification;

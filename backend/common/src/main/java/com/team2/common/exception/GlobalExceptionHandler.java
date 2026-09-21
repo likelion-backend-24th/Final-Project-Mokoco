@@ -10,16 +10,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
     protected ResponseEntity<ErrorResponse> handleCustomException(CustomException e) {
-        ErrorCode errorCode = e.getErrorCode();
+        ApiErrorCode errorCode = e.getErrorCode();
         ErrorResponse response = new ErrorResponse(errorCode.getCode(), errorCode.getMessage());
         return new ResponseEntity<>(response, errorCode.getHttpStatus());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     protected ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        ErrorResponse response = new ErrorResponse(ErrorCode.INVALID_INPUT.getCode(),
+        ErrorResponse response = new ErrorResponse("INVALID_INPUT",
                 e.getBindingResult().getAllErrors().get(0).getDefaultMessage());
-        return new ResponseEntity<>(response, ErrorCode.INVALID_INPUT.getHttpStatus());
+        return ResponseEntity.badRequest().body(response);
     }
 
     public record ErrorResponse(String code, String message) {}

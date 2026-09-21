@@ -5,7 +5,7 @@ import com.team2.chatservice.chatRoom.entity.ChatRoom;
 import com.team2.chatservice.chatRoom.repository.ChatRoomRepository;
 import com.team2.common.chat.ProposalChatResponse;
 import com.team2.common.exception.CustomException;
-import com.team2.common.exception.ErrorCode;
+import com.team2.chatservice.common.exception.ErrorCode;
 import com.team2.common.chat.ChatRoomInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
