@@ -1,5 +1,7 @@
 package com.team2.postservice.common.security;
 
+import com.team2.common.security.LoginUser;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team2.postservice.ai.AiRequestTrace;
 import com.team2.postservice.client.UserClient;

@@ -1,4 +1,4 @@
-package com.team2.postservice.common.exception;
+package com.team2.common.exception;
 
 import lombok.Getter;
 

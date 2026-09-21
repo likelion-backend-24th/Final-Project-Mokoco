@@ -29,6 +29,8 @@ dependencyManagement {
 }
 
 dependencies {
+    implementation project(':common')
+
 	implementation 'com.twelvemonkeys.imageio:imageio-webp:3.12.0'
 	implementation 'org.apache.tika:tika-core:3.2.3'
 	// Spring Boot & Cloud Starters

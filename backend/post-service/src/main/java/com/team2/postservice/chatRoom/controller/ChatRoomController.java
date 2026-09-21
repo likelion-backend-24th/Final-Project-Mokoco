@@ -3,7 +3,7 @@ package com.team2.postservice.chatRoom.controller;
 import com.team2.postservice.chatRoom.dto.ChatRoomListItem;
 import com.team2.postservice.chatRoom.dto.ChatRoomResponse;
 import com.team2.postservice.chatRoom.service.ChatRoomService;
-import com.team2.postservice.common.security.LoginUser;
+import com.team2.common.security.LoginUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

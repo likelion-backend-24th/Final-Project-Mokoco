@@ -1,7 +1,7 @@
 package com.team2.postservice.post.service;
 
-import com.team2.postservice.common.exception.CustomException;
-import com.team2.postservice.common.exception.ErrorCode;
+import com.team2.common.exception.CustomException;
+import com.team2.common.exception.ErrorCode;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
