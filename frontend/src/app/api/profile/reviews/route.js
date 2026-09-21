@@ -12,7 +12,7 @@ export async function GET(request) {
   try {
     const response = await fetch(
       backendUrl(`/profile/reviews?page=${page}&size=${size}`),
-      { headers: { "X-User-Email": email }, cache: "no-store", signal: AbortSignal.timeout(8000) },
+      { headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,  }, cache: "no-store", signal: AbortSignal.timeout(8000) },
     );
     const payload = await readBackendPayload(response);
     if (!response.ok) {

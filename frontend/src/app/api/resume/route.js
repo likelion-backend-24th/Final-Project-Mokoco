@@ -11,7 +11,7 @@ export async function GET() {
 
   try {
     const response = await fetch(backendUrl("/resumes/me"), {
-      headers: { "X-User-Email": email },
+      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,  },
       cache: "no-store",
       signal: AbortSignal.timeout(8000),
     });
@@ -39,7 +39,7 @@ export async function POST(request) {
   try {
     const response = await fetch(backendUrl("/resumes"), {
       method: "POST",
-      headers: { "X-User-Email": email, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,   "Content-Type": "application/json" },
       body: JSON.stringify({
         headline: body.headline,
         introduction: body.introduction,
@@ -73,7 +73,7 @@ export async function PATCH(request) {
   try {
     const response = await fetch(backendUrl("/resumes"), {
       method: "PATCH",
-      headers: { "X-User-Email": email, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,   "Content-Type": "application/json" },
       body: JSON.stringify({
         headline: body.headline,
         introduction: body.introduction,
@@ -100,7 +100,7 @@ export async function DELETE() {
   try {
     const response = await fetch(backendUrl("/resumes"), {
       method: "DELETE",
-      headers: { "X-User-Email": email },
+      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,  },
       cache: "no-store",
       signal: AbortSignal.timeout(8000),
     });

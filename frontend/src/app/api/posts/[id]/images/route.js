@@ -32,7 +32,7 @@ export async function POST(request, { params }) {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "X-User-Email": userEmail,
+
       },
       body: outgoing,
       cache: "no-store",

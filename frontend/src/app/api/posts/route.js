@@ -17,7 +17,7 @@ export async function POST(request) {
 
     // 백엔드로 그대로 전달하기 위해 새로운 FormData 구성
     const backendFormData = new FormData();
-    
+
     const postBlob = formData.get("post");
     if (postBlob) {
       backendFormData.append("post", postBlob);
@@ -32,7 +32,7 @@ export async function POST(request) {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "X-User-Email": userEmail,
+
         // 주의: multipart/form-data 전송 시 Content-Type 헤더는 수동으로 넣지 않아야 boundary가 자동 생성됩니다.
       },
       body: backendFormData,

@@ -1,5 +1,7 @@
 package com.team2.postservice.fixDeal.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.team2.common.security.LoginUser;
 import com.team2.postservice.fixDeal.dto.FixDealDetailResponse;
 import com.team2.postservice.fixDeal.dto.FixDealStatusResponse;
 import com.team2.postservice.fixDeal.service.FixDealService;
@@ -15,35 +17,35 @@ public class FixDealController {
 
     @PatchMapping("/fix-deals/{fixDealId}/product-sent")
     public ResponseEntity<Void> markProductSent(@PathVariable Long fixDealId,
-                                                 @RequestHeader("X-User-Email") String repairerEmail) {
-        fixDealService.markProductSent(fixDealId, repairerEmail);
+                                                 @AuthenticationPrincipal LoginUser loginUser) {
+        fixDealService.markProductSent(fixDealId, loginUser.email());
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/fix-deals/{fixDealId}/repairing")
     public ResponseEntity<Void> markRepairing(@PathVariable Long fixDealId,
-                                               @RequestHeader("X-User-Email") String repairerEmail) {
-        fixDealService.markRepairing(fixDealId, repairerEmail);
+                                               @AuthenticationPrincipal LoginUser loginUser) {
+        fixDealService.markRepairing(fixDealId, loginUser.email());
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/fix-deals/{fixDealId}")
     public ResponseEntity<FixDealDetailResponse> getFixDeal(@PathVariable Long fixDealId,
-                                                             @RequestHeader("X-User-Email") String userEmail) {
-        return ResponseEntity.ok(fixDealService.getFixDeal(fixDealId, userEmail));
+                                                             @AuthenticationPrincipal LoginUser loginUser) {
+        return ResponseEntity.ok(fixDealService.getFixDeal(fixDealId, loginUser.email()));
     }
 
     @PatchMapping("/fix-deals/{fixDealId}/repair-done")
     public ResponseEntity<Void> requestCompletion(@PathVariable Long fixDealId,
-                                                   @RequestHeader("X-User-Email") String repairerEmail) {
-        fixDealService.requestCompletion(fixDealId, repairerEmail);
+                                                   @AuthenticationPrincipal LoginUser loginUser) {
+        fixDealService.requestCompletion(fixDealId, loginUser.email());
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/fix-deals/{fixDealId}/complete")
     public ResponseEntity<Void> acceptCompletion(@PathVariable Long fixDealId,
-                                                  @RequestHeader("X-User-Email") String requesterEmail) {
-        fixDealService.acceptCompletion(fixDealId, requesterEmail);
+                                                  @AuthenticationPrincipal LoginUser loginUser) {
+        fixDealService.acceptCompletion(fixDealId, loginUser.email());
         return ResponseEntity.ok().build();
     }
 

@@ -56,7 +56,7 @@ export async function POST(request) {
   try {
     const response = await fetch(backendUrl("/reviews"), {
       method: "POST",
-      headers: { "X-User-Email": email },
+      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,  },
       body: outgoing,
       cache: "no-store",
       signal: AbortSignal.timeout(15000),

@@ -23,18 +23,24 @@ public class SecurityConfig {
             UserClient users,
             ObjectMapper mapper) throws Exception {
         return http
-                .securityMatcher(
-                        "/api/ai/**",
-                        "/api/chat-rooms/*/contract/ai-draft"
-                )
+                .securityMatcher("/posts/**", "/fix-deals/**", "/notifications/**", "/reviews/**",
+                        "/profile/**", "/resumes/**", "/api/ai/**", "/api/chat-rooms/**")
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 .requestCache(cache -> cache.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new TokenAuthenticationFilter(users, mapper),
+                .addFilterBefore(new TokenAuthenticationFilter(users, mapper, true),
                         AnonymousAuthenticationFilter.class)
-                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .exceptionHandling(errors -> errors.authenticationEntryPoint((request, response, failure) -> {
+                    response.setStatus(401); response.setContentType("application/json"); response.setCharacterEncoding("UTF-8");
+                    mapper.writeValue(response.getWriter(), java.util.Map.of("code", "LOGIN_REQUIRED", "message", "로그인이 필요합니다."));
+                }))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/resumes/me").authenticated()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/posts", "/posts/{id}",
+                                "/posts/{id}/proposals", "/reviews/**", "/resumes/{email}").permitAll()
+                        .anyRequest().authenticated())
                 .build();
     }
 
