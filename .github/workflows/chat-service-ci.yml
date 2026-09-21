@@ -5,12 +5,14 @@ on:
     branches: [dev, release]
     paths:
       - "backend/chat-service/**"
+      - "backend/post-service/src/main/resources/db/migration/**"
       - "backend/common/**"
       - ".github/workflows/chat-service-ci.yml"
   pull_request:
     branches: [dev, release]
     paths:
       - "backend/chat-service/**"
+      - "backend/post-service/src/main/resources/db/migration/**"
       - "backend/common/**"
       - ".github/workflows/chat-service-ci.yml"
   workflow_dispatch:

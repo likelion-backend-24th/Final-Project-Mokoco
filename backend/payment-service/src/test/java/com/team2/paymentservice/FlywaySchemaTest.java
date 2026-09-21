@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 class FlywaySchemaTest {
     @Container
-    static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.4")
+    static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.0")
             .withDatabaseName("payment_test");
 
     @DynamicPropertySource

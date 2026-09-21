@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 public class FlywaySchemaTest {
     @Container
-    static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.4")
+    static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.0")
             .withDatabaseName("post_test");
 
     @DynamicPropertySource
@@ -35,7 +35,7 @@ public class FlywaySchemaTest {
     @Test
     void schemaMatchesEntitiesAndMigrationIsRepeatable() {
         flyway.validate();
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("3");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("5");
         assertThat(flyway.migrate().migrationsExecuted).isZero();
         assertThat(flyway.getConfiguration().isBaselineOnMigrate()).isFalse();
         assertThat(flyway.getConfiguration().isCleanDisabled()).isTrue();

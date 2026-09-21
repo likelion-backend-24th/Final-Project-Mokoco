@@ -13,12 +13,17 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest(properties = {"spring.flyway.enabled=true", "spring.jpa.hibernate.ddl-auto=validate"})
+@DataJpaTest(properties = {
+        "spring.flyway.enabled=true",
+        "spring.flyway.locations=filesystem:../post-service/src/main/resources/db/migration",
+        "spring.jpa.defer-datasource-initialization=false",
+        "spring.jpa.hibernate.ddl-auto=validate"
+})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers
 class FlywaySchemaTest {
     @Container
-    static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.4")
+    static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.0")
             .withDatabaseName("chat_test");
 
     @DynamicPropertySource
@@ -35,7 +40,7 @@ class FlywaySchemaTest {
     @Test
     void schemaMatchesEntitiesAndMigrationIsRepeatable() {
         flyway.validate();
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("1");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("5");
         assertThat(flyway.migrate().migrationsExecuted).isZero();
         assertThat(flyway.getConfiguration().isBaselineOnMigrate()).isFalse();
         assertThat(flyway.getConfiguration().isCleanDisabled()).isTrue();
