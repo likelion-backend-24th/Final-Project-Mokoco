@@ -26,8 +26,8 @@ public interface ChatClient {
     @GetMapping("/internal/chat-rooms/proposals/{proposalId}/exists")
     boolean existsForProposal(@PathVariable("proposalId") Long proposalId);
 
-    @PostMapping("/internal/chat-rooms/proposals/{proposalId}/sync")
-    void syncProposal(@PathVariable("proposalId") Long proposalId);
+    @PutMapping("/internal/chat-rooms/proposals/sync")
+    ChatRoomInfo syncProposal(@RequestBody ProposalChatResponse context);
 
     @GetMapping("/internal/chat-rooms/{roomId}/text-messages")
     List<ChatTextMessage> getTextMessages(@PathVariable("roomId") Long roomId,

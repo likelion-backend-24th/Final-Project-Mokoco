@@ -45,6 +45,11 @@ spring:
           predicates:
             - Path=/ws/chat, /ws/chat/**
 
+        - id: post-chat-rooms
+          uri: ${services.post-service.url:http://localhost:8082}
+          predicates:
+            - Path=/api/chat-rooms/proposals/**, /api/chat-rooms/fix-deals/**, /api/chat-rooms/*/detail
+
         - id: chat-service
           uri: ${services.chat-service.url:http://localhost:8084}
           predicates:

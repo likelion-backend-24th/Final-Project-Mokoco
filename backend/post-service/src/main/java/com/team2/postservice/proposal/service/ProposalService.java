@@ -15,6 +15,7 @@ import com.team2.postservice.proposal.dto.ProposalResponseDto;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
 import com.team2.postservice.notification.service.NotificationService;
+import com.team2.common.chat.ProposalChatResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -78,7 +79,7 @@ public class ProposalService {
             throw new CustomException(ErrorCode.PROPOSAL_NOT_FOUND);
         }
         if (proposal.isAdopted()) {
-            syncChatAfterCommit(proposalId);
+            syncChatAfterCommit(chatContext(proposal));
             return;
         }
         if (proposalRepository.findByPost(post).stream().anyMatch(Proposal::isAdopted)) {
@@ -100,7 +101,8 @@ public class ProposalService {
                 .build();
 
         fixDealRepository.save(fixDeal);
-        syncChatAfterCommit(proposalId);
+        syncChatAfterCommit(new ProposalChatResponse(proposal.getId(), post.getId(), post.getTitle(),
+                requesterUserId, repairerUserId, fixDeal.getId()));
 
         try {
             notificationService.notifyProposalAdopted(post, proposal);
@@ -179,18 +181,25 @@ public class ProposalService {
         deal.changeStatus(FixDealStatus.CANCELED);
         proposal.cancel();
         post.changeStatus(PostStatus.WAITING);
-        syncChatAfterCommit(proposalId);
+        syncChatAfterCommit(new ProposalChatResponse(proposal.getId(), post.getId(), post.getTitle(),
+                post.getAuthorId(), proposal.getRepairerId(), null));
     }
 
-    private void syncChatAfterCommit(Long proposalId) {
+    private ProposalChatResponse chatContext(Proposal proposal) {
+        FixDeal deal = fixDealRepository.findByProposalId(proposal.getId()).orElse(null);
+        return new ProposalChatResponse(proposal.getId(), proposal.getPost().getId(), proposal.getPost().getTitle(),
+                proposal.getPost().getAuthorId(), proposal.getRepairerId(), deal == null ? null : deal.getId());
+    }
+
+    private void syncChatAfterCommit(ProposalChatResponse context) {
         org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
                 new org.springframework.transaction.support.TransactionSynchronization() {
                     @Override public void afterCommit() {
                         try {
-                            chat.syncProposal(proposalId);
+                            chat.syncProposal(context);
                         } catch (RuntimeException failure) {
                             // ponytail: cached room metadata retries on room reads; durable background delivery needs an outbox.
-                            log.warn("채팅방 거래 정보 동기화 실패 proposalId={}", proposalId, failure);
+                            log.warn("채팅방 거래 정보 동기화 실패 proposalId={}", context.proposalId(), failure);
                         }
                     }
                 });
