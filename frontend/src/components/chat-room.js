@@ -66,7 +66,7 @@ export default function ChatRoom({ roomId }) {
 
   useEffect(() => {
     let active = true;
-    const url = process.env.NEXT_PUBLIC_CHAT_WS_URL || (window.location.protocol === "https:" ? `wss://${window.location.host}/ws/chat` : "ws://localhost:8082/ws/chat");
+    const url = process.env.NEXT_PUBLIC_CHAT_WS_URL || (window.location.protocol === "https:" ? `wss://${window.location.host}/ws/chat` : "ws://localhost:8000/ws/chat");
     const client = new Client({
       brokerURL: url, reconnectDelay: 5000, connectionTimeout: 10000,
       heartbeatIncoming: 0, heartbeatOutgoing: 10000,

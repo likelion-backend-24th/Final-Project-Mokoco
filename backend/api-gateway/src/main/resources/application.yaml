@@ -32,10 +32,25 @@ spring:
           predicates:
             - Path=/policy/**
 
-        - id: post-service
-          uri: http://localhost:8082
+        - id: post-contracts
+          uri: ${services.post-service.url:http://localhost:8082}
           predicates:
-            - Path=/posts/**, /api/chat-rooms/**, /fix-deals/**, /notifications/**, /reviews/**, /api/ai/**, /profile/**, /resumes/**
+            - Path=/api/chat-rooms/*/contract, /api/chat-rooms/*/contract/**
+
+        - id: chat-websocket
+          uri: ${services.chat-service.ws-url:ws://localhost:8084}
+          predicates:
+            - Path=/ws/chat, /ws/chat/**
+
+        - id: chat-service
+          uri: ${services.chat-service.url:http://localhost:8084}
+          predicates:
+            - Path=/api/chat-rooms/**, /chat/**
+
+        - id: post-service
+          uri: ${services.post-service.url:http://localhost:8082}
+          predicates:
+            - Path=/posts/**, /fix-deals/**, /notifications/**, /reviews/**, /api/ai/**, /profile/**, /resumes/**
 
         - id: payment-service
           uri: http://localhost:8083

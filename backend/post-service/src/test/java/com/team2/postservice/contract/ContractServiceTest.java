@@ -1,6 +1,12 @@
 package com.team2.postservice.contract;
 
-import com.team2.postservice.chatRoom.entity.ChatRoom;
+import com.team2.common.chat.ChatRoomInfo;
+import com.team2.postservice.client.ChatClient;
+import com.team2.postservice.post.entity.Post;
+import com.team2.postservice.post.entity.PostCategory;
+import com.team2.postservice.proposal.entity.Proposal;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import static org.mockito.Mockito.*;
 import com.team2.postservice.contract.dto.ContractTerms;
 import com.team2.postservice.contract.dto.Version;
 import com.team2.postservice.contract.entity.RepairContract;
@@ -17,7 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.*;
 
-@DataJpaTest
+@DataJpaTest(properties = {"spring.jpa.hibernate.ddl-auto=create-drop", "spring.flyway.enabled=false"})
 @Import({ContractService.class, ContractServiceTest.JsonConfig.class})
 class ContractServiceTest {
     @TestConfiguration static class JsonConfig {
@@ -26,21 +32,27 @@ class ContractServiceTest {
     @Autowired TestEntityManager em;
     @Autowired ContractService service;
     Long roomId;
+    @MockitoBean ChatClient chat;
 
     @BeforeEach void setup() {
-        FixDeal deal = em.persist(FixDeal.builder().postId(1L).proposalId(1L).requesterId(10L).repairerId(20L).build());
-        roomId = em.persist(ChatRoom.builder().fixDeal(deal).build()).getId();
+        Post post = em.persist(Post.builder().title("Repair").content("Repair").authorEmail("requester@test")
+                .regionName("Seoul").category(PostCategory.values()[0]).build());
+        Proposal proposal = em.persist(Proposal.builder().post(post).repairerEmail("repairer@test").estimatedPrice(50000).content("Repair").build());
+        proposal.adopt();
+        FixDeal deal = em.persist(FixDeal.builder().postId(post.getId()).proposalId(proposal.getId()).requesterId(10L).repairerId(20L).build());
+        roomId = 100L;
+        when(chat.getRoom(roomId)).thenReturn(new ChatRoomInfo(roomId, deal.getId(), proposal.getId(), 10L, 20L, null));
     }
     @Test void consultationRoomRejectsContractsUntilAdoption() {
-        Long consultation = em.persist(ChatRoom.builder().proposalId(999L).postId(1L).requesterId(10L).repairerId(20L).build()).getId();
+        Long consultation = 999L;
+        when(chat.getRoom(consultation)).thenReturn(new ChatRoomInfo(consultation, null, null, 10L, 20L, null));
         assertThatThrownBy(() -> service.get(consultation, 10L)).isInstanceOfSatisfying(ResponseStatusException.class,
                 failure -> assertThat(failure.getStatusCode().value()).isEqualTo(409));
         assertThatThrownBy(() -> service.draft(consultation, 20L, null, terms("수리"))).isInstanceOfSatisfying(ResponseStatusException.class,
                 failure -> assertThat(failure.getStatusCode().value()).isEqualTo(409));
         assertThatThrownBy(() -> service.get(consultation, 99L)).isInstanceOfSatisfying(ResponseStatusException.class,
                 failure -> assertThat(failure.getStatusCode().value()).isEqualTo(403));
-    }
-    ContractTerms terms(String scope) {
+    }    ContractTerms terms(String scope) {
         return new ContractTerms("가구 수리", scope, "도색 제외", "부품비 포함", new BigDecimal("50000"), "검수 후 지급",
                 LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 2), "방문 작업", "흔들림 없음", "30일 재수리", "착수 전 취소 가능", "추가 비용 사전 승인");
     }

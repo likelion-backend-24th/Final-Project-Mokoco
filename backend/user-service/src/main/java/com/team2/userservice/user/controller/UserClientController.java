@@ -15,7 +15,7 @@ public class UserClientController {
 
     @GetMapping("/by-id/{userId}")
     public UserNicknameResponse getNickname(@PathVariable Long userId) {
-        var user = userService.findById(userId);
+        com.team2.userservice.user.entity.User user = userService.findById(userId);
         return new UserNicknameResponse(user.getId(), user.getNickname());
     }
     private final com.team2.userservice.config.JwtTokenProvider tokenProvider;
@@ -23,8 +23,8 @@ public class UserClientController {
     @PostMapping("/verify-token")
     public ResponseEntity<UserResponse> verifyToken(@RequestBody String token) {
         if (!tokenProvider.validateAccessToken(token)) return ResponseEntity.status(401).build();
-        String email = tokenProvider.getEmailFromAccessToken(token);
-        return ResponseEntity.ok(userService.findUserByEmail(email));
+        Long userId = tokenProvider.getUserIdFromAccessToken(token);
+        return ResponseEntity.ok(userService.findUserById(userId));
     }
 
     @GetMapping("/by-email")

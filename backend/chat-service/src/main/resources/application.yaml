@@ -1,0 +1,36 @@
+server:
+  port: 8084 # user-service가 8081을 쓰고 있으므로 포트 변경
+
+spring:
+  application:
+    name: chat-service # 서비스 이름 변경
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 51MB
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/chat_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: ${CHAT_DB_USERNAME:root}
+    password: ${CHAT_DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+services:
+  user-service:
+    url: http://localhost:8081
+  post-service:
+    url: http://localhost:8082
+internal:
+  service-key: ${INTERNAL_SERVICE_KEY}
+
+chat:
+  allowed-origins: ${CHAT_ALLOWED_ORIGINS:http://localhost:3000}

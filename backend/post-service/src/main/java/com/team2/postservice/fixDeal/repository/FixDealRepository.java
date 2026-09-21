@@ -10,7 +10,8 @@ import java.util.Optional;
 
 public interface FixDealRepository extends JpaRepository<FixDeal, Long> {
 
-    Optional<FixDeal> findByProposalId(Long proposalId);
+    @org.springframework.data.jpa.repository.Query("select d from FixDeal d where d.proposalId = :proposalId and d.status <> com.team2.postservice.fixDeal.entity.FixDealStatus.CANCELED")
+    Optional<FixDeal> findByProposalId(@org.springframework.data.repository.query.Param("proposalId") Long proposalId);
 
     Optional<FixDeal> findByPostIdAndStatus(
             Long fixRequestId,
@@ -18,6 +19,10 @@ public interface FixDealRepository extends JpaRepository<FixDeal, Long> {
     );
 
     Optional<FixDeal> findByPostId(Long postId);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select d from FixDeal d where d.proposalId = :proposalId and d.status <> com.team2.postservice.fixDeal.entity.FixDealStatus.CANCELED")
+    Optional<FixDeal> lockByProposalId(@org.springframework.data.repository.query.Param("proposalId") Long proposalId);
 
     boolean existsByProposalId(Long proposalId);
 

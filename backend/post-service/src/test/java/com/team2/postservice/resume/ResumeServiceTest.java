@@ -1,7 +1,7 @@
 package com.team2.postservice.resume;
 
-import com.team2.postservice.common.exception.CustomException;
-import com.team2.postservice.common.exception.ErrorCode;
+import com.team2.common.exception.CustomException;
+import com.team2.common.exception.ErrorCode;
 import com.team2.postservice.resume.dto.ResumeRequestDto;
 import com.team2.postservice.resume.dto.ResumeResponseDto;
 import com.team2.postservice.resume.entity.Resume;

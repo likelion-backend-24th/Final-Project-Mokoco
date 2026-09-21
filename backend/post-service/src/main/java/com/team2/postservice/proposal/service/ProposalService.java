@@ -2,8 +2,8 @@ package com.team2.postservice.proposal.service;
 
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
-import com.team2.postservice.common.exception.CustomException;
-import com.team2.postservice.common.exception.ErrorCode;
+import com.team2.common.exception.CustomException;
+import com.team2.common.exception.ErrorCode;
 import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
@@ -33,7 +33,7 @@ public class ProposalService {
     private final FixDealRepository fixDealRepository;
     private final UserClient userClient;
     private final NotificationService notificationService;
-    private final com.team2.postservice.chatRoom.repository.ChatRoomRepository rooms;
+    private final com.team2.postservice.client.ChatClient chat;
 
     @Transactional
     public Long createProposal(Long postId, ProposalRequestDto.Create request, String repairerEmail) {
@@ -77,7 +77,10 @@ public class ProposalService {
         if (!proposal.getPost().getId().equals(postId)) {
             throw new CustomException(ErrorCode.PROPOSAL_NOT_FOUND);
         }
-        if (proposal.isAdopted()) return;
+        if (proposal.isAdopted()) {
+            syncChatAfterCommit(proposalId);
+            return;
+        }
         if (proposalRepository.findByPost(post).stream().anyMatch(Proposal::isAdopted)) {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         }
@@ -95,8 +98,8 @@ public class ProposalService {
                 .repairerId(repairer.id())
                 .build();
 
-        var savedDeal = fixDealRepository.save(fixDeal);
-        rooms.findByProposalId(proposalId).ifPresent(room -> room.attachDeal(savedDeal));
+        fixDealRepository.save(fixDeal);
+        syncChatAfterCommit(proposalId);
 
         try {
             notificationService.notifyProposalAdopted(post, proposal);
@@ -138,7 +141,7 @@ public class ProposalService {
         }
 
         if (!proposal.getPost().getId().equals(postId)) throw new CustomException(ErrorCode.PROPOSAL_NOT_FOUND);
-        if (proposal.isAdopted() || rooms.existsByProposalId(proposalId))
+        if (proposal.isAdopted() || chat.existsForProposal(proposalId))
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
                     "채택되었거나 채팅방이 있는 견적은 삭제할 수 없습니다.");
         proposalRepository.delete(proposal);
@@ -170,15 +173,25 @@ public class ProposalService {
         FixDeal deal = fixDealRepository.findByProposalId(proposalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
 
-        if (deal.getStatus().equals(FixDealStatus.MATCHED)) {
-
+        if (deal.getStatus() == FixDealStatus.MATCHED) {
             deal.changeStatus(FixDealStatus.CANCELED);
             proposal.cancel();
             post.changeStatus(PostStatus.WAITING);
-
-            rooms.findByProposalId(proposalId)
-                    .ifPresent(room -> room.detachDeal(deal));
-
+            syncChatAfterCommit(proposalId);
         }
+    }
+
+    private void syncChatAfterCommit(Long proposalId) {
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override public void afterCommit() {
+                        try {
+                            chat.syncProposal(proposalId);
+                        } catch (RuntimeException failure) {
+                            // ponytail: cached room metadata retries on room reads; durable background delivery needs an outbox.
+                            log.warn("채팅방 거래 정보 동기화 실패 proposalId={}", proposalId, failure);
+                        }
+                    }
+                });
     }
 }

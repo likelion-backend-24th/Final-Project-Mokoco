@@ -1,8 +1,8 @@
 package com.team2.postservice.notification.service;
 
 import com.team2.postservice.client.UserClient;
-import com.team2.postservice.common.exception.CustomException;
-import com.team2.postservice.common.exception.ErrorCode;
+import com.team2.common.exception.CustomException;
+import com.team2.common.exception.ErrorCode;
 import com.team2.postservice.notification.dto.NotificationResponseDto;
 import com.team2.postservice.notification.dto.NotificationSettingDto;
 import com.team2.postservice.notification.entity.Notification;
@@ -14,8 +14,7 @@ import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.proposal.entity.Proposal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import com.team2.postservice.client.ChatClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,8 +33,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationSettingRepository settingRepository;
     private final UserClient userClient;
-    // ObjectProvider 로 지연 조회 — WebSocket 설정과의 순환 의존을 피한다.
-    private final ObjectProvider<SimpMessagingTemplate> messagingTemplate;
+    private final ChatClient chat;
 
     // ── 알림 생성 트리거 ────────────────────────────────────────────────
 
@@ -104,14 +102,10 @@ public class NotificationService {
                 .build());
 
         if (recipientId != null) {
-            SimpMessagingTemplate broker = messagingTemplate.getIfAvailable();
-            if (broker != null) {
-                try {
-                    broker.convertAndSendToUser(
-                            String.valueOf(recipientId), USER_QUEUE, NotificationResponseDto.from(saved));
-                } catch (Exception e) {
-                    log.warn("실시간 알림 전송 실패 recipientId={}", recipientId, e);
-                }
+            try {
+                chat.notifyUser(recipientId, NotificationResponseDto.from(saved));
+            } catch (Exception e) {
+                log.warn("실시간 알림 전송 실패 recipientId={}", recipientId, e);
             }
         }
     }

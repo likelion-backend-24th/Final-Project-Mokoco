@@ -31,6 +31,7 @@ class InternalServiceSecurityTest {
         mvc.perform(get("/internal/users/by-email"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().doesNotExist("Location"))
+                .andExpect(header().string("X-Internal-Auth-Error", "UNAUTHORIZED_INTERNAL_SERVICE"))
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED_INTERNAL_SERVICE"));
     }
