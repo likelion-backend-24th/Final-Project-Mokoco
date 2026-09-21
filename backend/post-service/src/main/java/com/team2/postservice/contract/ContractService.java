@@ -77,9 +77,9 @@ public class ContractService {
     }
     // 결제 상태 조회 실패로 계약서 페이지 전체가 죽으면 안 되므로, 조회용으로는 어떤 Feign
     // 오류든 "아직 결제 없음"으로 취급하고 페이지는 계속 보여준다.
-    private PaymentSummary paymentSummaryOrNull(Long postId, String requesterEmail) {
+    private PaymentSummary paymentSummaryOrNull(Long postId) {
         try {
-            PaymentClientResponse payment = paymentClient.getPaymentByPostId(postId, requesterEmail);
+            PaymentClientResponse payment = paymentClient.getPaymentByPostId(postId);
             return new PaymentSummary(payment.status(), payment.amount(), payment.feeAmount(),
                     payment.netAmount(), payment.settledAt() != null);
         } catch (FeignException.NotFound e) {
@@ -97,7 +97,7 @@ public class ContractService {
         String requesterEmail = post != null ? post.getAuthorEmail() : null;
         String repairerEmail = proposal != null ? proposal.getRepairerEmail() : null;
         Integer estimatedPrice = proposal != null ? proposal.getEstimatedPrice() : null;
-        PaymentSummary payment = requesterEmail == null ? null : paymentSummaryOrNull(deal.getPostId(), requesterEmail);
+        PaymentSummary payment = requesterEmail == null ? null : paymentSummaryOrNull(deal.getPostId());
         return new Overview(deal.getRequesterId(), deal.getRepairerId(), requesterEmail, repairerEmail,
                 deal.getPostId(), deal.getId(), estimatedPrice, deal.getStatus(), payment, CONSENT,
                 contracts.findByChatRoomIdOrderByRevisionDesc(roomId).stream().map(this::view).toList());
@@ -165,8 +165,7 @@ public class ContractService {
         switch (action) {
             case "start" -> {
                 if (deal.getStatus() != FixDealStatus.MATCHED) throw conflict("거래 상태가 변경되었습니다. 새로고침해주세요.");
-                Post post = posts.findById(deal.getPostId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-                PaymentClientResponse payment = requirePayment(deal.getPostId(), post.getAuthorEmail());
+                PaymentClientResponse payment = requirePayment(deal.getPostId());
                 if (!"COMPLETED".equals(payment.status()))
                     throw conflict("의뢰인의 결제가 완료되어야 작업을 시작할 수 있습니다.");
                 deal.changeStatus(FixDealStatus.REPAIRING);
@@ -187,7 +186,7 @@ public class ContractService {
                 // 정산 확정 — 이 호출이 실패하면 트랜잭션 전체가 롤백되어 위 상태 전환도 함께
                 // 취소된다. settle()은 멱등이라 사용자가 버튼을 다시 눌러 안전하게 재시도할 수 있다.
                 try {
-                    paymentClient.settle(deal.getPostId(), post.getAuthorEmail());
+                    paymentClient.settle(deal.getPostId());
                 } catch (FeignException e) {
                     throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "정산 처리에 실패했습니다. 잠시 후 다시 시도해주세요.");
                 }
@@ -196,9 +195,9 @@ public class ContractService {
         }
     }
 
-    private PaymentClientResponse requirePayment(Long postId, String requesterEmail) {
+    private PaymentClientResponse requirePayment(Long postId) {
         try {
-            return paymentClient.getPaymentByPostId(postId, requesterEmail);
+            return paymentClient.getPaymentByPostId(postId);
         } catch (FeignException.NotFound e) {
             throw conflict("의뢰인의 결제가 완료되어야 작업을 시작할 수 있습니다.");
         } catch (FeignException e) {

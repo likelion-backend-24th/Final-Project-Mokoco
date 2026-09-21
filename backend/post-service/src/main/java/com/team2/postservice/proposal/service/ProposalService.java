@@ -96,7 +96,9 @@ public class ProposalService {
         // 채택 취소(cancelProposal) 후 같은 제안을 다시 채택하는 경우, 새 거래를 또 만들면 같은
         // proposalId로 거래가 2건이 돼 findByProposalId(단건 조회) 호출부가 전부 깨진다
         // (프로필 거래 내역 중복 표시, 제안 목록 조회 실패 등). 취소된 거래를 재사용한다.
-        FixDeal savedDeal = fixDealRepository.findByProposalId(proposal.getId())
+        // lockByProposalId로 잠그는 이유는 cancelProposal과 동일 — 이 거래를 ContractService가
+        // 동시에 진행시키는 중이면 그 트랜잭션이 끝날 때까지 기다렸다가 최신 상태로 재사용 판단한다.
+        FixDeal savedDeal = fixDealRepository.lockByProposalId(proposal.getId())
                 .map(existing -> { existing.changeStatus(FixDealStatus.MATCHED); return existing; })
                 .orElseGet(() -> {
                     UserClientResponse requester = userClient.getUserByEmail(post.getAuthorEmail());
@@ -156,13 +158,15 @@ public class ProposalService {
         }
         if (!proposal.isAdopted()) return;
 
-        FixDeal deal = fixDealRepository.findByProposalId(proposalId)
+        // 잠금 없이 읽으면 ContractService.advance()(FixDeal 락 보유)가 동시에 이 거래를 진행시키고
+        // 있을 때 그 결과를 못 보고 오래된 MATCHED 상태를 그대로 덮어써 버릴 수 있다(TOCTOU).
+        FixDeal deal = fixDealRepository.lockByProposalId(proposalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
 
         if (deal.getStatus() != FixDealStatus.MATCHED) {
             throw new CustomException(ErrorCode.INVALID_FIX_DEAL_STATUS);
         }
-        if (isPaid(postId, userEmail)) {
+        if (isPaid(postId)) {
             throw new CustomException(ErrorCode.PROPOSAL_ADOPTION_ALREADY_PAID);
         }
 
@@ -185,9 +189,9 @@ public class ProposalService {
 
     // 조회 실패(장애·타임아웃)는 "결제됨"으로 취급해 취소를 막는다 — 실제로 결제된 거래가
     // 일시적 오류로 취소되는 사고보다는, 취소가 잠시 막히는 쪽이 안전하다.
-    private boolean isPaid(Long postId, String requesterEmail) {
+    private boolean isPaid(Long postId) {
         try {
-            return "COMPLETED".equals(paymentClient.getPaymentByPostId(postId, requesterEmail).status());
+            return "COMPLETED".equals(paymentClient.getPaymentByPostId(postId).status());
         } catch (FeignException.NotFound e) {
             return false;
         } catch (FeignException e) {

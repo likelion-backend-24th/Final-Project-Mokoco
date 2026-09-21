@@ -95,20 +95,29 @@ export default function RepairContract({ roomId }) {
   async function startPayment() {
     setPaymentBusy(true); setPaymentError("");
     try {
-      const paymentId = `payment-${crypto.randomUUID()}`;
-      const base = overview.estimatedPrice ?? 0;
+      const prepareRes = await fetch("/api/payments/prepare", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId: overview.postId }),
+      });
+      const order = await prepareRes.json().catch(() => ({}));
+      if (!prepareRes.ok) {
+        setPaymentError(order.error ?? "결제를 준비하지 못했습니다.");
+        return;
+      }
 
       const paymentResult = await PortOne.requestPayment({
         storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID,
         channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY,
-        paymentId,
+        paymentId: order.paymentId,
         orderName: "동네수리 - 수리 대금 안전결제",
-        totalAmount: base,
+        totalAmount: order.totalAmount,
         currency: "CURRENCY_KRW",
         payMethod: "CARD",
         isEscrow: true,
         customer: overview.requesterEmail ? { email: overview.requesterEmail } : undefined,
-        customData: JSON.stringify({ postId: overview.postId, payerEmail: overview.requesterEmail, payeeEmail: overview.repairerEmail, baseAmount: base }),
+        // paymentId가 서버가 미리 만들어둔 주문(PaymentOrder)에 연결돼있어, 결제 확정/웹훅이
+        // 브라우저가 실어보내는 customData가 아니라 그 주문을 유일한 진실 소스로 삼는다.
         noticeUrls: [`${window.location.origin}/api/payments/webhook`],
       });
 
@@ -120,13 +129,7 @@ export default function RepairContract({ roomId }) {
       const confirmRes = await fetch("/api/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postId: overview.postId,
-          payeeEmail: overview.repairerEmail,
-          amount: base,
-          baseAmount: base,
-          paymentId,
-        }),
+        body: JSON.stringify({ postId: overview.postId, paymentId: order.paymentId }),
       });
       const confirmData = await confirmRes.json().catch(() => ({}));
       // 확인 요청이 실패해도, 웹훅이 먼저 도착해 이미 결제가 기록된 경우(DUPLICATE_PAYMENT)라면

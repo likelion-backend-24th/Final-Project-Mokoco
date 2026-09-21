@@ -31,3 +31,6 @@ post-service:
 portone:
   base-url: https://api.portone.io
   # api-secret / webhook-secret / store-id 는 application-secret.yaml (GitHub Secret) 에서 주입
+
+internal:
+  service-key: ${INTERNAL_SERVICE_KEY}

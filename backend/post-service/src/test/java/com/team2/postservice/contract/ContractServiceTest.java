@@ -34,7 +34,7 @@ class ContractServiceTest {
     Long roomId;
     @BeforeEach void setup() {
         Mockito.reset(paymentClient);
-        Mockito.when(paymentClient.getPaymentByPostId(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString()))
+        Mockito.when(paymentClient.getPaymentByPostId(ArgumentMatchers.anyLong()))
                 .thenReturn(new PaymentClientResponse(1L, 1L, "COMPLETED", 55000, 5000, 50000, null));
         var post = em.persist(Post.builder().title("의자 수리").content("다리가 흔들려요").authorEmail("requester@test.com")
                 .regionName("서울특별시").regionCode("11000").category(PostCategory.LIVING_ETC).build());
@@ -67,13 +67,13 @@ class ContractServiceTest {
         service.advance(roomId, 20L, contract.id(), "finish");
         service.advance(roomId, 10L, contract.id(), "accept");
         assertThat(service.get(roomId, 10L).dealStatus()).isEqualTo(FixDealStatus.COMPLETED);
-        Mockito.verify(paymentClient).settle(ArgumentMatchers.anyLong(), ArgumentMatchers.eq("requester@test.com"));
+        Mockito.verify(paymentClient).settle(ArgumentMatchers.anyLong());
     }
     @Test void startIsBlockedUntilPaymentIsCompleted() {
         var contract = signing();
         service.sign(roomId, 10L, contract.id(), contract.documentHash(), "의뢰인", true);
         service.sign(roomId, 20L, contract.id(), contract.documentHash(), "수리자", true);
-        Mockito.when(paymentClient.getPaymentByPostId(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString()))
+        Mockito.when(paymentClient.getPaymentByPostId(ArgumentMatchers.anyLong()))
                 .thenReturn(new PaymentClientResponse(1L, 1L, "FAILED", 55000, 5000, 50000, null));
         assertThatThrownBy(() -> service.advance(roomId, 20L, contract.id(), "start")).isInstanceOf(ResponseStatusException.class);
         assertThat(service.get(roomId, 10L).dealStatus()).isEqualTo(FixDealStatus.MATCHED);

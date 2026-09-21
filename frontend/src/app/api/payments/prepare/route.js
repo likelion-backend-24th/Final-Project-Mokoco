@@ -15,25 +15,22 @@ export async function POST(request) {
   }
 
   try {
-    const response = await fetch(backendUrl("/payments"), {
+    const response = await fetch(backendUrl("/payments/prepare"), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "X-User-Email": email,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        postId: body.postId,
-        paymentId: body.paymentId,
-      }),
+      body: JSON.stringify({ postId: body.postId }),
       cache: "no-store",
       signal: AbortSignal.timeout(8000),
     });
     const payload = await readBackendPayload(response);
     if (!response.ok) {
-      return Response.json({ error: errorMessage(payload, "결제를 진행하지 못했습니다."), code: payload?.code }, { status: response.status });
+      return Response.json({ error: errorMessage(payload, "결제를 준비하지 못했습니다."), code: payload?.code }, { status: response.status });
     }
-    return Response.json({ success: true });
+    return Response.json(payload);
   } catch {
     return Response.json({ error: "결제 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요." }, { status: 502 });
   }
