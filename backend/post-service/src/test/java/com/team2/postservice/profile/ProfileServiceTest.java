@@ -1,6 +1,6 @@
 package com.team2.postservice.profile;
 
-import com.team2.postservice.chatRoom.repository.ChatRoomRepository;
+import com.team2.postservice.client.ChatRoomClient;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.fixDeal.entity.FixDeal;
@@ -33,8 +33,8 @@ class ProfileServiceTest {
     final PostRepository posts = mock(PostRepository.class);
     final ReviewRepository reviews = mock(ReviewRepository.class);
     final UserClient users = mock(UserClient.class);
-    final ChatRoomRepository chatRooms = mock(ChatRoomRepository.class);
-    final ProfileService service = new ProfileService(fixDeals, posts, reviews, users, chatRooms);
+    final ChatRoomClient chatRoomClient = mock(ChatRoomClient.class);
+    final ProfileService service = new ProfileService(fixDeals, posts, reviews, users, chatRoomClient);
 
     private FixDeal fixDeal(FixDealStatus status, LocalDateTime completedAt) {
         return FixDeal.builder()

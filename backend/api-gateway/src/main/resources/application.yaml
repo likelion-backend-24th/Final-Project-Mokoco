@@ -35,9 +35,18 @@ spring:
           filters:
             - StripPrefix=1
 
-        # 채팅 컨트롤러는 이미 /api/chat-rooms 매핑이라 접두어 유지
-        - id: post-service-chat
+        # 계약서(ContractController)는 URL만 /api/chat-rooms/{roomId}/contract/** 아래 있을 뿐
+        # post-service에 그대로 남아있다 — 아래 chat-service 라우트보다 반드시 먼저 매치돼야 한다
+        # (Spring Cloud Gateway는 라우트 목록 순서대로 첫 매치를 채택).
+        - id: post-service-contract
           uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/api/chat-rooms/*/contract/**
+
+        # 그 외 채팅 관련 엔드포인트(방 개설/조회/메시지/첨부)는 chat-service로 — 컨트롤러가
+        # 이미 /api/chat-rooms 매핑이라 접두어 유지
+        - id: chat-service-chat
+          uri: http://mokoco-chat-service:8084
           predicates:
             - Path=/api/chat-rooms/**
 
@@ -92,6 +101,12 @@ spring:
             - Path=/payment-service/v3/api-docs
           filters:
             - RewritePath=/payment-service/v3/api-docs, /v3/api-docs
+        - id: chat-service-docs
+          uri: http://mokoco-chat-service:8084
+          predicates:
+            - Path=/chat-service/v3/api-docs
+          filters:
+            - RewritePath=/chat-service/v3/api-docs, /v3/api-docs
 
 springdoc:
   swagger-ui:
@@ -102,3 +117,5 @@ springdoc:
         url: /post-service/v3/api-docs
       - name: payment-service
         url: /payment-service/v3/api-docs
+      - name: chat-service
+        url: /chat-service/v3/api-docs

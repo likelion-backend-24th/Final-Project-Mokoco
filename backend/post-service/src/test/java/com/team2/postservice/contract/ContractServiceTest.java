@@ -1,6 +1,6 @@
 package com.team2.postservice.contract;
 
-import com.team2.postservice.chatRoom.entity.ChatRoom;
+import com.team2.postservice.client.ChatRoomClient;
 import com.team2.postservice.client.PaymentClient;
 import com.team2.postservice.client.dto.PaymentClientResponse;
 import com.team2.postservice.fixDeal.entity.*;
@@ -30,6 +30,7 @@ class ContractServiceTest {
     @Autowired TestEntityManager em;
     @Autowired ContractService service;
     @MockitoBean PaymentClient paymentClient;
+    @MockitoBean ChatRoomClient chatRoomClient;
     Long roomId;
     @BeforeEach void setup() {
         Mockito.reset(paymentClient);
@@ -39,7 +40,9 @@ class ContractServiceTest {
                 .regionName("서울특별시").regionCode("11000").category(PostCategory.LIVING_ETC).build());
         var proposal = em.persist(Proposal.builder().post(post).estimatedPrice(50000).repairerEmail("repairer@test.com").content("견적 드립니다").build());
         var deal = em.persist(FixDeal.builder().postId(post.getId()).proposalId(proposal.getId()).requesterId(10L).repairerId(20L).build());
-        roomId = em.persist(ChatRoom.builder().fixDeal(deal).build()).getId();
+        roomId = 1L;
+        Mockito.when(chatRoomClient.getRoom(roomId))
+                .thenReturn(new ChatRoomClient.ChatRoomInfo(roomId, proposal.getId(), 10L, 20L, post.getId(), deal.getId()));
     }
     ContractTerms terms(String scope) {
         return new ContractTerms("가구 수리", scope, "도색 제외", "부품비 포함", new BigDecimal("50000"), "검수 후 지급",

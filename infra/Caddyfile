@@ -28,14 +28,14 @@
 		reverse_proxy payment-service:8083
 	}
 
-	# 채팅 첨부 업로드(멀티파트)만 post-service 직결. SCG가 파일 파트를 유실하는 문제 회피.
+	# 채팅 첨부 업로드(멀티파트)만 chat-service 직결. SCG가 파일 파트를 유실하는 문제 회피.
 	# (다운로드 GET .../attachments/{id} 는 BFF 경유 유지 — 인증 쿠키 주입 필요)
 	@chat_attach_upload {
 		path /api/chat-rooms/*/attachments
 		method POST
 	}
 	handle @chat_attach_upload {
-		reverse_proxy post-service:8082
+		reverse_proxy chat-service:8084
 	}
 
 	# 후기 작성(멀티파트, 이미지 포함)만 post-service 직결. SCG가 파일 파트를 유실하는 문제 회피
@@ -117,9 +117,9 @@
 		reverse_proxy api-gateway:8000
 	}
 
-	# STOMP WebSocket (채팅) -> post-service 직결. Caddy가 Upgrade 자동 처리.
+	# STOMP WebSocket (채팅) -> chat-service 직결. Caddy가 Upgrade 자동 처리.
 	handle /ws/chat {
-		reverse_proxy post-service:8082
+		reverse_proxy chat-service:8084
 	}
 
 	# 소셜 로그인 진입/콜백
@@ -136,7 +136,7 @@
 	}
 
 	# API 문서(Swagger) — 게이트웨이가 3개 서비스 문서를 하나로 모아 보여준다 (api-gateway application.yaml 참고)
-	@api_docs path /swagger-ui* /v3/api-docs* /webjars* /user-service/v3/api-docs /post-service/v3/api-docs /payment-service/v3/api-docs
+	@api_docs path /swagger-ui* /v3/api-docs* /webjars* /user-service/v3/api-docs /post-service/v3/api-docs /payment-service/v3/api-docs /chat-service/v3/api-docs
 	handle @api_docs {
 		reverse_proxy api-gateway:8000
 	}

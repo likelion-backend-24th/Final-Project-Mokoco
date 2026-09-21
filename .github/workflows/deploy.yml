@@ -12,6 +12,7 @@ jobs:
       user-service: ${{ steps.filter.outputs.user-service }}
       post-service: ${{ steps.filter.outputs.post-service }}
       payment-service: ${{ steps.filter.outputs.payment-service }}
+      chat-service: ${{ steps.filter.outputs.chat-service }}
       frontend: ${{ steps.filter.outputs.frontend }}
     steps:
       - name: Checkout source code
@@ -30,8 +31,10 @@ jobs:
               - 'backend/post-service/**'
             payment-service:
               - 'backend/payment-service/**'
-            # user/post/payment-service가 공통으로 의존하는 서브프로젝트(:common) — 얘만 바뀌어도
-            # 세 서비스 다 새로 빌드해야 반영되므로, 아래에서 각 서비스 조건에 OR로 같이 건다.
+            chat-service:
+              - 'backend/chat-service/**'
+            # user/post/payment/chat-service가 공통으로 의존하는 서브프로젝트(:common) — 얘만 바뀌어도
+            # 네 서비스 다 새로 빌드해야 반영되므로, 아래에서 각 서비스 조건에 OR로 같이 건다.
             common:
               - 'backend/common/**'
             frontend:
@@ -41,9 +44,9 @@ jobs:
               - 'infra/**'
               - 'init.sql'
 
-      # 백엔드 4개 서비스 중 하나라도(혹은 공통 모듈이) 바뀌었을 때만 JDK/gradle 캐시를 셋업한다.
+      # 백엔드 5개 서비스 중 하나라도(혹은 공통 모듈이) 바뀌었을 때만 JDK/gradle 캐시를 셋업한다.
       - name: Set up Java 21
-        if: steps.filter.outputs.api-gateway == 'true' || steps.filter.outputs.user-service == 'true' || steps.filter.outputs.post-service == 'true' || steps.filter.outputs.payment-service == 'true' || steps.filter.outputs.common == 'true'
+        if: steps.filter.outputs.api-gateway == 'true' || steps.filter.outputs.user-service == 'true' || steps.filter.outputs.post-service == 'true' || steps.filter.outputs.payment-service == 'true' || steps.filter.outputs.chat-service == 'true' || steps.filter.outputs.common == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -88,6 +91,12 @@ jobs:
           mkdir -p backend/payment-service/src/main/resources
           echo "${{ secrets.PAYMENT_SERVICE_SECRET_YML }}" > backend/payment-service/src/main/resources/application-secret.yaml
 
+      - name: Create Chat Service secret file
+        if: steps.filter.outputs.chat-service == 'true' || steps.filter.outputs.common == 'true'
+        run: |
+          mkdir -p backend/chat-service/src/main/resources
+          echo "${{ secrets.CHAT_SERVICE_SECRET_YML }}" > backend/chat-service/src/main/resources/application-secret.yml
+
       - name: Build API Gateway
         if: steps.filter.outputs.api-gateway == 'true'
         run: cd backend/api-gateway && chmod +x gradlew && ./gradlew bootJar -x test
@@ -103,6 +112,10 @@ jobs:
       - name: Build Payment Service
         if: steps.filter.outputs.payment-service == 'true' || steps.filter.outputs.common == 'true'
         run: cd backend/payment-service && chmod +x gradlew && ./gradlew bootJar -x test
+
+      - name: Build Chat Service
+        if: steps.filter.outputs.chat-service == 'true' || steps.filter.outputs.common == 'true'
+        run: cd backend/chat-service && chmod +x gradlew && ./gradlew bootJar -x test
 
       - name: Build Frontend
         if: steps.filter.outputs.frontend == 'true'
@@ -123,6 +136,7 @@ jobs:
           if [ "${{ steps.filter.outputs.user-service }}" = "true" ] || [ "${{ steps.filter.outputs.common }}" = "true" ]; then SERVICES="$SERVICES user-service"; fi
           if [ "${{ steps.filter.outputs.post-service }}" = "true" ] || [ "${{ steps.filter.outputs.common }}" = "true" ]; then SERVICES="$SERVICES post-service"; fi
           if [ "${{ steps.filter.outputs.payment-service }}" = "true" ] || [ "${{ steps.filter.outputs.common }}" = "true" ]; then SERVICES="$SERVICES payment-service"; fi
+          if [ "${{ steps.filter.outputs.chat-service }}" = "true" ] || [ "${{ steps.filter.outputs.common }}" = "true" ]; then SERVICES="$SERVICES chat-service"; fi
           if [ "${{ steps.filter.outputs.frontend }}" = "true" ]; then SERVICES="$SERVICES frontend"; fi
           echo "list=$SERVICES" >> "$GITHUB_OUTPUT"
           echo "changed services:${SERVICES:- (없음)}"
@@ -198,6 +212,16 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "backend/payment-service"
+          target: "/home/ubuntu/mokoco"
+
+      - name: Copy Chat Service to EC2
+        if: steps.filter.outputs.chat-service == 'true' || steps.filter.outputs.common == 'true'
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/chat-service"
           target: "/home/ubuntu/mokoco"
 
       - name: Run docker compose on EC2

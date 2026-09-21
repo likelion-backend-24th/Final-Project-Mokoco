@@ -1,6 +1,6 @@
 package com.team2.postservice.proposal.service;
 
-import com.team2.postservice.chatRoom.repository.ChatRoomRepository;
+import com.team2.postservice.client.ChatRoomClient;
 import com.team2.postservice.client.PaymentClient;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.RegionResponse;
@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 
@@ -36,7 +38,7 @@ public class ProposalService {
     private final ProposalRepository proposalRepository;
     private final PostRepository postRepository;
     private final FixDealRepository fixDealRepository;
-    private final ChatRoomRepository chatRoomRepository;
+    private final ChatRoomClient chatRoomClient;
     private final UserClient userClient;
     private final PaymentClient paymentClient;
     private final NotificationService notificationService;
@@ -106,13 +108,32 @@ public class ProposalService {
                             .repairerId(repairer.id())
                             .build());
                 });
-        chatRoomRepository.findByProposalId(proposalId).ifPresent(room -> room.attachDeal(savedDeal));
+        // 채팅방-거래 연결은 chat-service가 죽어있어도 채택 자체는 성공해야 하므로, 커밋 후에
+        // best-effort로 시도한다(실패해도 로그만 남기고 넘어감 — 알림 실패 처리와 같은 철학).
+        Long requesterId = savedDeal.getRequesterId(), repairerId = savedDeal.getRepairerId(), postIdForLink = post.getId();
+        Long dealIdForLink = savedDeal.getId();
+        afterCommit(() -> {
+            try {
+                chatRoomClient.attachDeal(new ChatRoomClient.DealLinkRequest(
+                        proposalId, dealIdForLink, requesterId, repairerId, postIdForLink));
+            } catch (Exception e) {
+                log.warn("채팅방-거래 연결 실패 proposalId={}", proposalId, e);
+            }
+        });
 
         try {
             notificationService.notifyProposalAdopted(post, proposal);
         } catch (Exception e) {
             log.warn("제안 채택 알림 전송 실패 proposalId={}", proposalId, e);
         }
+    }
+
+    // 트랜잭션이 실제로 커밋된 뒤에만 실행 — 롤백되면 아예 호출하지 않는다.
+    private void afterCommit(Runnable action) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) { action.run(); return; }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override public void afterCommit() { action.run(); }
+        });
     }
 
     // 의뢰인이 채택을 취소한다. 결제 전(MATCHED) 단계에서만 허용 — 결제가 이미 끝난 거래는
@@ -148,7 +169,18 @@ public class ProposalService {
         deal.changeStatus(FixDealStatus.CANCELED);
         proposal.cancel();
         post.updateStatusToWaiting();
-        chatRoomRepository.findByProposalId(proposalId).ifPresent(room -> room.detachDeal(deal));
+
+        // 채택 취소도 채팅방 연결 해제 전에 chat-service가 죽어있다고 막힐 이유는 없으므로
+        // attachDeal과 같은 커밋 후 best-effort 패턴을 쓴다.
+        Long dealId = deal.getId(), requesterId = deal.getRequesterId(), repairerId = deal.getRepairerId(), postIdForLink = deal.getPostId();
+        afterCommit(() -> {
+            try {
+                chatRoomClient.detachDeal(new ChatRoomClient.DealLinkRequest(
+                        proposalId, dealId, requesterId, repairerId, postIdForLink));
+            } catch (Exception e) {
+                log.warn("채팅방-거래 연결 해제 실패 proposalId={}", proposalId, e);
+            }
+        });
     }
 
     // 조회 실패(장애·타임아웃)는 "결제됨"으로 취급해 취소를 막는다 — 실제로 결제된 거래가
@@ -217,10 +249,21 @@ public class ProposalService {
             throw new CustomException(ErrorCode.UNAUTHORIZED_PROPOSAL_DELETE);
         }
 
-        if (proposal.isAdopted() || chatRoomRepository.existsByProposalId(proposalId)) {
+        if (proposal.isAdopted() || chatRoomExistsForProposal(proposalId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "채택되었거나 채팅방이 있는 견적은 삭제할 수 없습니다.");
         }
 
         proposalRepository.delete(proposal);
+    }
+
+    // 조회 실패 시 "채팅방 있음"으로 취급해 삭제를 막는다 — isPaid()와 같은 fail-closed 철학:
+    // 장애로 삭제가 막히는 쪽이, 실제로는 채팅방이 있는 제안이 삭제되는 사고보다 안전하다.
+    private boolean chatRoomExistsForProposal(Long proposalId) {
+        try {
+            return chatRoomClient.existsByProposal(proposalId);
+        } catch (Exception e) {
+            log.warn("채팅방 존재 여부 확인 실패 proposalId={}", proposalId, e);
+            return true;
+        }
     }
 }

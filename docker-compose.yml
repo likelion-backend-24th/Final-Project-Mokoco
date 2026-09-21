@@ -106,10 +106,6 @@ services:
     volumes:
       # 업로드된 게시글 이미지 영속화 (컨테이너는 CWD=/ 이므로 uploads -> /uploads)
       - post_uploads:/uploads
-      # 채팅 첨부파일(chat.attachment-dir 기본값 ./private-chat-files -> CWD=/ 이므로 /private-chat-files) 영속화.
-      # 이게 없으면 DB의 메시지 기록(attachmentKey)은 남아있는데 실제 파일은 컨테이너 재생성 때마다 사라져서
-      # "나갔다 들어오면 사진이 안 보이는" 증상이 남.
-      - chat_attachments:/private-chat-files
     depends_on:
       mysql:
         condition: service_healthy
@@ -129,6 +125,29 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - TZ=Asia/Seoul
       - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - mokoco-net
+
+  # --------------------
+  # Backend: Chat Service
+  # --------------------
+  chat-service:
+    build:
+      context: ./backend/chat-service
+      dockerfile: Dockerfile
+    container_name: mokoco-chat-service
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - TZ=Asia/Seoul
+      - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
+    volumes:
+      # 채팅 첨부파일(chat.attachment-dir 기본값 ./private-chat-files -> CWD=/ 이므로 /private-chat-files) 영속화.
+      # 원래 post-service가 쓰던 것과 같은 named volume을 그대로 재마운트한 것 — 기존 파일 유지됨.
+      - chat_attachments:/private-chat-files
     depends_on:
       mysql:
         condition: service_healthy

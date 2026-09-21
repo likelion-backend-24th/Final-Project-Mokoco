@@ -12,8 +12,26 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // 채팅 컨트롤러가 아직 이 서비스로 안 옮겨온 상태의 임시 catch-all.
-    // (컨트롤러들이 X-User-Email/Bearer를 직접 처리하는 post-service의 기존 패턴을 그대로 옮겨올 예정)
+    // 채택 전 제안 채팅(견적별 채팅방 개설/조회, 방 상세)만 Authorization: Bearer로 직접 인증한다.
+    // 나머지 chat-service 엔드포인트는 post-service와 같은 방식(X-User-Email 또는 컨트롤러가
+    // 직접 Bearer를 파싱)을 그대로 쓴다.
+    @Bean
+    @Order(1)
+    public SecurityFilterChain authenticatedApiSecurityFilterChain(HttpSecurity http,
+            com.team2.chatservice.client.UserClient users, com.fasterxml.jackson.databind.ObjectMapper mapper) throws Exception {
+        return http
+                .securityMatcher("/api/chat-rooms/proposals/*", "/api/chat-rooms/*/detail")
+                .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .requestCache(cache -> cache.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(new TokenAuthenticationFilter(users, mapper),
+                        org.springframework.security.web.authentication.AnonymousAuthenticationFilter.class)
+                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .build();
+    }
+
     @Bean
     @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
