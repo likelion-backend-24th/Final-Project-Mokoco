@@ -14,45 +14,6 @@
 
 # Mokoco API 명세
 
----
-
-# 서비스별 API 소유권 요약
-
-```
-user-service
-├─ /api/auth/**
-├─ /api/users/**
-├─ /oauth2/**
-└─ /api/internal/users/**
-
-post-service
-├─ /posts/**
-├─ /fix-deals/**
-├─ /reviews/**
-├─ /resumes/**
-├─ /profile/**
-├─ /notifications/**
-├─ /api/ai/**
-├─ /api/chat-rooms/proposals/**
-├─ /api/chat-rooms/fix-deals/**
-├─ /api/chat-rooms/{roomId}/detail
-└─ /api/chat-rooms/{roomId}/contract/**
-
-chat-service
-├─ /api/chat-rooms
-├─ /api/chat-rooms/{roomId}/messages/**
-├─ /api/chat-rooms/{roomId}/counterpart
-├─ /api/chat-rooms/{roomId}/attachments/**
-├─ /ws/chat
-└─ /internal/chat-rooms/**
-
-payment-service
-├─ /payments/prepare
-├─ /payments
-├─ /payments/{paymentId}
-├─ /payments/post/{postId}
-├─ /payments/webhook
-
 ## 1. 인증 — user-service
 
 - `POST /api/auth/signup` — 회원가입
@@ -731,6 +692,43 @@ Base:
     - post-service가 거래 완료 처리 등에 사용할 결제 상태 조회
     - `X-Internal-Service-Key` 필요
 
+---
 
+# 서비스별 API 소유권 요약
+
+```
+user-service
+├─ /api/auth/**
+├─ /api/users/**
+├─ /oauth2/**
+└─ /api/internal/users/**
+
+post-service
+├─ /posts/**
+├─ /fix-deals/**
+├─ /reviews/**
+├─ /resumes/**
+├─ /profile/**
+├─ /notifications/**
+├─ /api/ai/**
+├─ /api/chat-rooms/proposals/**
+├─ /api/chat-rooms/fix-deals/**
+├─ /api/chat-rooms/{roomId}/detail
+└─ /api/chat-rooms/{roomId}/contract/**
+
+chat-service
+├─ /api/chat-rooms
+├─ /api/chat-rooms/{roomId}/messages/**
+├─ /api/chat-rooms/{roomId}/counterpart
+├─ /api/chat-rooms/{roomId}/attachments/**
+├─ /ws/chat
+└─ /internal/chat-rooms/**
+
+payment-service
+├─ /payments/prepare
+├─ /payments
+├─ /payments/{paymentId}
+├─ /payments/post/{postId}
+├─ /payments/webhook
 └─ /internal/payments/**
 ```
