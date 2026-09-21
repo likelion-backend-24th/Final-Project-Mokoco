@@ -7,9 +7,15 @@ spring:
   application:
     name: user-service
 
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    clean-disabled: true
+
   jpa:
     hibernate:
-      ddl-auto: update # 혹은 create
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true

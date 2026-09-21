@@ -33,6 +33,7 @@ class ContractServiceTest {
     @Autowired ContractService service;
     Long roomId;
     @MockitoBean ChatClient chat;
+    @MockitoBean com.team2.postservice.client.PaymentClient payments;
 
     @BeforeEach void setup() {
         Post post = em.persist(Post.builder().title("Repair").content("Repair").authorEmail("requester@test")
@@ -41,6 +42,7 @@ class ContractServiceTest {
         proposal.adopt();
         FixDeal deal = em.persist(FixDeal.builder().postId(post.getId()).proposalId(proposal.getId()).requesterId(10L).repairerId(20L).build());
         roomId = 100L;
+        when(payments.getPaymentByPostId(post.getId())).thenReturn(new com.team2.postservice.client.dto.PaymentClientResponse(1L, post.getId(), "COMPLETED"));
         when(chat.getRoom(roomId)).thenReturn(new ChatRoomInfo(roomId, deal.getId(), proposal.getId(), 10L, 20L, null));
     }
     @Test void consultationRoomRejectsContractsUntilAdoption() {
@@ -73,6 +75,9 @@ class ContractServiceTest {
         assertThat(service.get(roomId, 10L).dealStatus()).isEqualTo(FixDealStatus.REPAIRING);
         assertThatThrownBy(() -> service.advance(roomId, 10L, contract.id(), "accept")).isInstanceOf(ResponseStatusException.class);
         service.advance(roomId, 20L, contract.id(), "finish");
+        when(payments.getPaymentByPostId(anyLong())).thenReturn(new com.team2.postservice.client.dto.PaymentClientResponse(1L, 1L, "FAILED"));
+        assertThatThrownBy(() -> service.advance(roomId, 10L, contract.id(), "accept")).isInstanceOf(ResponseStatusException.class);
+        when(payments.getPaymentByPostId(anyLong())).thenReturn(new com.team2.postservice.client.dto.PaymentClientResponse(1L, 1L, "COMPLETED"));
         service.advance(roomId, 10L, contract.id(), "accept");
         assertThat(service.get(roomId, 10L).dealStatus()).isEqualTo(FixDealStatus.COMPLETED);
     }

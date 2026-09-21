@@ -1,5 +1,6 @@
 package com.team2.postservice.proposal.controller;
 
+import com.team2.common.security.LoginUser;
 import com.team2.postservice.proposal.dto.ProposalRequestDto;
 import com.team2.postservice.proposal.dto.ProposalResponseDto;
 import com.team2.postservice.proposal.service.ProposalService;
@@ -22,8 +23,8 @@ public class ProposalController {
     @PostMapping
     public ResponseEntity<Long> createProposal(@PathVariable Long postId,
                                                @RequestBody @Valid ProposalRequestDto.Create request,
-                                               @RequestHeader("X-User-Email") String repairerEmail) {
-        Long proposalId = proposalService.createProposal(postId, request, repairerEmail);
+                                               @AuthenticationPrincipal LoginUser loginUser) {
+        Long proposalId = proposalService.createProposal(postId, request, loginUser.email());
         return ResponseEntity.ok(proposalId);
     }
 
@@ -31,8 +32,8 @@ public class ProposalController {
     @PatchMapping("/{proposalId}/adopt")
     public ResponseEntity<Void> adoptProposal(@PathVariable Long postId,
                                               @PathVariable Long proposalId,
-                                              @RequestHeader("X-User-Email") String userEmail) {
-        proposalService.adoptProposal(postId, proposalId, userEmail);
+                                              @AuthenticationPrincipal LoginUser loginUser) {
+        proposalService.adoptProposal(postId, proposalId, loginUser.email());
         return ResponseEntity.ok().build();
     }
 
@@ -41,9 +42,9 @@ public class ProposalController {
     public ResponseEntity<Void> cancelProposal(
             @PathVariable Long postId,
             @PathVariable Long proposalId,
-            @RequestHeader("X-User-Email") String userEmail
+            @AuthenticationPrincipal LoginUser loginUser
     ){
-        proposalService.cancelProposal(postId, proposalId, userEmail);
+        proposalService.cancelProposal(postId, proposalId, loginUser.email());
         return ResponseEntity.ok().build();
     }
 
@@ -58,8 +59,8 @@ public class ProposalController {
     @DeleteMapping("/{proposalId}")
     public ResponseEntity<Void> deleteProposal(@PathVariable Long postId,
                                                @PathVariable Long proposalId,
-                                               @RequestHeader("X-User-Email") String userEmail) {
-        proposalService.deleteProposal(postId, proposalId, userEmail);
+                                               @AuthenticationPrincipal LoginUser loginUser) {
+        proposalService.deleteProposal(postId, proposalId, loginUser.email());
         return ResponseEntity.ok().build();
     }
 }

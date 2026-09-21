@@ -13,7 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import static org.assertj.core.api.Assertions.*;
 
-@DataJpaTest
+@DataJpaTest(properties = {"spring.flyway.enabled=false", "spring.jpa.hibernate.ddl-auto=create-drop"})
 class NearbyRepairRequestQueryTest {
     @Autowired TestEntityManager em;
     @Autowired PostRepository repository;

@@ -1,5 +1,7 @@
 package com.team2.postservice.profile.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.team2.common.security.LoginUser;
 import com.team2.postservice.profile.dto.MyWrittenReviewsResponse;
 import com.team2.postservice.profile.dto.TransactionHistoryResponse;
 import com.team2.postservice.profile.service.ProfileService;
@@ -20,23 +22,23 @@ public class ProfileController {
 
     @GetMapping("/transactions")
     public ResponseEntity<TransactionHistoryResponse> getMyTransactions(
-            @RequestHeader("X-User-Email") String email,
+            @AuthenticationPrincipal LoginUser loginUser,
             @RequestParam(defaultValue = "requester") String role,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE));
-        return ResponseEntity.ok(profileService.getMyTransactions(email, role, pageable));
+        return ResponseEntity.ok(profileService.getMyTransactions(loginUser.email(), role, pageable));
     }
 
     @GetMapping("/reviews")
     public ResponseEntity<MyWrittenReviewsResponse> getMyWrittenReviews(
-            @RequestHeader("X-User-Email") String email,
+            @AuthenticationPrincipal LoginUser loginUser,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE));
-        return ResponseEntity.ok(profileService.getMyWrittenReviews(email, pageable));
+        return ResponseEntity.ok(profileService.getMyWrittenReviews(loginUser.email(), pageable));
     }
 
     @GetMapping("/{email}/transactions")

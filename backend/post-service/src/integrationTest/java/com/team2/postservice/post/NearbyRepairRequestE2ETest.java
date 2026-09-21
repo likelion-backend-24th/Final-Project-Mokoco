@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.*;
     "spring.config.location=optional:classpath:/nearby-e2e-empty.properties",
     "spring.datasource.url=jdbc:h2:mem:nearby-post;MODE=MySQL;DB_CLOSE_DELAY=-1",
     "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa", "spring.datasource.password=",
-    "spring.jpa.hibernate.ddl-auto=create-drop", "spring.jpa.open-in-view=false",
+    "spring.jpa.hibernate.ddl-auto=create-drop", "spring.jpa.open-in-view=false", "spring.flyway.enabled=false",
     "internal.service-key=nearby-e2e-only", "file.upload-dir=build/nearby-e2e/uploads",
     "file.base-url=/images"
 })
@@ -60,7 +60,7 @@ class NearbyRepairRequestE2ETest {
                 "--spring.config.location=optional:classpath:/nearby-e2e-empty.properties",
                 "--server.port=" + userPort, "--spring.datasource.url=jdbc:h2:mem:nearby-user;MODE=MySQL;DB_CLOSE_DELAY=-1",
                 "--spring.datasource.driver-class-name=org.h2.Driver", "--spring.datasource.username=sa", "--spring.datasource.password=",
-                "--spring.jpa.hibernate.ddl-auto=create-drop", "--internal.service-key=nearby-e2e-only",
+                "--spring.jpa.hibernate.ddl-auto=create-drop", "--spring.flyway.enabled=false", "--internal.service-key=nearby-e2e-only",
                 "--jwt.secretKey=nearby-e2e-access-key-with-at-least-32-bytes",
                 "--jwt.refreshKey=nearby-e2e-refresh-key-with-at-least-32-bytes",
                 "--jwt.access-expiration-ms=3600000", "--jwt.refresh-expiration-ms=3600000",

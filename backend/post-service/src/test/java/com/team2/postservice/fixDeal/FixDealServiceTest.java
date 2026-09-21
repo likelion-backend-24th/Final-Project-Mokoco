@@ -36,7 +36,7 @@ class FixDealServiceTest {
 
     @Test void repairerMarksProductSentFromMatched() {
         FixDeal deal = fixDeal(FixDealStatus.MATCHED);
-        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
         when(users.getUserByEmail("repairer@test.com"))
                 .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
 
@@ -47,7 +47,7 @@ class FixDealServiceTest {
 
     @Test void rejectsWhenRequesterAttemptsProductSent() {
         FixDeal deal = fixDeal(FixDealStatus.MATCHED);
-        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
         when(users.getUserByEmail("requester@test.com"))
                 .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
 
@@ -59,20 +59,17 @@ class FixDealServiceTest {
         assertThat(deal.getStatus()).isEqualTo(FixDealStatus.MATCHED);
     }
 
-    @Test void rejectsProductSentWhenNotInMatchedStatus() {
+    @Test void repeatedProductSentIsIdempotent() {
         FixDeal deal = fixDeal(FixDealStatus.PRODUCT_SENT);
-        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
         when(users.getUserByEmail("repairer@test.com"))
                 .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
-
-        assertThatThrownBy(() -> service.markProductSent(1L, "repairer@test.com"))
-                .isInstanceOf(CustomException.class)
-                .extracting(e -> ((CustomException) e).getErrorCode())
-                .isEqualTo(ErrorCode.INVALID_FIX_DEAL_STATUS);
+        service.markProductSent(1L, "repairer@test.com");
+        assertThat(deal.getStatus()).isEqualTo(FixDealStatus.PRODUCT_SENT);
     }
 
     @Test void rejectsProductSentWhenFixDealNotFound() {
-        when(fixDeals.findById(99L)).thenReturn(Optional.empty());
+        when(fixDeals.lockById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.markProductSent(99L, "repairer@test.com"))
                 .isInstanceOf(CustomException.class)
@@ -84,7 +81,7 @@ class FixDealServiceTest {
 
     @Test void repairerMarksRepairingFromProductSent() {
         FixDeal deal = fixDeal(FixDealStatus.PRODUCT_SENT);
-        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
         when(users.getUserByEmail("repairer@test.com"))
                 .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
 
@@ -95,7 +92,7 @@ class FixDealServiceTest {
 
     @Test void rejectsRepairingWhenMatchedStepSkipped() {
         FixDeal deal = fixDeal(FixDealStatus.MATCHED);
-        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
         when(users.getUserByEmail("repairer@test.com"))
                 .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
 
@@ -107,7 +104,7 @@ class FixDealServiceTest {
 
     @Test void rejectsRepairingWhenRequesterAttempts() {
         FixDeal deal = fixDeal(FixDealStatus.PRODUCT_SENT);
-        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
         when(users.getUserByEmail("requester@test.com"))
                 .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
 
@@ -143,7 +140,7 @@ class FixDealServiceTest {
 
     @Test void repairerRequestsCompletionFromRepairing() {
         FixDeal deal = fixDeal(FixDealStatus.REPAIRING);
-        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
         when(users.getUserByEmail("repairer@test.com"))
                 .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
 
@@ -154,7 +151,7 @@ class FixDealServiceTest {
 
     @Test void rejectsCompletionRequestWhenMatchedStepsSkipped() {
         FixDeal deal = fixDeal(FixDealStatus.MATCHED);
-        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
         when(users.getUserByEmail("repairer@test.com"))
                 .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
 
@@ -166,7 +163,7 @@ class FixDealServiceTest {
 
     @Test void rejectsCompletionRequestWhenProductSentStepSkipped() {
         FixDeal deal = fixDeal(FixDealStatus.PRODUCT_SENT);
-        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
         when(users.getUserByEmail("repairer@test.com"))
                 .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region"));
 
@@ -178,7 +175,7 @@ class FixDealServiceTest {
 
     @Test void rejectsCompletionRequestByRequester() {
         FixDeal deal = fixDeal(FixDealStatus.REPAIRING);
-        when(fixDeals.findById(1L)).thenReturn(Optional.of(deal));
+        when(fixDeals.lockById(1L)).thenReturn(Optional.of(deal));
         when(users.getUserByEmail("requester@test.com"))
                 .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region"));
 

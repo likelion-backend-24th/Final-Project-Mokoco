@@ -32,6 +32,7 @@ import java.util.*;
 public class ContractService {
     public static final String CONSENT = "계약 내용과 금액, 작업 범위 및 조건을 확인했으며, 이 버전의 계약에 전자서명하는 것에 동의합니다.";
     private final ChatClient chat;
+    private final com.team2.postservice.client.PaymentClient payments;
     private final FixDealRepository deals;
     private final ProposalRepository proposals;
     private final ContractRepository contracts;
@@ -239,11 +240,21 @@ public class ContractService {
             default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
 
+        if (deal.getStatus() == to) return;
         if (deal.getStatus() != from) {
             throw conflict("거래 상태가 변경되었습니다. 새로고침해주세요.");
         }
 
 
+        if (to == FixDealStatus.COMPLETED) {
+            try {
+                if (!"COMPLETED".equals(payments.getPaymentByPostId(deal.getPostId()).status()))
+                    throw conflict("결제 완료 후 수리를 확정할 수 있습니다.");
+            } catch (feign.FeignException failure) {
+                throw new ResponseStatusException(failure.status() == 404 ? HttpStatus.CONFLICT : HttpStatus.BAD_GATEWAY,
+                        "결제 정보를 확인할 수 없습니다.");
+            }
+        }
         deal.changeStatus(to);
     }
 }

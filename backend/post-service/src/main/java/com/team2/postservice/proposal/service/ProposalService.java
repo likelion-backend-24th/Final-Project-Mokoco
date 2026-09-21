@@ -85,6 +85,7 @@ public class ProposalService {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         }
 
+        if (post.getStatus() != PostStatus.WAITING) throw new CustomException(ErrorCode.POST_NOT_ACCEPTING_PROPOSALS);
         proposal.adopt();
         post.updateStatusToMatched();
 
@@ -170,15 +171,15 @@ public class ProposalService {
             return;
         }
 
-        FixDeal deal = fixDealRepository.findByProposalId(proposalId)
+        FixDeal deal = fixDealRepository.lockByProposalId(proposalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
 
-        if (deal.getStatus() == FixDealStatus.MATCHED) {
-            deal.changeStatus(FixDealStatus.CANCELED);
-            proposal.cancel();
-            post.changeStatus(PostStatus.WAITING);
-            syncChatAfterCommit(proposalId);
-        }
+        if (deal.getStatus() != FixDealStatus.MATCHED)
+            throw new CustomException(ErrorCode.INVALID_FIX_DEAL_STATUS);
+        deal.changeStatus(FixDealStatus.CANCELED);
+        proposal.cancel();
+        post.changeStatus(PostStatus.WAITING);
+        syncChatAfterCommit(proposalId);
     }
 
     private void syncChatAfterCommit(Long proposalId) {

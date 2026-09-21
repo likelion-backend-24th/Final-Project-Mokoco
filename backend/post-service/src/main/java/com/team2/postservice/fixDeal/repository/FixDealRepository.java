@@ -13,12 +13,17 @@ public interface FixDealRepository extends JpaRepository<FixDeal, Long> {
     @org.springframework.data.jpa.repository.Query("select d from FixDeal d where d.proposalId = :proposalId and d.status <> com.team2.postservice.fixDeal.entity.FixDealStatus.CANCELED")
     Optional<FixDeal> findByProposalId(@org.springframework.data.repository.query.Param("proposalId") Long proposalId);
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select d from FixDeal d where d.id = :id")
+    Optional<FixDeal> lockById(@org.springframework.data.repository.query.Param("id") Long id);
+
     Optional<FixDeal> findByPostIdAndStatus(
             Long fixRequestId,
             FixDealStatus status
     );
 
-    Optional<FixDeal> findByPostId(Long postId);
+    @org.springframework.data.jpa.repository.Query("select d from FixDeal d where d.postId = :postId and d.status <> com.team2.postservice.fixDeal.entity.FixDealStatus.CANCELED")
+    Optional<FixDeal> findByPostId(@org.springframework.data.repository.query.Param("postId") Long postId);
 
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @org.springframework.data.jpa.repository.Query("select d from FixDeal d where d.proposalId = :proposalId and d.status <> com.team2.postservice.fixDeal.entity.FixDealStatus.CANCELED")

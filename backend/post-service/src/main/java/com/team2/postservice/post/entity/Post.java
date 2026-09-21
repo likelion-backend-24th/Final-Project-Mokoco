@@ -1,6 +1,8 @@
 package com.team2.postservice.post.entity;
 
 import jakarta.persistence.*;
+import com.team2.common.exception.CustomException;
+import com.team2.common.exception.ErrorCode;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -78,10 +80,15 @@ public class Post {
     }
 
     public void updateStatusToMatched() {
-        this.status = PostStatus.MATCHED;
+        changeStatus(PostStatus.MATCHED);
     }
 
     public void changeStatus(PostStatus status) {
+        if (status == null) throw new CustomException(ErrorCode.INVALID_INPUT);
+        if (this.status == status) return;
+        boolean allowed = this.status == PostStatus.WAITING && status == PostStatus.MATCHED
+                || this.status == PostStatus.MATCHED && (status == PostStatus.WAITING || status == PostStatus.COMPLETED);
+        if (!allowed) throw new CustomException(ErrorCode.INVALID_FIX_DEAL_STATUS);
         this.status = status;
     }
 

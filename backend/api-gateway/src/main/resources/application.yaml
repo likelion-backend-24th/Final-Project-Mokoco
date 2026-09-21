@@ -6,6 +6,9 @@ spring:
     name: api-gateway
   cloud:
     gateway:
+      default-filters:
+        - RemoveRequestHeader=X-User-Email
+        - RemoveRequestHeader=X-Internal-Service-Key
       globalcors:
         cors-configurations:
           '[/**]':

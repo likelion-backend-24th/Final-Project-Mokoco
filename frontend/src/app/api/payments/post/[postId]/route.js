@@ -8,7 +8,7 @@ export async function GET(request, { params }) {
 
   try {
     const response = await fetch(backendUrl(`/payments/post/${postId}`), {
-      headers: { "X-User-Email": email },
+      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,  },
       cache: "no-store",
       signal: AbortSignal.timeout(8000),
     });

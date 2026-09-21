@@ -9,7 +9,7 @@ export async function PATCH(request, { params }) {
   try {
     const response = await fetch(backendUrl(`/fix-deals/${fixDealId}/complete`), {
       method: "PATCH",
-      headers: { "X-User-Email": email },
+      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,  },
       cache: "no-store",
       signal: AbortSignal.timeout(8000),
     });

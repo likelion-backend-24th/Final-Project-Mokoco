@@ -18,9 +18,9 @@ export async function POST(request, { params }) {
 
     const response = await fetch(targetUrl, {
       method: "POST",
-      headers: {
+      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,
         "Content-Type": "application/json",
-        "X-User-Email": userEmail,
+
       },
       body: JSON.stringify(body),
     });

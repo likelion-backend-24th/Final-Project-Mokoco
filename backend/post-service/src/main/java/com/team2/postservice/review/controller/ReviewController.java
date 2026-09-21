@@ -1,5 +1,7 @@
 package com.team2.postservice.review.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.team2.common.security.LoginUser;
 import com.team2.postservice.review.dto.ReviewRequestDto;
 import com.team2.postservice.review.dto.ReviewResponseDto;
 import com.team2.postservice.review.dto.UserReviewsResponseDto;
@@ -26,8 +28,8 @@ public class ReviewController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Long> createReview(@RequestPart("review") ReviewRequestDto.Create request,
                                               @RequestPart(value = "images", required = false) List<MultipartFile> images,
-                                              @RequestHeader("X-User-Email") String reviewerEmail) {
-        Long reviewId = reviewService.createReview(request, images, reviewerEmail);
+                                              @AuthenticationPrincipal LoginUser loginUser) {
+        Long reviewId = reviewService.createReview(request, images, loginUser.email());
         return ResponseEntity.ok(reviewId);
     }
 

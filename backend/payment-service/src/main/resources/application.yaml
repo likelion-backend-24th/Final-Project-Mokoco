@@ -7,9 +7,15 @@ spring:
   profiles:
     include: secret
 
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    clean-disabled: true
+
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
@@ -30,3 +36,6 @@ post-service:
 
 portone:
   base-url: https://api.portone.io
+
+internal:
+  service-key: ${INTERNAL_SERVICE_KEY}

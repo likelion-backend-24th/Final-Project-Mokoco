@@ -17,7 +17,7 @@ export async function DELETE(_request, { params }) {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "X-User-Email": userEmail,
+
       },
       cache: "no-store",
       signal: AbortSignal.timeout(8000),

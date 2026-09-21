@@ -2,7 +2,6 @@ package com.team2.postservice.post;
 
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.*;
-import com.team2.postservice.common.exception.*;
 import com.team2.common.exception.*;
 import com.team2.postservice.post.dto.NearbyRepairRequest;
 import com.team2.postservice.post.entity.*;
