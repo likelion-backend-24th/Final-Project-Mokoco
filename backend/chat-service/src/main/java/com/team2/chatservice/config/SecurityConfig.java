@@ -19,8 +19,7 @@ public class SecurityConfig {
     public SecurityFilterChain authenticatedApiSecurityFilterChain(HttpSecurity http,
             com.team2.chatservice.client.UserClient users, com.fasterxml.jackson.databind.ObjectMapper mapper) throws Exception {
         return http
-                .securityMatcher("/api/chat-rooms", "/api/chat-rooms/proposals/*", "/api/chat-rooms/*/detail",
-                        "/api/chat-rooms/fix-deals/*", "/api/chat-rooms/*/attachments/**",
+                .securityMatcher("/api/chat-rooms", "/api/chat-rooms/*/attachments/**",
                         "/api/chat-rooms/*/messages/**", "/api/chat-rooms/*/counterpart", "/api/chat-rooms/session")
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())

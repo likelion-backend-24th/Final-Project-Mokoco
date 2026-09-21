@@ -38,6 +38,12 @@ public enum ErrorCode implements ApiErrorCode {
     PAYMENT_NOT_COMPLETED(HttpStatus.CONFLICT, "PAYMENT_NOT_COMPLETED", "결제가 완료되지 않아 수리 완료를 수락할 수 없습니다."),
     PAYMENT_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "PAYMENT_SERVICE_UNAVAILABLE", "결제 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요."),
 
+    // ===== ChatRoom =====
+    UNAUTHORIZED_CHAT_ROOM_CREATE(HttpStatus.FORBIDDEN, "UNAUTHORIZED_CHAT_ROOM_CREATE", "수리 요청글 작성자만 채팅방을 만들 수 있습니다."),
+    CHAT_ROOM_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "CHAT_ROOM_NOT_AVAILABLE", "채택된 제안이 아닙니다."),
+    UNAUTHORIZED_CHAT_ROOM_ACCESS(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED_CHAT_ROOM_ACCESS", "채팅방 접근 권한이 없습니다."),
+    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_ROOM_NOT_FOUND", "채팅방을 찾을 수 없습니다."),
+
     // ===== Notification =====
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_NOT_FOUND", "알림이 존재하지 않습니다."),
     UNAUTHORIZED_NOTIFICATION_ACCESS(HttpStatus.FORBIDDEN, "UNAUTHORIZED_NOTIFICATION_ACCESS", "본인의 알림만 확인할 수 있습니다."),

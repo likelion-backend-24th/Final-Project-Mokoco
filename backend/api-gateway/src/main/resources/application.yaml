@@ -43,7 +43,16 @@ spring:
           predicates:
             - Path=/api/chat-rooms/*/contract/**
 
-        # 그 외 채팅 관련 엔드포인트(방 개설/조회/메시지/첨부)는 chat-service로 — 컨트롤러가
+        # 제안/거래 단위 채팅방 개설·조회(ChatRoomController)도 URL만 /api/chat-rooms 아래 있을 뿐
+        # post-service에 있다 — Proposal/FixDeal 컨텍스트가 로컬에 있어서 여기서 인가까지 마친 뒤
+        # chat-service에는 방을 찾거나 만드는 것만 위임한다. 아래 chat-service 라우트보다 반드시
+        # 먼저 매치돼야 한다(post-service-contract와 같은 이유).
+        - id: post-chat-rooms
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/api/chat-rooms/proposals/**, /api/chat-rooms/fix-deals/**, /api/chat-rooms/*/detail
+
+        # 그 외 채팅 관련 엔드포인트(방 목록/메시지/첨부)는 chat-service로 — 컨트롤러가
         # 이미 /api/chat-rooms 매핑이라 접두어 유지
         - id: chat-service-chat
           uri: http://mokoco-chat-service:8084

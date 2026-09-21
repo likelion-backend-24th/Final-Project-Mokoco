@@ -42,7 +42,8 @@ class ContractServiceTest {
         var deal = em.persist(FixDeal.builder().postId(post.getId()).proposalId(proposal.getId()).requesterId(10L).repairerId(20L).build());
         roomId = 1L;
         Mockito.when(chatRoomClient.getRoom(roomId))
-                .thenReturn(new ChatRoomClient.ChatRoomInfo(roomId, proposal.getId(), 10L, 20L, post.getId(), deal.getId()));
+                .thenReturn(new ChatRoomClient.ChatRoomInfo(roomId, proposal.getId(), 10L, 20L, post.getId(), deal.getId(),
+                        java.time.LocalDateTime.now()));
     }
     ContractTerms terms(String scope) {
         return new ContractTerms("가구 수리", scope, "도색 제외", "부품비 포함", new BigDecimal("50000"), "검수 후 지급",

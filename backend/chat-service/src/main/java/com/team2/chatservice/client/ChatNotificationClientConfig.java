@@ -4,8 +4,8 @@ import feign.RequestInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 
-// Deliberately not @Configuration: only the PostClient child context imports this.
-public class PostClientConfig {
+// Deliberately not @Configuration: only the ChatNotificationClient child context imports this.
+public class ChatNotificationClientConfig {
     @Bean
     public RequestInterceptor internalServiceAuthentication(
             @Value("${internal.service-key}") String key) {

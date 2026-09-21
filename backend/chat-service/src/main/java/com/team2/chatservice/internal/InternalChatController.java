@@ -5,9 +5,11 @@ import com.team2.chatservice.chatMessage.repository.ChatMessageRepository;
 import com.team2.chatservice.chatRoom.entity.ChatRoom;
 import com.team2.chatservice.chatRoom.repository.ChatRoomRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -25,16 +27,54 @@ public class InternalChatController {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
 
-    public record ChatRoomInfo(Long id, Long proposalId, Long requesterId, Long repairerId, Long postId, Long fixDealId) {
+    public record ChatRoomInfo(Long id, Long proposalId, Long requesterId, Long repairerId, Long postId,
+            Long fixDealId, java.time.LocalDateTime createdAt) {
         static ChatRoomInfo from(ChatRoom room) {
             return new ChatRoomInfo(room.getId(), room.getProposalId(), room.getRequesterId(),
-                    room.getRepairerId(), room.getPostId(), room.getFixDealId());
+                    room.getRepairerId(), room.getPostId(), room.getFixDealId(), room.getCreatedAt());
         }
     }
 
     @GetMapping("/{roomId}")
     public ChatRoomInfo getRoom(@PathVariable Long roomId) {
         return chatRoomRepository.findById(roomId)
+                .map(ChatRoomInfo::from)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
+
+    // post-service가 이미 로컬에 갖고 있는 Proposal 컨텍스트를 넘기면, 그 제안 기준 방을 찾거나
+    // 없으면 새로 만든다. proposal_id에 DB unique 제약이 있어 동시에 두 요청이 들어오면 하나는
+    // 제약 위반으로 실패하는데, 그 경우 예외를 삼키고 방금 다른 요청이 만든 방을 그대로 반환한다.
+    public record ProposalRoomContext(Long proposalId, Long postId, Long requesterId, Long repairerId) {}
+
+    @PutMapping("/proposals/ensure")
+    @Transactional
+    public ChatRoomInfo ensureForProposal(@RequestBody ProposalRoomContext context) {
+        if (context.proposalId() == null || context.postId() == null || context.requesterId() == null
+                || context.repairerId() == null || context.requesterId().equals(context.repairerId()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid room context");
+        return chatRoomRepository.findByProposalId(context.proposalId())
+                .map(ChatRoomInfo::from)
+                .orElseGet(() -> {
+                    ChatRoom room = ChatRoom.builder()
+                            .proposalId(context.proposalId())
+                            .postId(context.postId())
+                            .requesterId(context.requesterId())
+                            .repairerId(context.repairerId())
+                            .build();
+                    try {
+                        return ChatRoomInfo.from(chatRoomRepository.saveAndFlush(room));
+                    } catch (DataIntegrityViolationException raceLoser) {
+                        return chatRoomRepository.findByProposalId(context.proposalId())
+                                .map(ChatRoomInfo::from)
+                                .orElseThrow(() -> raceLoser);
+                    }
+                });
+    }
+
+    @GetMapping("/proposals/{proposalId}")
+    public ChatRoomInfo getByProposalId(@PathVariable Long proposalId) {
+        return chatRoomRepository.findByProposalId(proposalId)
                 .map(ChatRoomInfo::from)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }

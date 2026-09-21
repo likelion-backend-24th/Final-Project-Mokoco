@@ -38,6 +38,8 @@ public class SecurityConfig {
         return http
                 .securityMatcher(matchers(
                         m("/api/ai/**"), m("/api/chat-rooms/*/contract/**"),
+                        m("/api/chat-rooms/proposals/**"), m("/api/chat-rooms/fix-deals/**"),
+                        m("/api/chat-rooms/*/detail"),
                         m(HttpMethod.POST, "/posts"), m("/posts/*/visibility"),
                         m(HttpMethod.PATCH, "/posts/*"), m(HttpMethod.DELETE, "/posts/*"),
                         m("/posts/*/images"), m("/posts/*/images/*"),

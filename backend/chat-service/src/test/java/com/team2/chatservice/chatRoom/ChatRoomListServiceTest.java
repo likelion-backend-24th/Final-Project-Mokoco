@@ -2,8 +2,6 @@ package com.team2.chatservice.chatRoom;
 
 import com.team2.chatservice.chatRoom.repository.ChatRoomRepository;
 import com.team2.chatservice.chatRoom.service.ChatRoomService;
-import com.team2.chatservice.client.PostClient;
-import com.team2.chatservice.client.UserClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageRequest;
 import static org.mockito.Mockito.*;
@@ -11,8 +9,7 @@ import static org.assertj.core.api.Assertions.*;
 
 class ChatRoomListServiceTest {
     final ChatRoomRepository rooms = mock(ChatRoomRepository.class);
-    final UserClient users = mock(UserClient.class);
-    final ChatRoomService service = new ChatRoomService(rooms, mock(PostClient.class), users);
+    final ChatRoomService service = new ChatRoomService(rooms);
 
     // 토큰 검증 자체는 SecurityConfig의 TokenAuthenticationFilter가 담당하므로(userId를 컨트롤러가
     // 이미 확인된 값으로 넘겨받음), 서비스는 페이지네이션 검증만 스스로 한다.
