@@ -47,7 +47,7 @@ public class ChatRoomController {
     public ChatRoomResponse createForProposal(
             @PathVariable Long proposalId,
             @org.springframework.security.core.annotation.AuthenticationPrincipal
-                    com.team2.postservice.common.security.LoginUser user
+                    com.team2.common.security.LoginUser user
     ) {
         return chatRoomService.createForProposal(proposalId, user.id());
     }
@@ -56,7 +56,7 @@ public class ChatRoomController {
     public ChatRoomResponse getForProposal(
             @PathVariable Long proposalId,
             @org.springframework.security.core.annotation.AuthenticationPrincipal
-                    com.team2.postservice.common.security.LoginUser user
+                    com.team2.common.security.LoginUser user
     ) {
         return chatRoomService.getForProposal(proposalId, user.id());
     }
@@ -65,7 +65,7 @@ public class ChatRoomController {
     public ChatRoomResponse detail(
             @PathVariable Long roomId,
             @org.springframework.security.core.annotation.AuthenticationPrincipal
-                    com.team2.postservice.common.security.LoginUser user
+                    com.team2.common.security.LoginUser user
     ) {
         return chatRoomService.detail(roomId, user.id());
     }

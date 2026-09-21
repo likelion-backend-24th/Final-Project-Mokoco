@@ -1,7 +1,7 @@
 package com.team2.postservice.report.service;
 
-import com.team2.postservice.common.exception.CustomException;
-import com.team2.postservice.common.exception.ErrorCode;
+import com.team2.common.exception.CustomException;
+import com.team2.common.exception.ErrorCode;
 import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.post.service.PostViewerService;
 import com.team2.postservice.report.dto.ReportCreateRequest;

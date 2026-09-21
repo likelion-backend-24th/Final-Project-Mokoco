@@ -3,7 +3,7 @@ package com.team2.postservice.ai.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.team2.postservice.ai.service.AiDraftService;
 import com.team2.postservice.ai.dto.ContractDraftRequest;
-import com.team2.postservice.common.security.LoginUser;
+import com.team2.common.security.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

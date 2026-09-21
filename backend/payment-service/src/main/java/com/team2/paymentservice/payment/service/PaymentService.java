@@ -2,8 +2,8 @@ package com.team2.paymentservice.payment.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.team2.paymentservice.common.exception.CustomException;
-import com.team2.paymentservice.common.exception.ErrorCode;
+import com.team2.common.exception.CustomException;
+import com.team2.common.exception.ErrorCode;
 import com.team2.paymentservice.payment.client.FixDealStatusResponse;
 import com.team2.paymentservice.payment.client.PortOnePaymentClient;
 import com.team2.paymentservice.payment.client.PortOnePaymentResponse;
