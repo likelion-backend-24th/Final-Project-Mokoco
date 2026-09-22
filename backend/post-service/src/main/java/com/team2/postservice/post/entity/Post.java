@@ -39,6 +39,9 @@ public class Post {
     @Column(nullable = false)
     private Long authorId;
 
+    @Column
+    private String authorEmail;
+
     @Column(nullable = false, length = 100)
     private String regionName; // 지역 이름 필드
 
@@ -67,11 +70,12 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Post(String title, String content, ContentFormat contentFormat, Long authorId, String regionName, String regionCode, PostCategory category) {
+    public Post(String title, String content, ContentFormat contentFormat, Long authorId, String authorEmail, String regionName, String regionCode, PostCategory category) {
         this.title = title;
         this.content = content;
         this.contentFormat = contentFormat == null ? ContentFormat.PLAIN_TEXT : contentFormat;
         this.authorId = authorId;
+        this.authorEmail = authorEmail;
         this.regionName = regionName; // 빌더에 지역 이름 추가
         this.regionCode = regionCode;
         this.category = category;
