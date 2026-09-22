@@ -52,7 +52,8 @@ class GeminiLiveTest {
         when(context.read(1L,2L,null)).thenReturn(new LinkedHashMap<>(Map.of("POST","의자 다리가 흔들립니다. 다리를 고정해주세요.","ADOPTED_PROPOSAL","다리 고정 작업을 제안합니다.","PROPOSAL_AMOUNT","50000",
                 "MESSAGE_1","[의뢰인] 다리만 고정하고 도색은 하지 말아주세요.","MESSAGE_2","[수리자] 네, 다리 고정만 하고 도색은 제외하겠습니다.")));
 
-        AiDraftService service = new AiDraftService(client,new AiImages(),new AiRateLimit(3,20,500),context,new ObjectMapper(),new com.team2.postservice.ai.AiDraftCache());
+        AiDraftService service = new AiDraftService(client,new AiImages(),new AiRateLimit(3,20,500),context,new ObjectMapper(),new com.team2.postservice.ai.AiDraftCache(),
+                org.mockito.Mockito.mock(AiPostDraftStore.class));
 
         JsonNode result = service.contract(2L,1L,null,Map.of(),"");
 

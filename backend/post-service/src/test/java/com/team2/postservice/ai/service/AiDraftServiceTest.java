@@ -21,7 +21,8 @@ class AiDraftServiceTest {
     final AiContractContext context = mock(AiContractContext.class);
     final AiImages images = mock(AiImages.class);
     final AiRateLimit limit = mock(AiRateLimit.class);
-    final AiDraftService service = new AiDraftService(gemini,images,limit,context,mapper,new AiDraftCache());
+    final AiPostDraftStore drafts = mock(AiPostDraftStore.class);
+    final AiDraftService service = new AiDraftService(gemini,images,limit,context,mapper,new AiDraftCache(),drafts);
 
     ObjectNode blankContract() {
         ObjectNode node = mapper.createObjectNode();
@@ -143,6 +144,7 @@ class AiDraftServiceTest {
         assertThat(result.path("suggestedTerms").path("endDate").isNull()).isTrue();
     }
     @Test void photoContentsAndUserScopeDetermineCacheKey() {
+        when(drafts.create(anyLong(), anyString(), anyString())).thenReturn(new AiPostDraftStore.Session(1L, 0, 3));
         when(images.parts(anyList())).thenAnswer(invocation -> new ArrayList<>(List.of(Map.of("text","image-a"))));
         when(gemini.generate(anyString(),anyList(),anyMap())).thenAnswer(invocation -> mapper.readTree(
                 "{\"suggestion\":{\"title\":\"수리\",\"content\":\"수리 요청\",\"category\":\"" + com.team2.postservice.post.entity.PostCategory.values()[0].name() + "\"}}"));
@@ -152,5 +154,32 @@ class AiDraftServiceTest {
         when(images.parts(anyList())).thenAnswer(invocation -> new ArrayList<>(List.of(Map.of("text","image-b"))));
         service.post(1L,List.of(),"","","");
         verify(gemini,times(3)).generate(anyString(),anyList(),anyMap());
+    }
+
+    @Test void revisionChangesOnlySelectedContent() throws Exception {
+        String current = "{\"suggestion\":{\"title\":\"세탁기 수리\",\"content\":\"전원이 안 켜져요. 어제부터 그래요.\",\"category\":\"ELECTRIC_LIGHT\"}}";
+        when(drafts.claim(12L, 7L)).thenReturn(new AiPostDraftStore.Claimed("token", "{}", current));
+        when(gemini.generate(anyString(), anyList(), anyMap()))
+                .thenReturn(mapper.readTree("{\"replacement\":\"전원 버튼을 눌러도 화면이 켜지지 않아요.\"}"));
+        when(drafts.complete(eq(12L), eq(7L), eq("token"), eq("전원이 안 켜져요."), eq("증상을 구체적으로 써줘"), anyString()))
+                .thenReturn(new AiPostDraftStore.Session(12L, 1, 2));
+
+        JsonNode result = service.revisePostContent(7L, 12L, 0, 10, "전원이 안 켜져요.", "증상을 구체적으로 써줘");
+
+        assertThat(result.path("suggestion").path("title").asText()).isEqualTo("세탁기 수리");
+        assertThat(result.path("suggestion").path("category").asText()).isEqualTo("ELECTRIC_LIGHT");
+        assertThat(result.path("suggestion").path("content").asText()).isEqualTo("전원 버튼을 눌러도 화면이 켜지지 않아요. 어제부터 그래요.");
+        assertThat(result.path("remainingRetries").asInt()).isEqualTo(2);
+    }
+
+    @Test void staleSelectionIsRejectedBeforeModelCall() {
+        String current = "{\"suggestion\":{\"title\":\"수리\",\"content\":\"최신 본문\",\"category\":\"ELECTRIC_LIGHT\"}}";
+        when(drafts.claim(12L, 7L)).thenReturn(new AiPostDraftStore.Claimed("token", "{}", current));
+
+        assertThatThrownBy(() -> service.revisePostContent(7L, 12L, 0, 4, "예전 본문", "고쳐줘"))
+                .isInstanceOf(AiException.class)
+                .hasMessageContaining("최신 초안");
+        verify(gemini, never()).generate(anyString(), anyList(), anyMap());
+        verify(drafts).release(12L, "token");
     }
 }

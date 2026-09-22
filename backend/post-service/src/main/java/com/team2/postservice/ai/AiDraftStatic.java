@@ -109,6 +109,17 @@ public class AiDraftStatic {
         );
     }
 
+    public static Map<String, Object> postContentRevisionSchema() {
+        return objectSchema(Map.of("replacement", textSchema(800)));
+    }
+
+    public static String validatePostContentRevision(JsonNode result) {
+        keys(result, Set.of("replacement"));
+        String replacement = text(result.path("replacement"), 800, false);
+        if (replacement == null || replacement.isBlank()) throw AiException.output();
+        return replacement;
+    }
+
     public static Map<String, Object> contractSchema(Set<String> sourceIds) {
         Map<String, Object> terms = new LinkedHashMap<>(), sources = new LinkedHashMap<>();
 

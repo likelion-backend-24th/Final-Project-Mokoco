@@ -70,6 +70,31 @@ class AiControllerTest {
                 new ObjectMapper().readTree(result.getResponse().getContentAsString()).get("requestId").asText());
         verify(service).post(eq(7L),anyList(),eq(""),eq(""),eq(""));
     }
+    @Test void revisionRequiresSelectedContentAndPrompt() throws Exception {
+        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(7L, "test@example.invalid", "test", null, com.team2.common.security.Role.USER));
+
+        mvc.perform(post("/api/ai/post-drafts/12/revisions")
+                        .header("Authorization", "Bearer valid")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"selectionStart\":0,\"selectionEnd\":0,\"selectedText\":\"\",\"prompt\":\"\"}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(service);
+    }
+    @Test void revisionUsesVerifiedUserAndSelectedContent() throws Exception {
+        when(users.verifyToken("valid")).thenReturn(new UserClientResponse(7L, "test@example.invalid", "test", null, com.team2.common.security.Role.USER));
+        when(service.revisePostContent(7L, 12L, 0, 5, "고장 내용", "더 구체적으로"))
+                .thenReturn(new ObjectMapper().createObjectNode().put("draftId", 12));
+
+        mvc.perform(post("/api/ai/post-drafts/12/revisions")
+                        .header("Authorization", "Bearer valid")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"selectionStart\":0,\"selectionEnd\":5,\"selectedText\":\"고장 내용\",\"prompt\":\"더 구체적으로\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.draftId").value(12));
+
+        verify(service).revisePostContent(7L, 12L, 0, 5, "고장 내용", "더 구체적으로");
+    }
     @Test void authenticationFailuresPreserveErrorContract() throws Exception {
         for (int upstreamStatus : new int[]{401,503}) {
             Request request = feign.Request.create(feign.Request.HttpMethod.GET,"http://user/verify",Map.of(),null,java.nio.charset.StandardCharsets.UTF_8,null);
