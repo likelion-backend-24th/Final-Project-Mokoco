@@ -1,12 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PencilSimple, LockKey, FileText, X, Link as LinkIcon } from "@phosphor-icons/react";
+import { PencilSimple, LockKey, FileText, X } from "@phosphor-icons/react";
 import ResumeEditor from "./resume-editor";
 
+// 로그인 페이지 소셜 버튼과 같은 아이콘 — 여기서도 같은 브랜드 그림으로 어떤 provider인지 바로 알아보게 한다.
+const GOOGLE_ICON = (
+  <svg className="size-4 shrink-0" viewBox="0 0 24 24">
+    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.18v3.15C3.15 21.32 7.21 24 12 24z"/>
+    <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.18C.43 8.13 0 9.87 0 11.7s.43 3.57 1.18 5.09l4.09-2.55z"/>
+    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.21 0 3.15 2.68 1.18 6.61l4.09 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+  </svg>
+);
+const KAKAO_ICON = (
+  <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="#191919">
+    <path d="M12 3C6.48 3 2 6.58 2 11c0 2.84 1.83 5.32 4.58 6.72-.16.59-.59 2.15-.68 2.48-.11.41.15.4.32.28.13-.09 2.05-1.39 2.87-1.95.62.09 1.26.14 1.91.14 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
+  </svg>
+);
+
 const SOCIAL_PROVIDERS = [
-  { id: "google", label: "구글" },
-  { id: "kakao", label: "카카오" },
+  { id: "google", label: "구글", icon: GOOGLE_ICON },
+  { id: "kakao", label: "카카오", icon: KAKAO_ICON },
 ];
 
 // 로그인 페이지의 소셜 버튼과 같은 경로다 — 이미 로그인된 상태에서 타면 백엔드가
@@ -149,10 +164,32 @@ export default function AccountSettings() {
 
       {!editingProfile && !editingPassword && (
         <div>
-          <div>
-            <p className="text-lg font-bold text-slate-800">{me.name} · {me.nickname}</p>
-            <p className="mt-1 text-sm text-slate-500">{me.email}</p>
-            {me.regionName && <p className="mt-0.5 text-sm text-slate-400">{me.regionName}</p>}
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-lg font-bold text-slate-800">{me.name} · {me.nickname}</p>
+              <p className="mt-1 text-sm text-slate-500">{me.email}</p>
+              {me.regionName && <p className="mt-0.5 text-sm text-slate-400">{me.regionName}</p>}
+            </div>
+            <div className="flex shrink-0 flex-col items-end gap-1.5">
+              {SOCIAL_PROVIDERS.map(({ id, label, icon }) => {
+                const linked = linkedProviders?.includes(id.toUpperCase());
+                return linked ? (
+                  <span key={id} className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+                    {icon} {label} 연결됨
+                  </span>
+                ) : (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => navigateToOAuth(id)}
+                    disabled={linkedProviders === null}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600 disabled:opacity-50"
+                  >
+                    {icon} {label} 연결하기
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <div className="mt-4 flex gap-3">
             <button
@@ -179,36 +216,6 @@ export default function AccountSettings() {
               <FileText size={16} weight="bold" />
               내 이력서
             </button>
-          </div>
-
-          <div className="mt-6 border-t border-slate-100 pt-4">
-            <p className="text-sm font-bold text-slate-700">연결된 소셜 계정</p>
-            <p className="mt-1 text-xs text-slate-400">
-              두 계정 모두 본인 소유임을 증명해야 연결돼요. 이미 다른 계정에 연결된 소셜 계정은 연결할 수 없어요.
-            </p>
-            <div className="mt-3 flex flex-col gap-2">
-              {SOCIAL_PROVIDERS.map(({ id, label }) => {
-                const linked = linkedProviders?.includes(id.toUpperCase());
-                return (
-                  <div key={id} className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-2.5">
-                    <span className="text-sm font-medium text-slate-600">{label}</span>
-                    {linked ? (
-                      <span className="text-xs font-semibold text-emerald-600">연결됨</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => navigateToOAuth(id)}
-                        disabled={linkedProviders === null}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-50"
-                      >
-                        <LinkIcon size={14} weight="bold" />
-                        연결하기
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
           </div>
         </div>
       )}
