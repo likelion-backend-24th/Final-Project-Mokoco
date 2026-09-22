@@ -89,6 +89,14 @@ public class Post {
         changeStatus(PostStatus.MATCHED);
     }
 
+    public void updateStatusToCompleted() {
+        changeStatus(PostStatus.COMPLETED);
+    }
+
+    public void updateStatusToWaiting(){
+        changeStatus(PostStatus.WAITING);
+    }
+
     public void changeStatus(PostStatus status) {
         if (status == null) throw new CustomException(ErrorCode.INVALID_INPUT);
         if (this.status == status) return;

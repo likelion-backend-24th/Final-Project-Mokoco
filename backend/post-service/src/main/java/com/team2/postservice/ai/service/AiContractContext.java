@@ -3,9 +3,11 @@ package com.team2.postservice.ai.service;
 import com.team2.postservice.client.ChatRoomClient;
 import com.team2.postservice.common.exception.AiException;
 import com.team2.postservice.contract.ContractRepository;
+import com.team2.postservice.contract.RepairContract;
 import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
+import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.post.service.PostContent;
 import com.team2.postservice.proposal.entity.Proposal;
@@ -44,9 +46,9 @@ public class AiContractContext {
             throw new AiException(HttpStatus.FORBIDDEN, "NOT_PARTICIPANT", "이 거래의 참여자만 사용할 수 있습니다.");
         if (room.fixDealId() == null)
             throw new AiException(HttpStatus.CONFLICT, "PROPOSAL_NOT_ADOPTED", "견적 채택 후 계약 초안을 작성할 수 있습니다.");
-        var deal = fixDeals.findById(room.fixDealId())
+        FixDeal deal = fixDeals.findById(room.fixDealId())
                 .orElseThrow(() -> new AiException(HttpStatus.NOT_FOUND, "ROOM_NOT_FOUND", "채팅방을 찾을 수 없습니다."));
-        var latest = contracts.findFirstByChatRoomIdOrderByRevisionDesc(roomId).orElse(null);
+        RepairContract latest = contracts.findFirstByChatRoomIdOrderByRevisionDesc(roomId).orElse(null);
         if (deal.getStatus() != FixDealStatus.MATCHED || deal.getRequesterId().equals(deal.getRepairerId())
                 || !Objects.equals(baseId, latest == null ? null : latest.getId())
                 || (latest != null && "SIGNED".equals(latest.getStatus())))
@@ -56,17 +58,19 @@ public class AiContractContext {
 
     @Transactional(readOnly = true)
     public Map<String, String> read(Long roomId, Long userId, Long baseId) {
-        var deal = checkedDeal(roomId, userId, baseId);
-        var post = posts.findById(deal.getPostId()).orElseThrow(() -> AiException.input("의뢰 내용을 찾을 수 없습니다."));
-        var proposal = proposals.findById(deal.getProposalId()).orElseThrow(() -> AiException.input("견적 내용을 찾을 수 없습니다."));
+        FixDeal deal = checkedDeal(roomId, userId, baseId);
+        Post post = posts.findById(deal.getPostId()).orElseThrow(() -> AiException.input("의뢰 내용을 찾을 수 없습니다."));
+        Proposal proposal = proposals.findById(deal.getProposalId()).orElseThrow(() -> AiException.input("견적 내용을 찾을 수 없습니다."));
         if (!Objects.equals(proposal.getPost().getId(), post.getId())) throw AiException.input("거래에 연결된 견적을 확인해주세요.");
         Map<String, String> sources = new LinkedHashMap<>();
         sources.put("POST", post.getTitle() + "\n" + post.getContent());
-        if (proposal.getEstimatedPrice() == null || proposal.getEstimatedPrice() <= 0)
-        sources.put("POST", post.getTitle() + "\n" + PostContent.plainText(post.getContent(), post.getContentFormat()));
-
         if (proposal.getEstimatedPrice() == null || proposal.getEstimatedPrice() <= 0){
+            sources.put("POST", post.getTitle() + "\n" + PostContent.plainText(post.getContent(), post.getContentFormat()));
+        }
+
+        if (proposal.getEstimatedPrice() == null || proposal.getEstimatedPrice() <= 0) {
             throw AiException.input("채택된 제안의 금액을 확인해주세요.");
+        }
         sources.put("ADOPTED_PROPOSAL", proposal.getContent());
         sources.put("PROPOSAL_AMOUNT", proposal.getEstimatedPrice().toString());
         List<ChatRoomClient.TextMessage> history;

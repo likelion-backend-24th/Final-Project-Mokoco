@@ -1,7 +1,7 @@
 package com.team2.userservice.user.dto;
 
+import com.team2.common.security.Role;
 import com.team2.userservice.user.entity.AccountStatus;
-import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
 import lombok.Builder;
 import lombok.AllArgsConstructor;

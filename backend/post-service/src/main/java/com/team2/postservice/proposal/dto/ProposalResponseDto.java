@@ -9,7 +9,7 @@ public class ProposalResponseDto {
 
     private final Long id;
     private final Long postId;
-    private final String repairerEmail;
+    private final Long repairerId;
     private final Integer estimatedPrice;
     private final String content;
     private final Long fixDealId;
@@ -30,7 +30,7 @@ public class ProposalResponseDto {
         this.fixDealId = fixDealId;
         this.id = proposal.getId();
         this.postId = proposal.getPost() != null ? proposal.getPost().getId() : null;
-        this.repairerEmail = proposal.getRepairerEmail();
+        this.repairerId = proposal.getRepairerId();
         this.estimatedPrice = proposal.getEstimatedPrice();
         this.content = proposal.getContent();
         this.isAdopted = proposal.isAdopted();

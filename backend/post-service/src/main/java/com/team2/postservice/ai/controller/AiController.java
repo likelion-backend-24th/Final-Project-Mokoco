@@ -30,7 +30,7 @@ public class AiController {
             @AuthenticationPrincipal LoginUser user,
             @Valid @RequestBody PostDraftRevisionRequest input
     ) {
-        return service.revisePostContent(user.userId(), draftId, input.selectionStart(), input.selectionEnd(),
+        return service.revisePostContent(user.id(), draftId, input.selectionStart(), input.selectionEnd(),
                 input.selectedText(), input.prompt());
     }
     @PostMapping("/api/chat-rooms/{roomId}/contract/ai-draft")

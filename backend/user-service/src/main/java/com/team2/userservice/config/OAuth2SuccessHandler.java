@@ -1,8 +1,8 @@
 package com.team2.userservice.config;
 
+import com.team2.common.security.Role;
 import com.team2.userservice.user.dto.OAuthAttributes;
 import com.team2.userservice.user.entity.RefreshToken;
-import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
 import com.team2.userservice.user.repository.RefreshTokenRepository;
 import com.team2.userservice.user.repository.UserRepository;

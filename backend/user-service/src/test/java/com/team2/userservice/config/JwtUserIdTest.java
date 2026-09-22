@@ -6,7 +6,6 @@ import com.team2.userservice.region.repository.RegionRepository;
 import com.team2.userservice.user.controller.UserClientController;
 import com.team2.userservice.user.dto.TokenReissueRequest;
 import com.team2.userservice.user.entity.RefreshToken;
-import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
 import com.team2.userservice.user.repository.RefreshTokenRepository;
 import com.team2.userservice.user.dto.UserResponse;
