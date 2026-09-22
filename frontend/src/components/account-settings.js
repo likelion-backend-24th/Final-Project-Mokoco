@@ -173,8 +173,8 @@ export default function AccountSettings() {
             </div>
 
             <div className="flex shrink-0 flex-col items-end gap-6">
-              <div>
-                <p className="mb-1.5 text-right text-xs font-semibold text-slate-400">소셜 로그인</p>
+              <div className="flex items-center gap-3">
+                <p className="text-xs font-semibold text-slate-400">소셜 로그인</p>
                 <div className="flex gap-3">
                   {SOCIAL_PROVIDERS.map(({ id, label, icon, boxClass }) => {
                     const linked = linkedProviders?.includes(id.toUpperCase());
