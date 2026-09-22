@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle, Trash, MapPin, Wrench, FileText, XCircle } from "@phosphor-icons/react";
+import { CheckCircle, Trash, MapPin, Wrench, FileText, XCircle, Flag } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import ProposalChatRoom from "@/components/proposal-chat-room";
 import FixDealProgress from "@/components/fix-deal-progress";
 import RatingBadge from "@/components/rating-badge";
-import RepairerEmailMenu from "@/components/repairer-email-menu";
+import RepairerTransactionsModal from "@/components/repairer-transactions-modal";
+import RepairerReportModal from "@/components/repairer-report-modal";
 import ResumeViewModal from "@/components/resume-view-modal";
 
 export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail }) {
@@ -14,6 +15,8 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
   const [previousProposals, setPreviousProposals] = useState(initialProposals);
   const [loadingId, setLoadingId] = useState(null);
   const [resumeEmail, setResumeEmail] = useState(null);
+  const [transactionsEmail, setTransactionsEmail] = useState(null);
+  const [reportEmail, setReportEmail] = useState(null);
   const [adoptedDealStatus, setAdoptedDealStatus] = useState(null);
   const router = useRouter();
 
@@ -141,7 +144,9 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <RepairerEmailMenu email={proposal.repairerEmail} nickname={proposal.repairerNickname} />
+                <span className="text-base font-extrabold text-slate-900">
+                  {proposal.repairerNickname || proposal.repairerEmail || "수리공 이웃"}
+                </span>
                 <RatingBadge email={proposal.repairerEmail} postId={postId} />
                 {proposal.attachResume && proposal.repairerEmail && (
                   <button
@@ -171,9 +176,13 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                   </span>
                 )}
                 {proposal.repairerCompletedCount > 0 && (
-                  <span className="inline-flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setTransactionsEmail(proposal.repairerEmail)}
+                    className="inline-flex items-center gap-1 hover:text-blue-600 hover:underline"
+                  >
                     <Wrench size={12} weight="duotone" /> 완료한 수리 {proposal.repairerCompletedCount}건
-                  </span>
+                  </button>
                 )}
               </div>
             )}
@@ -188,6 +197,18 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
             <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line mb-4">{proposal.content}</p>
 
             <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
+              {/* 본인 제안이 아닐 때만(자기 자신 신고 방지) 신고 가능 */}
+              {!isMyProposal && (
+                <button
+                  type="button"
+                  onClick={() => setReportEmail(proposal.repairerEmail)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 px-4 py-2 text-xs font-semibold text-red-500 shadow-sm hover:bg-red-100 transition"
+                >
+                  <Flag size={16} weight="bold" />
+                  신고하기
+                </button>
+              )}
+
               {/* 채택 전이고, 이 제안의 당사자(글쓴이 또는 이 제안을 보낸 수리공)만 미리 채팅 가능 */}
               {!isAdopted && (isMine || isMyProposal) && (
                 <ProposalChatRoom
@@ -246,6 +267,10 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
         );
       })}
       {resumeEmail && <ResumeViewModal email={resumeEmail} onClose={() => setResumeEmail(null)} />}
+      {transactionsEmail && (
+        <RepairerTransactionsModal email={transactionsEmail} onClose={() => setTransactionsEmail(null)} />
+      )}
+      {reportEmail && <RepairerReportModal email={reportEmail} onClose={() => setReportEmail(null)} />}
     </div>
   );
 }
