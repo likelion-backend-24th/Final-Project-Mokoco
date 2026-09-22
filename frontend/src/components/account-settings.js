@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PencilSimple, LockKey, FileText, X } from "@phosphor-icons/react";
-import ResumeEditor from "./resume-editor";
+import { PencilSimple } from "@phosphor-icons/react";
 
 export default function AccountSettings() {
   const [me, setMe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingProfile, setEditingProfile] = useState(false);
   const [editingPassword, setEditingPassword] = useState(false);
-  const [resumeOpen, setResumeOpen] = useState(false);
   const [name, setName] = useState("");
   const [nickname, setNickname] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -118,80 +116,70 @@ export default function AccountSettings() {
     }
   }
 
-  if (loading) return <p className="text-base text-slate-400">내 정보 확인 중...</p>;
-  if (!me) return <p className="text-base text-red-600">{error || "내 정보를 불러오지 못했습니다."}</p>;
+  if (loading) return <p className="text-sm text-slate-400">내 정보 확인 중...</p>;
+  if (!me) return <p className="text-sm text-red-600">{error || "내 정보를 불러오지 못했습니다."}</p>;
 
   return (
-    <>
-    <div className="rounded-xl border border-slate-200 bg-white p-6">
-      {notice && <p className="mb-4 text-sm font-semibold text-emerald-600">{notice}</p>}
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      {notice && <p className="mb-3 text-xs font-semibold text-emerald-600">{notice}</p>}
 
       {!editingProfile && !editingPassword && (
         <div>
-          <div>
-            <p className="text-lg font-bold text-slate-800">{me.name} · {me.nickname}</p>
-            <p className="mt-1 text-sm text-slate-500">{me.email}</p>
-            {me.regionName && <p className="mt-0.5 text-sm text-slate-400">{me.regionName}</p>}
-          </div>
-          <div className="mt-4 flex gap-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-slate-800">{me.name} · {me.nickname}</p>
+              <p className="mt-0.5 text-xs text-slate-500">{me.email}</p>
+              {me.regionName && <p className="mt-0.5 text-xs text-slate-400">{me.regionName}</p>}
+            </div>
             <button
               type="button"
               onClick={startEditProfile}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              aria-label="개인정보 수정"
+              className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100"
             >
-              <PencilSimple size={16} weight="bold" />
-              정보 수정
-            </button>
-            <button
-              type="button"
-              onClick={startEditPassword}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
-            >
-              <LockKey size={16} weight="bold" />
-              비밀번호 변경
-            </button>
-            <button
-              type="button"
-              onClick={() => setResumeOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
-            >
-              <FileText size={16} weight="bold" />
-              내 이력서
+              <PencilSimple size={16} />
             </button>
           </div>
+          <button
+            type="button"
+            onClick={startEditPassword}
+            className="mt-3 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
+          >
+            비밀번호 변경
+          </button>
         </div>
       )}
 
       {editingProfile && (
         <form onSubmit={handleProfileSubmit}>
-          <p className="mb-4 text-base font-bold text-slate-800">개인정보 수정</p>
-          <label className="block text-sm font-semibold text-slate-500">이름</label>
+          <p className="mb-3 text-sm font-bold text-slate-800">개인정보 수정</p>
+          <label className="block text-xs font-semibold text-slate-500">이름</label>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
             maxLength={50}
-            className="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 text-base outline-none focus:border-blue-400"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
           />
-          <label className="mt-4 block text-sm font-semibold text-slate-500">닉네임</label>
+          <label className="mt-3 block text-xs font-semibold text-slate-500">닉네임</label>
           <input
             value={nickname}
             onChange={(event) => setNickname(event.target.value)}
             maxLength={50}
-            className="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 text-base outline-none focus:border-blue-400"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
           />
-          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-          <div className="mt-4 flex gap-3">
+          {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+          <div className="mt-3 flex gap-2">
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {submitting ? "저장 중..." : "저장"}
             </button>
             <button
               type="button"
               onClick={() => setEditingProfile(false)}
-              className="rounded-lg border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
+              className="rounded-lg border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
             >
               취소
             </button>
@@ -201,42 +189,42 @@ export default function AccountSettings() {
 
       {editingPassword && (
         <form onSubmit={handlePasswordSubmit}>
-          <p className="mb-4 text-base font-bold text-slate-800">비밀번호 변경</p>
-          <label className="block text-sm font-semibold text-slate-500">현재 비밀번호</label>
+          <p className="mb-3 text-sm font-bold text-slate-800">비밀번호 변경</p>
+          <label className="block text-xs font-semibold text-slate-500">현재 비밀번호</label>
           <input
             type="password"
             value={currentPassword}
             onChange={(event) => setCurrentPassword(event.target.value)}
-            className="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 text-base outline-none focus:border-blue-400"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
           />
-          <label className="mt-4 block text-sm font-semibold text-slate-500">새 비밀번호</label>
+          <label className="mt-3 block text-xs font-semibold text-slate-500">새 비밀번호</label>
           <input
             type="password"
             value={newPassword}
             onChange={(event) => setNewPassword(event.target.value)}
             placeholder="영문+숫자 포함 8자 이상"
-            className="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 text-base outline-none focus:border-blue-400"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
           />
-          <label className="mt-4 block text-sm font-semibold text-slate-500">새 비밀번호 확인</label>
+          <label className="mt-3 block text-xs font-semibold text-slate-500">새 비밀번호 확인</label>
           <input
             type="password"
             value={newPasswordConfirm}
             onChange={(event) => setNewPasswordConfirm(event.target.value)}
-            className="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 text-base outline-none focus:border-blue-400"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
           />
-          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-          <div className="mt-4 flex gap-3">
+          {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+          <div className="mt-3 flex gap-2">
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {submitting ? "변경 중..." : "변경"}
             </button>
             <button
               type="button"
               onClick={() => setEditingPassword(false)}
-              className="rounded-lg border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
+              className="rounded-lg border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
             >
               취소
             </button>
@@ -244,37 +232,5 @@ export default function AccountSettings() {
         </form>
       )}
     </div>
-
-    {resumeOpen && (
-      <div
-        className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm transition-opacity"
-        onClick={() => setResumeOpen(false)}
-      />
-    )}
-
-    <div
-      className={`fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl transition-all duration-300 ease-out md:inset-0 md:m-auto md:h-fit md:w-full md:max-w-lg md:rounded-3xl ${
-        resumeOpen
-          ? "translate-y-0 md:translate-y-0 md:visible md:opacity-100"
-          : "translate-y-full md:translate-y-0 md:invisible md:opacity-0"
-      }`}
-    >
-      <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-200 md:hidden" />
-
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-extrabold text-slate-900">내 이력서</h3>
-        <button
-          type="button"
-          onClick={() => setResumeOpen(false)}
-          aria-label="닫기"
-          className="rounded-full p-1 text-slate-400 hover:bg-slate-100"
-        >
-          <X size={20} weight="bold" />
-        </button>
-      </div>
-
-      <ResumeEditor />
-    </div>
-    </>
   );
 }

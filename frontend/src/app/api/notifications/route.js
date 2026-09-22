@@ -6,7 +6,7 @@ export async function GET() {
   if (!accessToken) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
   try {
     const response = await fetch(backendUrl("/notifications"), {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,  },
       cache: "no-store",
       signal: AbortSignal.timeout(10000),
     });

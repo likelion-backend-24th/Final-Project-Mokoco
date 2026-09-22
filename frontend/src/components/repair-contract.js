@@ -1,20 +1,9 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import * as PortOne from "@portone/browser-sdk/v2";
 import "./repair-contract.css";
 import ContractAiAssist from "./contract-ai-assist";
-import ReviewForm from "./review-form";
-
-const FEE_RATE = 0.1; // 백엔드 Payment.calculateFee와 동일하게 유지 (견적 금액의 10%)
-
-// 의뢰자는 견적 금액을 그대로 결제한다(수수료를 얹지 않음). 플랫폼 수수료는 결제액에서
-// 차감되어 수리자 정산액(net)에서만 빠진다 — 안내 문구용으로 fee/net을 미리 계산해둔다.
-function calculateSettlement(baseAmount) {
-  const base = baseAmount ?? 0;
-  const fee = Math.round(base * FEE_RATE);
-  return { base, fee, net: base - fee };
-}
+import SiteHeader from "@/components/site-header";
 
 const fields = [
   ["title", "계약 제목", "text", 120], ["scope", "작업 대상과 수리 범위", "area", 4000],
@@ -48,6 +37,8 @@ function SignatureForm({ version, consentText, busy, onSign }) {
 }
 
 export default function RepairContract({ roomId }) {
+  const userEmail = cookieStore.get("user_email")?.value ?? null;
+
   const [overview, setOverview] = useState(null);
   const [userId, setUserId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
@@ -55,9 +46,6 @@ export default function RepairContract({ roomId }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  const [paymentBusy, setPaymentBusy] = useState(false);
-  const [paymentError, setPaymentError] = useState("");
-  const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const endpoint = `/api/chat-rooms/${roomId}/contract`;
   const load = useCallback(async () => {
     const response = await fetch(endpoint, { cache: "no-store" });
@@ -82,70 +70,6 @@ export default function RepairContract({ roomId }) {
   const latest = overview?.versions[0];
   const selected = overview?.versions.find(version => version.id === selectedId) ?? latest;
   const isLatest = selected?.id === latest?.id;
-  const paid = overview?.payment?.status === "COMPLETED";
-  useEffect(() => {
-    if (overview?.dealStatus !== "COMPLETED" || !overview?.postId) return;
-    let active = true;
-    fetch(`/api/reviews/exists?postId=${overview.postId}`, { cache: "no-store" })
-      .then(res => (res.ok ? res.json() : null))
-      .then(data => { if (active) setReviewSubmitted(Boolean(data?.exists)); })
-      .catch(() => {});
-    return () => { active = false; };
-  }, [overview?.dealStatus, overview?.postId]);
-  async function startPayment() {
-    setPaymentBusy(true); setPaymentError("");
-    try {
-      const prepareRes = await fetch("/api/payments/prepare", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId: overview.postId }),
-      });
-      const order = await prepareRes.json().catch(() => ({}));
-      if (!prepareRes.ok) {
-        setPaymentError(order.error ?? "결제를 준비하지 못했습니다.");
-        return;
-      }
-
-      const paymentResult = await PortOne.requestPayment({
-        storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID,
-        channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY,
-        paymentId: order.paymentId,
-        orderName: "동네수리 - 수리 대금 안전결제",
-        totalAmount: order.totalAmount,
-        currency: "CURRENCY_KRW",
-        payMethod: "CARD",
-        isEscrow: true,
-        customer: overview.requesterEmail ? { email: overview.requesterEmail } : undefined,
-        // paymentId가 서버가 미리 만들어둔 주문(PaymentOrder)에 연결돼있어, 결제 확정/웹훅이
-        // 브라우저가 실어보내는 customData가 아니라 그 주문을 유일한 진실 소스로 삼는다.
-        noticeUrls: [`${window.location.origin}/api/payments/webhook`],
-      });
-
-      if (paymentResult?.code != null) {
-        setPaymentError(paymentResult.message ?? "결제가 취소되었거나 실패했습니다.");
-        return;
-      }
-
-      const confirmRes = await fetch("/api/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId: overview.postId, paymentId: order.paymentId }),
-      });
-      const confirmData = await confirmRes.json().catch(() => ({}));
-      // 확인 요청이 실패해도, 웹훅이 먼저 도착해 이미 결제가 기록된 경우(DUPLICATE_PAYMENT)라면
-      // 실제로는 결제가 완료된 것이므로 에러로 취급하지 않는다.
-      if (!confirmRes.ok && confirmData.code !== "DUPLICATE_PAYMENT") {
-        setPaymentError(confirmData.error ?? "결제 확인에 실패했습니다. 잠시 후 다시 확인해주세요.");
-        return;
-      }
-
-      await load();
-    } catch {
-      setPaymentError("결제 진행 중 문제가 발생했습니다.");
-    } finally {
-      setPaymentBusy(false);
-    }
-  }
   async function mutate(action, body) {
     setBusy(true); setError(""); setNotice("");
     try {
@@ -167,80 +91,59 @@ export default function RepairContract({ roomId }) {
     const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
     anchor.href = url; anchor.download = `repair-contract-${roomId}-v${selected.revision}.json`; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  return <main className="contract-page">
-    <header className="contract-controls"><Link href={`/chat-rooms/${roomId}`}>← 채팅으로 돌아가기</Link><h1>수리 계약서</h1>
-      <p>작업 범위와 조건을 확인하고 같은 계약에 양측이 서명하세요.</p></header>
-    {error && <div role="alert" className="contract-error contract-controls">{error}<button type="button" onClick={() => load().then(() => setError("")).catch(e => setError(e.message))}>다시 불러오기</button></div>}
-    {notice && <p role="status" className="contract-controls">{notice}</p>}
-    {!overview ? <p>계약 정보를 불러오는 중입니다.</p> : <>
-      <div className="contract-toolbar contract-controls"><strong>{dealLabels[overview.dealStatus] || overview.dealStatus}</strong>
-        {overview.versions.length > 0 && <select aria-label="계약 버전" value={selected?.id || ""} onChange={e => { setSelectedId(Number(e.target.value)); setEditing(null); }}>{overview.versions.map(version => <option key={version.id} value={version.id}>버전 {version.revision} · {labels[version.status]}</option>)}</select>}
-        {latest?.status !== "SIGNED" && overview.dealStatus === "MATCHED" && <button disabled={busy || userId === null} onClick={() => setEditing({ baseId: latest?.id ?? null, terms: latest?.terms ? { ...latest.terms } : { ...initial } })}>{latest ? "수정본 작성" : "계약 초안 작성"}</button>}
-      </div>
-      {editing ? <form className="contract-editor contract-controls" onSubmit={event => {
-        event.preventDefault();
-        if (latest && !window.confirm("새 버전으로 저장합니다. 기존 버전의 서명은 새 버전에 적용되지 않습니다. 계속하시겠습니까?")) return;
-        mutate("", editing);
-      }}>
-        <h2>{editing.baseId ? "계약 수정본" : "새 계약 초안"}</h2><p>모든 항목을 작성해주세요. 해당 사항이 없으면 ‘없음’을 입력하세요.</p>
-        <ContractAiAssist key={`${roomId}-${editing.baseId ?? "new"}`} roomId={roomId} baseId={editing.baseId} terms={editing.terms} fields={fields}
-          disabled={busy || overview.dealStatus !== "MATCHED" || latest?.status === "SIGNED" || (latest?.id ?? null) !== editing.baseId}
-          onApply={(field, value) => setEditing(current => current ? { ...current, terms: { ...current.terms, [field]: value } } : current)} />
-        {fields.map(([key, label, type, max]) => <label key={key}>{label}
-          {type === "area" ? <textarea required maxLength={max} rows={3} value={editing.terms[key]} onChange={e => setEditing({ ...editing, terms: { ...editing.terms, [key]: e.target.value } })} />
-            : <input required type={type} maxLength={max} min={type === "number" ? "0.01" : undefined} max={type === "number" ? "9999999999.99" : undefined} step={type === "number" ? "0.01" : undefined} value={editing.terms[key]} onChange={e => setEditing({ ...editing, terms: { ...editing.terms, [key]: e.target.value } })} />}
-        </label>)}
-        <div className="contract-toolbar"><button disabled={busy}>초안 저장</button><button type="button" disabled={busy} onClick={() => setEditing(null)}>취소</button></div>
-      </form> : selected ? <>
-        {!isLatest && <p className="contract-error contract-controls">이전 계약 버전입니다. 최신 버전을 선택해 진행해주세요.</p>}
-        <article className="contract-document">
-          <div className="contract-document-heading"><span>수리 도급계약 · 버전 {selected.revision}</span><strong>{labels[selected.status]}</strong></div>
-          <h2>{selected.terms.title}</h2>
-          <p>의뢰인 계정 #{overview.requesterId} · 수리자 계정 #{overview.repairerId} · 채팅방 #{roomId}</p>
-          <p>작성: {dateTime(selected.createdAt)} · 체결: {dateTime(selected.signedAt)}</p>
-          <dl>{fields.filter(([key]) => key !== "title").map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{key === "totalAmount" ? `${Number(selected.terms[key]).toLocaleString("ko-KR")}원` : selected.terms[key]}</dd></div>)}</dl>
-          <h3>서명 기록</h3><p>{overview.consentText}</p>
-          <div className="contract-signatures">{[[overview.requesterId, "의뢰인"], [overview.repairerId, "수리자"]].map(([id, role]) => {
-            const signature = selected.signatures.find(item => item.signerId === id);
-            return <section key={id}><strong>{role} · 계정 #{id}</strong><p>{signature ? signature.signerName : "미서명"}</p><small>{signature ? dateTime(signature.signedAt) : "서명을 기다리고 있습니다."}</small></section>;
-          })}</div>
-          <p className="contract-hash">문서 SHA-256: {selected.documentHash}</p>
-          <small>로그인 계정 기반 전자서명 기록입니다. 별도 본인인증·외부 전자서명 서비스는 미연동입니다.</small>
-        </article>
-        <div className="contract-toolbar contract-controls"><button onClick={() => window.print()}>인쇄 / PDF 저장</button><button onClick={download}>계약·서명 기록 저장</button></div>
-        {isLatest && selected.status === "DRAFT" && <button className="contract-primary contract-controls" disabled={busy || userId === null} onClick={() => mutate("request", { versionId: selected.id })}>이 버전으로 양측 서명 요청</button>}
-        {isLatest && selected.status === "SIGNING" && userId !== null && !selected.signatures.some(s => s.signerId === userId) && <SignatureForm key={selected.id} version={selected} consentText={overview.consentText} busy={busy} onSign={body => mutate("sign", { versionId: selected.id, ...body })} />}
-        {isLatest && selected.status === "SIGNING" && selected.signatures.some(s => s.signerId === userId) && <p className="contract-controls">내 서명이 저장되었습니다. 상대방 서명을 기다리고 있습니다.</p>}
-        {isLatest && selected.status === "SIGNED" && <section className="contract-sign contract-controls"><h2>계약 체결 완료</h2><p>양측 서명이 완료되었습니다. 위 계약 내용을 기준으로 작업을 진행하세요.</p>
-          {overview.estimatedPrice != null && Number(selected.terms.totalAmount) !== overview.estimatedPrice &&
-            <p className="contract-error">계약서 금액({Number(selected.terms.totalAmount).toLocaleString("ko-KR")}원)과 채택된 견적 금액({overview.estimatedPrice.toLocaleString("ko-KR")}원)이 달라요. 결제는 채택된 견적 금액 기준으로 진행됩니다.</p>}
-
-          {overview.dealStatus === "MATCHED" && userId === overview.requesterId && !paid &&
-            <div>
-              <p>계약이 체결되었습니다. 결제하면 수리자가 작업을 시작할 수 있어요. 결제 금액은 완료될 때까지 안전하게 보관됩니다.</p>
-              <button disabled={paymentBusy} onClick={startPayment}>
-                {paymentBusy ? "결제 확인 중..." : `안전결제 하기 (${calculateSettlement(overview.estimatedPrice).base.toLocaleString("ko-KR")}원)`}
-              </button>
-              <p className="contract-hash">
-                견적 금액 그대로 결제돼요. 거래 완료 시 플랫폼 수수료(10%) {calculateSettlement(overview.estimatedPrice).fee.toLocaleString("ko-KR")}원을 제외한 {calculateSettlement(overview.estimatedPrice).net.toLocaleString("ko-KR")}원이 수리자에게 정산됩니다.
-              </p>
-              {paymentError && <p role="alert" className="contract-error">{paymentError}</p>}
-            </div>}
-          {overview.dealStatus === "MATCHED" && userId === overview.repairerId && !paid &&
-            <p>의뢰인의 결제를 기다리고 있어요. 결제가 완료되면 작업을 시작할 수 있어요.</p>}
-          {overview.dealStatus === "MATCHED" && paid &&
-            <p className="contract-hash">결제 완료 — 수리자의 작업 시작을 기다리고 있어요.</p>}
-
-          {userId === overview.repairerId && overview.dealStatus === "MATCHED" && paid && <button disabled={busy} onClick={() => advance("start", "체결된 계약에 따라 수리 작업을 시작하시겠습니까?")}>수리 작업 시작</button>}
-          {userId === overview.repairerId && overview.dealStatus === "REPAIRING" && <button disabled={busy} onClick={() => advance("finish", "작업을 마치고 의뢰인에게 완료 확인을 요청하시겠습니까?")}>작업 완료 확인 요청</button>}
-          {userId === overview.requesterId && overview.dealStatus === "REPAIR_DONE" && <button disabled={busy} onClick={() => advance("accept", "계약의 검수 기준을 확인하고 수리 완료를 수락하시겠습니까?")}>검수 및 수리 완료 확인</button>}
-
-          {overview.dealStatus === "COMPLETED" && userId === overview.requesterId && !reviewSubmitted &&
-            <ReviewForm postId={overview.postId} onSubmitted={() => setReviewSubmitted(true)} />}
-          {overview.dealStatus === "COMPLETED" && userId === overview.requesterId && reviewSubmitted &&
-            <p className="contract-hash">후기 작성 완료 — 남겨주셔서 감사해요.</p>}
-        </section>}
-      </> : <p className="contract-sign">아직 계약서가 없습니다. 채팅에서 합의한 조건으로 초안을 작성해주세요.</p>}
-    </>}
-  </main>;
+  return <div className="min-h-screen bg-[#f7f9fc]">
+    <SiteHeader userEmail={userEmail} />
+    <main className="contract-page">
+      <header className="contract-controls"><Link href={`/chat-rooms/${roomId}`}>← 채팅으로 돌아가기</Link><h1>수리 계약서</h1>
+        <p>작업 범위와 조건을 확인하고 같은 계약에 양측이 서명하세요.</p></header>
+      {error && <div role="alert" className="contract-error contract-controls">{error}<button type="button" onClick={() => load().then(() => setError("")).catch(e => setError(e.message))}>다시 불러오기</button></div>}
+      {notice && <p role="status" className="contract-controls">{notice}</p>}
+      {!overview ? <p>계약 정보를 불러오는 중입니다.</p> : <>
+        <div className="contract-toolbar contract-controls"><strong>{dealLabels[overview.dealStatus] || overview.dealStatus}</strong>
+          {overview.versions.length > 0 && <select aria-label="계약 버전" value={selected?.id || ""} onChange={e => { setSelectedId(Number(e.target.value)); setEditing(null); }}>{overview.versions.map(version => <option key={version.id} value={version.id}>버전 {version.revision} · {labels[version.status]}</option>)}</select>}
+          {latest?.status !== "SIGNED" && overview.dealStatus === "MATCHED" && <button disabled={busy || userId === null} onClick={() => setEditing({ baseId: latest?.id ?? null, terms: latest?.terms ? { ...latest.terms } : { ...initial } })}>{latest ? "수정본 작성" : "계약 초안 작성"}</button>}
+        </div>
+        {editing ? <form className="contract-editor contract-controls" onSubmit={event => {
+          event.preventDefault();
+          if (latest && !window.confirm("새 버전으로 저장합니다. 기존 버전의 서명은 새 버전에 적용되지 않습니다. 계속하시겠습니까?")) return;
+          mutate("", editing);
+        }}>
+          <h2>{editing.baseId ? "계약 수정본" : "새 계약 초안"}</h2><p>모든 항목을 작성해주세요. 해당 사항이 없으면 ‘없음’을 입력하세요.</p>
+          <ContractAiAssist key={`${roomId}-${editing.baseId ?? "new"}`} roomId={roomId} baseId={editing.baseId} terms={editing.terms} fields={fields}
+            disabled={busy || overview.dealStatus !== "MATCHED" || latest?.status === "SIGNED" || (latest?.id ?? null) !== editing.baseId}
+            onApply={(field, value) => setEditing(current => current ? { ...current, terms: { ...current.terms, [field]: value } } : current)} />
+          {fields.map(([key, label, type, max]) => <label key={key}>{label}
+            {type === "area" ? <textarea required maxLength={max} rows={3} value={editing.terms[key]} onChange={e => setEditing({ ...editing, terms: { ...editing.terms, [key]: e.target.value } })} />
+              : <input required type={type} maxLength={max} min={type === "number" ? "0.01" : undefined} max={type === "number" ? "9999999999.99" : undefined} step={type === "number" ? "0.01" : undefined} value={editing.terms[key]} onChange={e => setEditing({ ...editing, terms: { ...editing.terms, [key]: e.target.value } })} />}
+          </label>)}
+          <div className="contract-toolbar"><button disabled={busy}>초안 저장</button><button type="button" disabled={busy} onClick={() => setEditing(null)}>취소</button></div>
+        </form> : selected ? <>
+          {!isLatest && <p className="contract-error contract-controls">이전 계약 버전입니다. 최신 버전을 선택해 진행해주세요.</p>}
+          <article className="contract-document">
+            <div className="contract-document-heading"><span>수리 도급계약 · 버전 {selected.revision}</span><strong>{labels[selected.status]}</strong></div>
+            <h2>{selected.terms.title}</h2>
+            <p>의뢰인 계정 #{overview.requesterId} · 수리자 계정 #{overview.repairerId} · 채팅방 #{roomId}</p>
+            <p>작성: {dateTime(selected.createdAt)} · 체결: {dateTime(selected.signedAt)}</p>
+            <dl>{fields.filter(([key]) => key !== "title").map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{key === "totalAmount" ? `${Number(selected.terms[key]).toLocaleString("ko-KR")}원` : selected.terms[key]}</dd></div>)}</dl>
+            <h3>서명 기록</h3><p>{overview.consentText}</p>
+            <div className="contract-signatures">{[[overview.requesterId, "의뢰인"], [overview.repairerId, "수리자"]].map(([id, role]) => {
+              const signature = selected.signatures.find(item => item.signerId === id);
+              return <section key={id}><strong>{role} · 계정 #{id}</strong><p>{signature ? signature.signerName : "미서명"}</p><small>{signature ? dateTime(signature.signedAt) : "서명을 기다리고 있습니다."}</small></section>;
+            })}</div>
+            <p className="contract-hash">문서 SHA-256: {selected.documentHash}</p>
+            <small>로그인 계정 기반 전자서명 기록입니다. 별도 본인인증·외부 전자서명 서비스는 미연동입니다.</small>
+          </article>
+          <div className="contract-toolbar contract-controls"><button onClick={() => window.print()}>인쇄 / PDF 저장</button><button onClick={download}>계약·서명 기록 저장</button></div>
+          {isLatest && selected.status === "DRAFT" && <button className="contract-primary contract-controls" disabled={busy || userId === null} onClick={() => mutate("request", { versionId: selected.id })}>이 버전으로 양측 서명 요청</button>}
+          {isLatest && selected.status === "SIGNING" && userId !== null && !selected.signatures.some(s => s.signerId === userId) && <SignatureForm key={selected.id} version={selected} consentText={overview.consentText} busy={busy} onSign={body => mutate("sign", { versionId: selected.id, ...body })} />}
+          {isLatest && selected.status === "SIGNING" && selected.signatures.some(s => s.signerId === userId) && <p className="contract-controls">내 서명이 저장되었습니다. 상대방 서명을 기다리고 있습니다.</p>}
+          {isLatest && selected.status === "SIGNED" && <section className="contract-sign contract-controls"><h2>계약 체결 완료</h2><p>양측 서명이 완료되었습니다. 위 계약 내용을 기준으로 작업을 진행하세요.</p>
+            {userId === overview.repairerId && overview.dealStatus === "MATCHED" && <button disabled={busy} onClick={() => advance("start", "체결된 계약에 따라 수리 작업을 시작하시겠습니까?")}>수리 작업 시작</button>}
+            {userId === overview.repairerId && overview.dealStatus === "REPAIRING" && <button disabled={busy} onClick={() => advance("finish", "작업을 마치고 의뢰인에게 완료 확인을 요청하시겠습니까?")}>작업 완료 확인 요청</button>}
+            {userId === overview.requesterId && overview.dealStatus === "REPAIR_DONE" && <button disabled={busy} onClick={() => advance("accept", "계약의 검수 기준을 확인하고 수리 완료를 수락하시겠습니까?")}>검수 및 수리 완료 확인</button>}
+          </section>}
+        </> : <p className="contract-sign">아직 계약서가 없습니다. 채팅에서 합의한 조건으로 초안을 작성해주세요.</p>}
+      </>}
+    </main>
+  </div>;
 }

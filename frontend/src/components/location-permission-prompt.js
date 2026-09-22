@@ -17,10 +17,6 @@ import {
   formatRegionName,
   isAutomaticLocationAccurate,
 } from "@/lib/region";
-// 지역 조회/저장은 백엔드를 직접 호출하지 않고 같은 오리진의 Next.js BFF 라우트를 통해 처리한다.
-// (src/app/api/users/me/region/route.js 가 쿠키의 access_token 을 읽어 Bearer 로 백엔드에 전달)
-// 직접 호출하면 CORS(프리플라이트) 차단 + Authorization 헤더 누락으로 저장이 실패한다.
-const REGION_ENDPOINT = "/api/users/me/region";
 
 export default function LocationPermissionPrompt({ userEmail }) {
   const router = useRouter();
@@ -35,7 +31,11 @@ export default function LocationPermissionPrompt({ userEmail }) {
 
     async function checkRegion() {
       try {
-        const response = await fetch(REGION_ENDPOINT, { cache: "no-store" });
+        // credentials: "include" 추가하여 쿠키 동반 전송
+        const response = await fetch("/api/users/me/region", {
+          cache: "no-store",
+          credentials: "include"
+        });
 
         if (response.ok) {
           const region = await response.json();
@@ -121,10 +121,12 @@ export default function LocationPermissionPrompt({ userEmail }) {
     setState("saving");
 
     try {
-      const response = await fetch(REGION_ENDPOINT, {
+      // credentials: "include" 추가하여 쿠키 동반 전송
+      const response = await fetch("/api/users/me/region", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ latitude: position.latitude, longitude: position.longitude }),
+        credentials: "include",
       });
       const payload = await response.json();
 
@@ -137,7 +139,6 @@ export default function LocationPermissionPrompt({ userEmail }) {
       setRegionName(payload.regionName);
       window.sessionStorage.removeItem(dismissalKey);
       setState("success");
-      // 근처 수리요청 목록이 새 지역 기준으로 다시 조회되도록 서버 컴포넌트 갱신
       router.refresh();
     } catch {
       setMessage("지역 정보 서버와 통신할 수 없습니다.");

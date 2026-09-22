@@ -25,7 +25,7 @@ export default function NotificationSettingsView() {
   const [settings, setSettings] = useState(null);
   const [status, setStatus] = useState("loading"); // loading | ready | saving
   const [error, setError] = useState("");
-  const [savedAt, setSavedAt] = useState(0);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -65,7 +65,7 @@ export default function NotificationSettingsView() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "저장에 실패했습니다.");
       setSettings(data);
-      setSavedAt(Date.now());
+      setSaved(true);
     } catch (err) {
       setError(err.message);
       setSettings((s) => ({ ...s, [key]: !next[key] })); // 롤백
@@ -89,7 +89,7 @@ export default function NotificationSettingsView() {
           {error}
         </p>
       )}
-      {savedAt > 0 && !error && (
+      {saved && !error && (
         <p className="mt-4 text-sm text-green-600">저장되었습니다.</p>
       )}
 

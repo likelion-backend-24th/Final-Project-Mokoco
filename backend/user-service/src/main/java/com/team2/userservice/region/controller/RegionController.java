@@ -1,6 +1,5 @@
 package com.team2.userservice.region.controller;
 
-import com.team2.common.security.LoginUser;
 import com.team2.userservice.region.dto.RegionRequest;
 import com.team2.userservice.region.dto.RegionResponse;
 import com.team2.userservice.region.service.RegionService;
@@ -19,20 +18,20 @@ public class RegionController {
 
     @PatchMapping
     public ResponseEntity<RegionResponse> updateRegion(
-            @AuthenticationPrincipal LoginUser user,
+            @AuthenticationPrincipal com.team2.common.security.LoginUser user,
             @RequestBody @Valid RegionRequest request
     ) {
         RegionResponse response =
-                regionService.setMyRegion(user.email(), request);
+                regionService.setMyRegion(user.userId(), request);
 
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
     public ResponseEntity<RegionResponse> getRegion(
-            @AuthenticationPrincipal LoginUser user
+            @AuthenticationPrincipal com.team2.common.security.LoginUser user
     ) {
-        RegionResponse response = regionService.getRegionInfo(user.email());
+        RegionResponse response = regionService.getRegionInfo(user.userId());
         if (response == null) {
             return ResponseEntity.notFound().build(); // 👈 지역이 없으면 404를 반환해야 프론트가 동네 설정 모달을 띄웁니다!
         }

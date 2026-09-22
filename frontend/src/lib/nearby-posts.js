@@ -1,6 +1,6 @@
 import { backendUrl, errorMessage, readBackendPayload } from "./backend.js";
 
-export async function getNearbyPosts(accessToken, category = "ALL", page = 0, size = 20, regionScope = "ALL") {
+export async function getNearbyPosts(accessToken, category = "ALL", page = 0, size = 20, regionScope = "SIDO") {
   try {
     const query = new URLSearchParams({ category, page: String(page), size: String(size) });
     if (accessToken) query.set("regionScope", regionScope);

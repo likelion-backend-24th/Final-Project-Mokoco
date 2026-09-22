@@ -6,6 +6,9 @@ spring:
     name: api-gateway
   cloud:
     gateway:
+      default-filters:
+        - RemoveRequestHeader=X-User-Email
+        - RemoveRequestHeader=X-Internal-Service-Key
       globalcors:
         cors-configurations:
           '[/**]':
@@ -19,7 +22,8 @@ spring:
               - PATCH
               - DELETE
               - OPTIONS
-            allowed-headers: "*"
+            allowed-headers:
+              - "*"
             allow-credentials: true
       routes:
         - id: user-service
@@ -34,6 +38,16 @@ spring:
             - Path=/api/posts/**, /api/fix-deals/**, /api/images/**
           filters:
             - StripPrefix=1
+
+        - id: user-service-policy
+          uri: http://mokoco-user-service:8081
+          predicates:
+            - Path=/policy/**
+
+        - id: chat-websocket
+          uri: ws://mokoco-chat-service:8084
+          predicates:
+            - Path=/ws/chat, /ws/chat/**
 
         # 계약서(ContractController)는 URL만 /api/chat-rooms/{roomId}/contract/** 아래 있을 뿐
         # post-service에 그대로 남아있다 — 아래 chat-service 라우트보다 반드시 먼저 매치돼야 한다
@@ -57,7 +71,7 @@ spring:
         - id: chat-service-chat
           uri: http://mokoco-chat-service:8084
           predicates:
-            - Path=/api/chat-rooms/**
+            - Path=/api/chat-rooms/**, /chat/**
 
         # AI 작성 도움(사진 분석/계약 초안) — 컨트롤러가 이미 /api/ai/* 매핑이라 접두어 유지
         - id: post-service-ai

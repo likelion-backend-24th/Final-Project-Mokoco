@@ -2,35 +2,20 @@ import { cookies } from "next/headers";
 import { backendUrl, readBackendPayload, errorMessage } from "@/lib/backend";
 
 export async function POST(request) {
-  const cookieStore = await cookies();
-  const email = cookieStore.get("user_email")?.value;
-  const accessToken = cookieStore.get("access_token")?.value;
-  if (!email || !accessToken) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
-
+  const token = (await cookies()).get("access_token")?.value;
+  if (!token) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ error: "요청 형식이 올바르지 않습니다." }, { status: 400 });
-  }
-
+  try { body = await request.json(); }
+  catch { return Response.json({ error: "잘못된 요청입니다." }, { status: 400 }); }
   try {
     const response = await fetch(backendUrl("/payments/prepare"), {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ postId: body.postId }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
+      cache: "no-store", signal: AbortSignal.timeout(10000),
     });
     const payload = await readBackendPayload(response);
-    if (!response.ok) {
-      return Response.json({ error: errorMessage(payload, "결제를 준비하지 못했습니다."), code: payload?.code }, { status: response.status });
-    }
+    if (!response.ok) return Response.json({ error: errorMessage(payload, "결제를 준비하지 못했습니다.") }, { status: response.status });
     return Response.json(payload);
-  } catch {
-    return Response.json({ error: "결제 서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요." }, { status: 502 });
-  }
+  } catch { return Response.json({ error: "결제 서버에 연결하지 못했습니다." }, { status: 502 }); }
 }

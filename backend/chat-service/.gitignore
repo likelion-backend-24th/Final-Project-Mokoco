@@ -35,9 +35,3 @@ out/
 
 ### VS Code ###
 .vscode/
-
-# OS Files
-.DS_Store
-Thumbs.db
-
-**/application-secret.yml

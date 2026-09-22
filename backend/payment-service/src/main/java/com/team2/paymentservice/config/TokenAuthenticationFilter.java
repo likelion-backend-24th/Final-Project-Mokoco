@@ -1,54 +1,47 @@
 package com.team2.paymentservice.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team2.common.security.LoginUser;
-import com.team2.paymentservice.client.UserClient;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.client.*;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
-/**
- * payment-service의 사용자 대면 엔드포인트(/payments/**, webhook 제외) 공통 인증 필터.
- * Authorization: Bearer 토큰을 user-service에 검증해 LoginUser(id, email)를 SecurityContext에 심는다.
- * post-service/chat-service의 같은 이름 클래스와 동일 패턴.
- */
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
-    private final UserClient users;
-    private final ObjectMapper mapper;
-    public TokenAuthenticationFilter(UserClient users, ObjectMapper mapper) { this.users = users; this.mapper = mapper; }
+    private final RestClient users;
+    public TokenAuthenticationFilter(RestClient users) { this.users = users; }
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record VerifiedUser(Long id, com.team2.common.security.Role role) {}
 
-    @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
+    @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
         String auth = request.getHeader("Authorization");
         if (auth == null || !auth.startsWith("Bearer ") || auth.substring(7).isBlank()) {
-            error(response, 401, "LOGIN_REQUIRED", "로그인이 필요합니다."); return;
+            response.sendError(401); return;
         }
-        LoginUser loginUser;
+        VerifiedUser user;
         try {
-            var user = users.verifyToken(auth.substring(7));
-            if (user == null || user.id() == null || user.email() == null) { error(response, 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return; }
-            loginUser = new LoginUser(user.id(), user.email());
-        } catch (RestClientResponseException e) {
-            error(response, e.getStatusCode().value() == 401 ? 401 : 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return;
-        } catch (RestClientException e) {
-            error(response, 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return;
+            user = users.post().uri("/api/internal/users/verify-token").body(auth.substring(7))
+                    .retrieve().body(VerifiedUser.class);
+        } catch (RestClientResponseException failure) {
+            boolean internal = failure.getResponseHeaders() != null
+                    && failure.getResponseHeaders().containsKey("X-Internal-Auth-Error");
+            response.sendError(failure.getStatusCode().value() == 401 && !internal ? 401 : 502); return;
+        } catch (RestClientException failure) {
+            response.sendError(502); return;
         }
-        var context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(loginUser, null, List.of()));
+        if (user == null || user.id() == null || user.id() <= 0 || user.role() == null) {
+            response.sendError(502); return;
+        }
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(new LoginUser(user.id(), user.role()), null, List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.role().name()))));
         SecurityContextHolder.setContext(context);
         try { chain.doFilter(request, response); }
         finally { SecurityContextHolder.clearContext(); }
-    }
-    private void error(HttpServletResponse response, int status, String code, String message) throws IOException {
-        SecurityContextHolder.clearContext();
-        response.setStatus(status); response.setContentType("application/json"); response.setCharacterEncoding("UTF-8");
-        response.setHeader("Cache-Control", "no-store");
-        mapper.writeValue(response.getWriter(), Map.of("code", code, "message", message));
     }
 }

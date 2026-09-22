@@ -22,7 +22,7 @@ public class Notification {
     private Long id;
 
     @Column(nullable = false)
-    private String recipientEmail;   // 알림 받는 사람
+    private Long recipientId;   // 알림 받는 사람
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -44,9 +44,9 @@ public class Notification {
     private LocalDateTime createdAt;
 
     @Builder
-    public Notification(String recipientEmail, NotificationType type, Long postId,
+    public Notification(Long recipientId, NotificationType type, Long postId,
                         Long proposalId, Long chatRoomId, String message) {
-        this.recipientEmail = recipientEmail;
+        this.recipientId = recipientId;
         this.type = type;
         this.postId = postId;
         this.proposalId = proposalId;

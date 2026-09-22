@@ -67,6 +67,20 @@ Thumbs.db
 
 # Uploaded post images (local file storage)
 **/uploads/
+
+# Gradle build output at repo root
+/.gradle/
+/build/
+
+# Accidental Gradle user-home dirs (created at repo root when GRADLE_USER_HOME
+# points here, e.g. IntelliJ's "Gradle user home" set to the project dir)
+/caches/
+/daemon/
+/native/
+/wrapper/
+/notifications/
+/.tmp/
+/jdks/
 .npm-cache/
 **/private-chat-files/
 

@@ -1,5 +1,9 @@
 package com.team2.postservice.post.service;
 
+import com.team2.common.exception.CustomException;
+import com.team2.postservice.common.exception.ErrorCode;
+import org.apache.tika.Tika;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -7,45 +11,71 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class LocalFileStorageService implements FileStorageService {
 
-    private final Path uploadPath = Paths.get("uploads").toAbsolutePath().normalize();
+    private static final Set<String> ALLOWED_MIME_TYPES = Set.of(
+            "image/jpeg", "image/png", "image/gif", "image/webp");
+    private static final long MAX_FILE_SIZE = 10L * 1024 * 1024;
+
+    private final Path root;
+    private final String baseUrl;
+
+    public LocalFileStorageService(@Value("${file.upload-dir}") String uploadDir,
+                                    @Value("${file.base-url}") String baseUrl) {
+        this.root = Paths.get(uploadDir).toAbsolutePath().normalize();
+        this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+    }
 
     @Override
     public StoredFile store(MultipartFile file) {
-        // Preserve the existing post-image limit after enabling larger chat videos.
-        if (file.getSize() > 10L * 1024 * 1024) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    org.springframework.http.HttpStatus.PAYLOAD_TOO_LARGE, "게시글 이미지는 10MB 이하여야 합니다.");
+        if (file.isEmpty() || file.getSize() > MAX_FILE_SIZE) {
+            throw new CustomException(ErrorCode.IMAGE_FILE_TOO_LARGE);
         }
-        try {
-            // 상위 디렉토리가 없으면 한 번에 생성
-            Files.createDirectories(uploadPath);
 
-            String originalFilename = file.getOriginalFilename();
-            String storedFileName = UUID.randomUUID() + "_" + originalFilename;
-            Path destPath = uploadPath.resolve(storedFileName);
-
-            file.transferTo(destPath.toFile());
-
-            // 상대 경로로 저장한다. 브라우저는 같은 오리진(https)으로 요청 -> Caddy -> gateway(/api 제거) -> post-service /images/**
-            String imageUrl = "/api/images/" + storedFileName;
-            return new StoredFile(imageUrl, storedFileName);
+        String mime;
+        try (var input = file.getInputStream()) {
+            mime = new Tika().detect(input);
         } catch (IOException e) {
-            throw new RuntimeException("파일 저장에 실패했습니다.", e);
+            throw new CustomException(ErrorCode.IMAGE_UPLOAD_FAILED);
         }
+        if (!ALLOWED_MIME_TYPES.contains(mime)) {
+            throw new CustomException(ErrorCode.INVALID_IMAGE_FILE);
+        }
+
+        String storedFileName = UUID.randomUUID() + extensionFor(mime);
+        try {
+            Files.createDirectories(root);
+            try (var input = file.getInputStream()) {
+                Files.copy(input, root.resolve(storedFileName));
+            }
+        } catch (IOException e) {
+            throw new CustomException(ErrorCode.IMAGE_UPLOAD_FAILED);
+        }
+
+        return new StoredFile(baseUrl + "/" + storedFileName, storedFileName);
     }
 
     @Override
     public void delete(String storedFileName) {
         try {
-            Path filePath = uploadPath.resolve(storedFileName).normalize();
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            throw new RuntimeException("파일 삭제에 실패했습니다.", e);
+            Files.deleteIfExists(root.resolve(storedFileName));
+        } catch (IOException ignored) {
+            // best-effort cleanup; a stray file on disk is not worth failing the request
         }
+    }
+
+    private String extensionFor(String mime) {
+        return switch (mime.toLowerCase(Locale.ROOT)) {
+            case "image/jpeg" -> ".jpg";
+            case "image/png" -> ".png";
+            case "image/gif" -> ".gif";
+            case "image/webp" -> ".webp";
+            default -> "";
+        };
     }
 }

@@ -25,7 +25,7 @@ public class RegionService {
 
     @Transactional
     public RegionResponse setMyRegion(
-            String email,
+            Long userId,
             RegionRequest request
     ) {
         RegionInfo info = kakaoLocalClient.getRegionInfo(
@@ -44,7 +44,7 @@ public class RegionService {
                                 .build()
                 ));
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() ->
                         new CustomException(ErrorCode.USER_NOT_FOUND)
                 );
@@ -55,8 +55,8 @@ public class RegionService {
         return RegionResponse.from(region);
     }
 
-    public RegionResponse getRegionInfo(String email){
-        User user = userRepository.findByEmail(email)
+    public RegionResponse getRegionInfo(Long userId){
+        User user = userRepository.findById(userId)
                 .orElseThrow(() ->
                         new CustomException(ErrorCode.USER_NOT_FOUND)
                 );

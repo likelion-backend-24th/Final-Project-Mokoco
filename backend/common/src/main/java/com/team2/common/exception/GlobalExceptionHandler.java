@@ -13,7 +13,6 @@ import org.springframework.web.client.RestClientException;
 public class GlobalExceptionHandler {
 
     public record ErrorResponse(String code, String message) {}
-
     @ExceptionHandler(CustomException.class)
     protected ResponseEntity<ErrorResponse> handleCustomException(CustomException e) {
         ApiErrorCode errorCode = e.getErrorCode();

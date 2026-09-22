@@ -4,7 +4,7 @@ import { backendUrl, readBackendPayload, errorMessage } from "@/lib/backend";
 async function forward(method, { params }) {
   const { proposalId } = await params;
   if (!/^\d+$/.test(proposalId)) {
-    return Response.json({ error: "잘못된 제안 번호입니다." }, { status: 400 });
+    return Response.json({ error: "잘못된 견적 번호입니다." }, { status: 400 });
   }
   const token = (await cookies()).get("access_token")?.value;
   if (!token) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
