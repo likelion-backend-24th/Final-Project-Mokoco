@@ -171,7 +171,7 @@ export default function AccountSettings() {
             {me.regionName && <p className="mt-0.5 text-sm text-slate-400">{me.regionName}</p>}
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             {SOCIAL_PROVIDERS.map(({ id, label, icon, boxClass }) => {
               const linked = linkedProviders?.includes(id.toUpperCase());
               return (
@@ -190,14 +190,14 @@ export default function AccountSettings() {
             })}
           </div>
 
-          <div className="mt-4 flex gap-3">
+          <div className="mt-6 flex gap-3">
             <button
               type="button"
               onClick={startEditProfile}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
             >
               <PencilSimple size={16} weight="bold" />
-              정보 수정
+              회원정보 수정
             </button>
             <button
               type="button"
@@ -221,7 +221,7 @@ export default function AccountSettings() {
 
       {editingProfile && (
         <form onSubmit={handleProfileSubmit}>
-          <p className="mb-4 text-base font-bold text-slate-800">개인정보 수정</p>
+          <p className="mb-4 text-base font-bold text-slate-800">회원정보 수정</p>
           <label className="block text-sm font-semibold text-slate-500">이름</label>
           <input
             value={name}
