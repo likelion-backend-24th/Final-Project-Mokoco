@@ -1,7 +1,6 @@
 package com.team2.userservice.user.controller;
 
 import com.team2.userservice.config.JwtTokenProvider;
-import com.team2.userservice.region.service.RegionService;
 import com.team2.userservice.user.dto.UserResponse;
 import com.team2.userservice.user.entity.AccountStatus;
 import com.team2.userservice.user.service.UserService;
