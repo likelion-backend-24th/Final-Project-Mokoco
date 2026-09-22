@@ -1,7 +1,9 @@
 package com.team2.postservice.post.service;
 
+import com.team2.common.security.LoginUser;
 import com.team2.postservice.client.dto.RegionResponse;
 import com.team2.common.exception.CustomException;
+import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.post.dto.PostRequestDto;
 import com.team2.postservice.post.dto.NearbyRepairRequest;
@@ -37,9 +39,9 @@ public class PostService {
     private final FixDealRepository fixDealRepository;
 
     @Transactional
-    public Long createPost(PostRequestDto.Create request, List<MultipartFile> images, Long authorId) {
+    public Long createPost(PostRequestDto.Create request, List<MultipartFile> images, LoginUser user) {
         // 사용자 ID로 최신 지역 정보를 조회한다.
-        RegionResponse response = postViewerService.requireRegion(authorId);
+        RegionResponse response = postViewerService.requireRegion(user.id());
         String content = PostContent.sanitize(request.content(), request.contentFormat());
 
         Post post = Post.builder()
@@ -47,7 +49,8 @@ public class PostService {
                 .content(content)
                 .contentFormat(request.contentFormat())
                 .category(request.category())
-                .authorId(authorId)
+                .authorId(user.id())
+                .authorEmail(user.email())
                 .regionName(response.regionName())
                 .regionCode(response.regionCode())
                 .build();

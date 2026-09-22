@@ -29,7 +29,7 @@ public class PostController {
     public ResponseEntity<Long> createPost(@RequestPart("post") @Valid PostRequestDto.Create request,
                                            @RequestPart(value = "images", required = false) List<MultipartFile> images,
                                            @AuthenticationPrincipal LoginUser user) {
-        Long postId = postService.createPost(request, images, user.id());
+        Long postId = postService.createPost(request, images, user);
         return ResponseEntity.ok(postId);
     }
 
