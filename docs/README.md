@@ -5,7 +5,7 @@
 
 | 문서 | Notion 원본 URL | 담당자 | 최근 Git Snapshot(보존본) |
 |---|---|---|---|
-| 요구사항 | [[요구사항]](https://app.notion.com/p/3cd73873401a80418840dd22bbca3876) | 곽승욱, 변재웅, 정선우, 박준성 | 없음 — Sprint Review 뒤 `docs/요구사항.md` 생성 |
+| 요구사항 | [[요구사항]](https://app.notion.com/p/3cd73873401a80418840dd22bbca3876) | 곽승욱, 변재웅, 정선우, 박준성 |  [docs/요구사항.md](https://github.com/likelion-backend-24th/Final-Project-Mokoco/blob/main/docs/요구사항.md) |
 | 공통 완료 기준 | [[공통 완료 기준]](https://app.notion.com/p/Definition_of_Done-3cd73873401a8078ae8bf0443bf128e9) | 곽승욱, 변재웅, 정선우, 박준성 | 없음 — Sprint Review 뒤 `docs/Definition_of_Done.md` 생성 |
 | 화면 설계 | [[화면 설계]](https://app.notion.com/p/3cd73873401a80a5a10afa8658598cdf) | 곽승욱, 변재웅, 정선우, 박준성 | 없음 — Sprint Review 뒤 `docs/화면설계.md` 생성 |
 | 서비스 경계 | [[서비스 경계]](https://app.notion.com/p/3cd73873401a80c998b4d9c2a481fe7d) | 곽승욱, 변재웅, 정선우, 박준성 | 없음 — Sprint Review 뒤 `docs/서비스경계.md` 생성 |
