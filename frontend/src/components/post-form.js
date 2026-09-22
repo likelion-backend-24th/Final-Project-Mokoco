@@ -6,6 +6,7 @@ import { ArrowLeft, Wrench, Upload, X } from "@phosphor-icons/react";
 import Link from "next/link";
 import { backendUrl, imageSrc } from "@/lib/backend";
 import PostAiAssist from "./post-ai-assist";
+import PostRichTextEditor from "./rich-text/post-rich-text-editor";
 
 const categories = [
   { value: "ELECTRIC_LIGHT", label: "전기·조명" },
@@ -36,12 +37,12 @@ export default function PostForm({ postId, initialValue, accessToken }) {
   const handleFileChange = (e) => {
     if (!e.target.files) return;
     const filesArray = Array.from(e.target.files);
-    
+
     if (existingImages.length + selectedFiles.length + filesArray.length > 5) {
       setMessage("이미지는 최대 5장까지 등록할 수 있습니다.");
       return;
     }
-    
+
     setSelectedFiles((prev) => [...prev, ...filesArray]);
     setMessage("");
   };
@@ -149,8 +150,8 @@ export default function PostForm({ postId, initialValue, accessToken }) {
       <form onSubmit={submitPost} className="repair-form">
         <label className="form-field">
           <span>카테고리</span>
-          <select 
-            value={selectedCategory} 
+          <select
+            value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none bg-white"
           >
@@ -161,7 +162,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
             ))}
           </select>
         </label>
-        
+
         {/* 제목 입력 */}
         <label className="form-field">
           <span>제목</span>
@@ -179,15 +180,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
         {/* 내용 입력 */}
         <label className="form-field">
           <span>내용</span>
-          <textarea
-            name="content"
-            rows={6}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="어떤 도움이 필요한지 자세히 적어주세요"
-            required
-            className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
-          />
+          <PostRichTextEditor value={content} onChange={(html, text) => { setContent(html); setContentText(text); }} />
         </label>
 
         {/* 파일 첨부 영역 */}
@@ -222,7 +215,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
             <span className="text-sm text-slate-600">이미지 파일 업로드</span>
             <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
           </label>
-          
+
           {/* 선택된 파일 목록 프리뷰 */}
           <div className="flex flex-wrap gap-2 mt-2">
             {selectedFiles.map((file, idx) => (
