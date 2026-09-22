@@ -1,40 +1,70 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { CheckCircle, Trash } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { CheckCircle, Trash, MapPin, Wrench, FileText, XCircle, Flag } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
-import { XCircle } from 'lucide-react';
 import ProposalChatRoom from "@/components/proposal-chat-room";
 import FixDealProgress from "@/components/fix-deal-progress";
 import RatingBadge from "@/components/rating-badge";
-import RepairerMenu from "@/components/repairer-menu";
+import RepairerTransactionsModal from "@/components/repairer-transactions-modal";
+import RepairerReportModal from "@/components/repairer-report-modal";
+import ResumeViewModal from "@/components/resume-view-modal";
 
-export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail, userId }) {
+// 제안에 별도 생성 시각이 저장돼 있지 않아서(엔티티에 createdAt 없음), "최신순"은 id가 큰
+// 쪽(=나중에 생성됨)을 최신으로 취급한다.
+const SORT_OPTIONS = [
+  { value: "latest", label: "최신순" },
+  { value: "oldest", label: "오래된순" },
+  { value: "priceAsc", label: "희망 견적 낮은순" },
+  { value: "priceDesc", label: "희망 견적 높은순" },
+  { value: "completedDesc", label: "완료한 수리 많은순" },
+];
+
+function compareBySort(a, b, sortBy) {
+  switch (sortBy) {
+    case "oldest":
+      return a.id - b.id;
+    case "priceAsc":
+      return (a.estimatedPrice ?? 0) - (b.estimatedPrice ?? 0);
+    case "priceDesc":
+      return (b.estimatedPrice ?? 0) - (a.estimatedPrice ?? 0);
+    case "completedDesc":
+      return (b.repairerCompletedCount ?? 0) - (a.repairerCompletedCount ?? 0);
+    case "latest":
+    default:
+      return b.id - a.id;
+  }
+}
+
+export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail }) {
   const [proposals, setProposals] = useState(initialProposals);
   const [previousProposals, setPreviousProposals] = useState(initialProposals);
   const [loadingId, setLoadingId] = useState(null);
+  const [resumeEmail, setResumeEmail] = useState(null);
+  const [transactionsEmail, setTransactionsEmail] = useState(null);
+  const [reportEmail, setReportEmail] = useState(null);
   const [adoptedDealStatus, setAdoptedDealStatus] = useState(null);
+  const [sortBy, setSortBy] = useState("latest");
   const router = useRouter();
-
-  const adoptedFixDealId = proposals?.find((p) => p.isAdopted)?.fixDealId ?? null;
-
-  useEffect(() => {
-    if (!adoptedFixDealId) return;
-    const controller = new AbortController();
-    fetch(`/api/fix-deals/${adoptedFixDealId}`, { signal: controller.signal, cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!controller.signal.aborted) setAdoptedDealStatus(data?.status ?? null);
-      })
-      .catch(() => {});
-    return () => controller.abort();
-  }, [adoptedFixDealId]);
 
   // 부모 컴포넌트에서 router.refresh()로 새로운 데이터가 내려올 때 상태 동기화
   if (previousProposals !== initialProposals) {
     setPreviousProposals(initialProposals);
     setProposals(initialProposals);
   }
+
+  const adoptedFixDealId = proposals?.find((p) => p.isAdopted)?.fixDealId ?? null;
+
+  // 채택 취소 버튼은 거래가 아직 결제 전(MATCHED)일 때만 의미가 있어서, 실제 거래 상태를 확인해 노출 여부를 정한다.
+  useEffect(() => {
+    if (!adoptedFixDealId) return;
+    const controller = new AbortController();
+    fetch(`/api/fix-deals/${adoptedFixDealId}`, { signal: controller.signal, cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (!controller.signal.aborted) setAdoptedDealStatus(data?.status ?? null); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [adoptedFixDealId]);
 
   if (!proposals || proposals.length === 0) {
     return (
@@ -47,11 +77,10 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
   // 이미 채택된 제안이 하나라도 존재하는지 확인
   const hasAdopted = proposals.some((p) => p.isAdopted);
 
-
-  // 채택된 제안(isAdopted === true)이 맨 위로 오도록 정렬
+  // 채택된 제안(isAdopted === true)이 항상 맨 위, 그 안에서는 선택한 기준으로 정렬
   const sortedProposals = [...proposals].sort((a, b) => {
-    if (a.isAdopted === b.isAdopted) return 0;
-    return a.isAdopted ? -1 : 1;
+    if (a.isAdopted !== b.isAdopted) return a.isAdopted ? -1 : 1;
+    return compareBySort(a, b, sortBy);
   });
 
   const handleAdopt = async (proposalId) => {
@@ -77,37 +106,24 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
     }
   };
 
-
-  const handleCancelAdopt = async (proposalId) => {
-    if (!confirm("이 제안 채택을 취소하시겠습니까?")) return;
-
+  const handleCancelAdoption = async (proposalId) => {
+    if (!confirm("채택을 취소하시겠습니까? 취소하면 다시 다른 제안을 받을 수 있어요.")) return;
     setLoadingId(proposalId);
 
     try {
-      const response = await fetch(
-        `/api/posts/${postId}/proposals/${proposalId}/cancel`,
-        {
-          method: "PATCH",
-          credentials: "include",
-        }
-      );
-      if (response.ok) {
-        setProposals((current) =>
-          current.map((proposal) =>
-            proposal.id === proposalId
-              ? { ...proposal, isAdopted: false }
-              : proposal
-          )
-        );
+      const response = await fetch(`/api/posts/${postId}/proposals/${proposalId}/cancel`, {
+        method: "PATCH",
+      });
+      const payload = await response.json().catch(() => ({}));
 
-        alert("제안 채택이 취소되었습니다.");
+      if (response.ok) {
+        setProposals((current) => current.map((proposal) => proposal.id === proposalId ? { ...proposal, isAdopted: false } : proposal));
+        alert("채택이 취소되었습니다.");
         router.refresh();
       } else {
-        console.error("채택 취소 실패:", response.status);
-        alert("제안 채택 취소에 실패했습니다.");
+        alert(payload.error || payload.message || "채택을 취소하지 못했습니다.");
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("서버 연결에 실패했습니다.");
     } finally {
       setLoadingId(null);
@@ -140,43 +156,112 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-end gap-2">
+        <label htmlFor="proposal-sort" className="text-xs font-semibold text-slate-500">
+          정렬
+        </label>
+        <select
+          id="proposal-sort"
+          value={sortBy}
+          onChange={(event) => setSortBy(event.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:border-blue-400 focus:outline-none"
+        >
+          {SORT_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
       {sortedProposals.map((proposal) => {
-        const isMyProposal = userId && String(proposal.repairerId) === String(userId);
+        const isMyProposal = userEmail && proposal.repairerEmail === userEmail;
         const isAdopted = proposal.isAdopted;
 
         return (
           <div
             key={proposal.id}
-            className={`rounded-2xl border p-5 transition ${isAdopted
-              ? "border-emerald-500 bg-emerald-50/40 shadow-sm"
-              : "border-slate-100 bg-slate-50/50 hover:border-slate-200"
-              }`}
+            className={`rounded-2xl border-2 p-5 transition ${
+              isAdopted
+                ? "border-emerald-400 bg-emerald-50 shadow-md"
+                : "border-slate-200 bg-white shadow-sm hover:border-blue-300 hover:shadow-md"
+            }`}
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <RepairerMenu userId={proposal.repairerId} nickname={proposal.repairerNickname} />
-                <RatingBadge userId={proposal.repairerId} postId={postId} />
+                <span className="text-base font-extrabold text-slate-900">
+                  {proposal.repairerNickname || proposal.repairerEmail || "수리공 이웃"}
+                </span>
+                <RatingBadge email={proposal.repairerEmail} postId={postId} />
+                {proposal.attachResume && proposal.repairerEmail && (
+                  <button
+                    type="button"
+                    onClick={() => setResumeEmail(proposal.repairerEmail)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100"
+                  >
+                    <FileText size={13} weight="duotone" /> 이력서 보기
+                  </button>
+                )}
                 {isAdopted && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                    <CheckCircle size={14} weight="bold" />
-                    {adoptedDealStatus === "COMPLETED" ? "거래 완료" : "채택 완료"}
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white">
+                    <CheckCircle size={14} weight="bold" /> {adoptedDealStatus === "COMPLETED" ? "거래 완료" : "채택 완료"}
                   </span>
                 )}
               </div>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs font-medium text-slate-400">
                 {proposal.createdAt ? new Date(proposal.createdAt).toLocaleDateString() : ""}
               </span>
             </div>
 
-            {proposal.estimatedPrice !== undefined && proposal.estimatedPrice !== null && (
-              <div className="mb-2 text-sm font-bold text-blue-600">
-                희망 견적: {proposal.estimatedPrice.toLocaleString()}원
+            {(proposal.repairerRegion || proposal.repairerCompletedCount > 0) && (
+              <div className="mb-3 flex items-center gap-3 text-xs font-semibold text-slate-500">
+                {proposal.repairerRegion && (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin size={12} weight="duotone" /> {proposal.repairerRegion}
+                  </span>
+                )}
+                {proposal.repairerCompletedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setTransactionsEmail(proposal.repairerEmail)}
+                    className="inline-flex items-center gap-1 hover:text-blue-600 hover:underline"
+                  >
+                    <Wrench size={12} weight="duotone" /> 완료한 수리 {proposal.repairerCompletedCount}건
+                  </button>
+                )}
               </div>
             )}
 
-            <p className="text-sm text-slate-700 whitespace-pre-line mb-4">{proposal.content}</p>
+            {proposal.estimatedPrice !== undefined && proposal.estimatedPrice !== null && (
+              <div className="mb-3 inline-flex items-baseline gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5">
+                <span className="text-xs font-bold text-blue-500">희망 견적</span>
+                <span className="text-lg font-extrabold text-blue-700">{proposal.estimatedPrice.toLocaleString()}원</span>
+              </div>
+            )}
 
-            <div className="flex justify-end gap-2">
+            <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line mb-4">{proposal.content}</p>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
+              {/* 본인 제안이 아닐 때만(자기 자신 신고 방지) 신고 가능 */}
+              {!isMyProposal && (
+                <button
+                  type="button"
+                  onClick={() => setReportEmail(proposal.repairerEmail)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 px-4 py-2 text-xs font-semibold text-red-500 shadow-sm hover:bg-red-100 transition"
+                >
+                  <Flag size={16} weight="bold" />
+                  신고하기
+                </button>
+              )}
+
+              {/* 채택 전이고, 이 제안의 당사자(글쓴이 또는 이 제안을 보낸 수리공)만 미리 채팅 가능 */}
+              {!isAdopted && (isMine || isMyProposal) && (
+                <ProposalChatRoom
+                  key={`compact-${proposal.id}`}
+                  proposalId={proposal.id}
+                  compact
+                />
+              )}
+
               {/* 본인 제안이고 채택되지 않았을 때만 삭제 가능 */}
               {isMyProposal && !isAdopted && (
                 <button
@@ -201,36 +286,35 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
                 </button>
               )}
 
-              {/* 게시글 작성자이고, 현재 해당 제안이 채택된 상태(MATCHED, 결제 전)일 때만 채택 취소 버튼 */}
+              {/* 채택한 글쓴이만 취소 가능 — 결제 전(MATCHED) 단계에서만 의미가 있어서 그때만 보여준다 */}
               {isMine && isAdopted && adoptedDealStatus === "MATCHED" && (
                 <button
-                  onClick={() => handleCancelAdopt(proposal.id)}
+                  onClick={() => handleCancelAdoption(proposal.id)}
                   disabled={loadingId !== null}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-red-500 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-600 transition disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-300 transition disabled:opacity-50"
                 >
                   <XCircle size={16} weight="bold" />
                   {loadingId === proposal.id ? "처리 중..." : "채택 취소"}
                 </button>
               )}
-
             </div>
-            {(isMine || isMyProposal) && <ProposalChatRoom key={proposal.id} proposalId={proposal.id} />}
             {isAdopted && (isMine || isMyProposal) && (
               <>
-                <FixDealProgress
-                  fixDealId={proposal.fixDealId}
-                  postId={postId}
-                  isRequester={Boolean(isMine)}
-                  isRepairer={Boolean(isMyProposal)}
-                  estimatedPrice={proposal.estimatedPrice}
-                  repairerId={proposal.repairerId}
-                  userEmail={userEmail}
+                <ProposalChatRoom
+                  key={`${proposal.id}-${proposal.fixDealId}`}
+                  proposalId={proposal.id}
                 />
+                <FixDealProgress fixDealId={proposal.fixDealId} />
               </>
             )}
           </div>
         );
       })}
+      {resumeEmail && <ResumeViewModal email={resumeEmail} onClose={() => setResumeEmail(null)} />}
+      {transactionsEmail && (
+        <RepairerTransactionsModal email={transactionsEmail} onClose={() => setTransactionsEmail(null)} />
+      )}
+      {reportEmail && <RepairerReportModal email={reportEmail} onClose={() => setReportEmail(null)} />}
     </div>
   );
 }
