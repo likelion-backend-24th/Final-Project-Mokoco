@@ -13,10 +13,12 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+// 깨끗한 빈 DB에 V1 마이그레이션이 처음부터 끝까지 실제로 돌고, 그 결과 스키마가 엔티티와
+// 정확히 일치하는지(ddl-auto=validate) 확인하는 스모크 테스트.
 @DataJpaTest(properties = {"spring.flyway.enabled=true", "spring.jpa.hibernate.ddl-auto=validate"})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers
-public class FlywaySchemaTest {
+class FlywaySchemaTest {
     @Container
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.0")
             .withDatabaseName("post_test");
@@ -35,9 +37,9 @@ public class FlywaySchemaTest {
     @Test
     void schemaMatchesEntitiesAndMigrationIsRepeatable() {
         flyway.validate();
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("6");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("1");
         assertThat(flyway.migrate().migrationsExecuted).isZero();
-        assertThat(flyway.getConfiguration().isBaselineOnMigrate()).isFalse();
+        assertThat(flyway.getConfiguration().isBaselineOnMigrate()).isTrue();
         assertThat(flyway.getConfiguration().isCleanDisabled()).isTrue();
     }
 }

@@ -5,6 +5,9 @@ public record UserClientResponse(
         String email,
         String nickname,
         String region,
-        com.team2.common.security.Role role
+        String role // "ADMIN" | "USER" — user-service의 UserResponse.role(enum)을 문자열로 그대로 받는다
 ) {
+    public boolean isAdmin() {
+        return "ADMIN".equals(role);
+    }
 }

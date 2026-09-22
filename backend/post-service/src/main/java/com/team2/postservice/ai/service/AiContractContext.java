@@ -1,18 +1,14 @@
 package com.team2.postservice.ai.service;
 
+import com.team2.postservice.client.ChatRoomClient;
 import com.team2.postservice.common.exception.AiException;
-import com.team2.postservice.client.ChatClient;
-import com.team2.common.chat.ChatRoomInfo;
-import com.team2.common.chat.ChatTextMessage;
-import com.team2.postservice.fixDeal.repository.FixDealRepository;
-import com.team2.postservice.contract.repository.ContractRepository;
-import com.team2.postservice.contract.entity.RepairContract;
+import com.team2.postservice.contract.ContractRepository;
 import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
-import com.team2.postservice.post.entity.Post;
+import com.team2.postservice.fixDeal.repository.FixDealRepository;
 import com.team2.postservice.post.repository.PostRepository;
-import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,83 +18,63 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class AiContractContext {
-    private final ChatClient chat;
+    private final ChatRoomClient chatRoomClient;
+    private final FixDealRepository fixDeals;
     private final ContractRepository contracts;
     private final PostRepository posts;
     private final ProposalRepository proposals;
-    private final FixDealRepository deals;
-    private final jakarta.persistence.EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public void check(Long roomId, Long userId, Long baseId) {
-        // OSIV may retain the earlier read's entities across the provider call.
-        // Discard that read-only snapshot before checking the current database state.
-        entityManager.clear();
-        checkedRoom(roomId, userId, baseId);
+        checkedDeal(roomId, userId, baseId);
     }
 
-    private FixDeal checkedRoom(Long roomId, Long userId, Long baseId) {
-
-        ChatRoomInfo room = chat.getRoom(roomId);
-        if (!room.hasParticipant(userId))
-            throw new AiException(HttpStatus.FORBIDDEN, "NOT_PARTICIPANT", "이 거래의 참여자만 사용할 수 있습니다.");
-        Long proposalId = room.proposalId();
-        if (proposalId == null && room.fixDealId() != null) {
-            proposalId = deals.findById(room.fixDealId()).map(FixDeal::getProposalId).orElse(null);
+    private FixDeal checkedDeal(Long roomId, Long userId, Long baseId) {
+        ChatRoomClient.ChatRoomInfo room;
+        try {
+            room = chatRoomClient.getRoom(roomId);
+        } catch (FeignException.NotFound e) {
+            throw new AiException(HttpStatus.NOT_FOUND, "ROOM_NOT_FOUND", "채팅방을 찾을 수 없습니다.");
+        } catch (FeignException e) {
+            throw new AiException(HttpStatus.BAD_GATEWAY, "CHAT_SERVICE_UNAVAILABLE", "채팅방 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.");
         }
-        Proposal proposal = proposalId == null ? null : proposals.findById(proposalId).orElse(null);
-        FixDeal deal = proposal == null || !proposal.isAdopted() ? null : deals.findByProposalId(proposalId).orElse(null);
-        if (deal == null)
-            throw new AiException(HttpStatus.CONFLICT, "PROPOSAL_NOT_ADOPTED", "견적 채택 후 계약 초안을 작성할 수 있습니다.");
-        if (!userId.equals(deal.getRequesterId()) && !userId.equals(deal.getRepairerId()))
+        if (!userId.equals(room.requesterId()) && !userId.equals(room.repairerId()))
             throw new AiException(HttpStatus.FORBIDDEN, "NOT_PARTICIPANT", "이 거래의 참여자만 사용할 수 있습니다.");
-        RepairContract latest = contracts.findFirstByChatRoomIdOrderByRevisionDesc(roomId).orElse(null);
-
+        if (room.fixDealId() == null)
+            throw new AiException(HttpStatus.CONFLICT, "PROPOSAL_NOT_ADOPTED", "견적 채택 후 계약 초안을 작성할 수 있습니다.");
+        var deal = fixDeals.findById(room.fixDealId())
+                .orElseThrow(() -> new AiException(HttpStatus.NOT_FOUND, "ROOM_NOT_FOUND", "채팅방을 찾을 수 없습니다."));
+        var latest = contracts.findFirstByChatRoomIdOrderByRevisionDesc(roomId).orElse(null);
         if (deal.getStatus() != FixDealStatus.MATCHED || deal.getRequesterId().equals(deal.getRepairerId())
                 || !Objects.equals(baseId, latest == null ? null : latest.getId())
                 || (latest != null && "SIGNED".equals(latest.getStatus())))
-        {
             throw new AiException(HttpStatus.CONFLICT, "CONTRACT_CHANGED", "계약 또는 거래 상태가 변경되었습니다. 최신 내용을 확인해주세요.");
-        }
-
         return deal;
     }
 
     @Transactional(readOnly = true)
     public Map<String, String> read(Long roomId, Long userId, Long baseId) {
-
-        FixDeal deal = checkedRoom(roomId, userId, baseId);
-        Post post = posts.findById(deal.getPostId()).orElseThrow(() -> AiException.input("의뢰 내용을 찾을 수 없습니다."));
-        Proposal proposal = proposals.findById(deal.getProposalId()).orElseThrow(() -> AiException.input("견적 내용을 찾을 수 없습니다."));
-
-        if (!Objects.equals(proposal.getPost().getId(), post.getId())) {
-            throw AiException.input("거래에 연결된 견적을 확인해주세요.");
-        }
-
+        var deal = checkedDeal(roomId, userId, baseId);
+        var post = posts.findById(deal.getPostId()).orElseThrow(() -> AiException.input("의뢰 내용을 찾을 수 없습니다."));
+        var proposal = proposals.findById(deal.getProposalId()).orElseThrow(() -> AiException.input("견적 내용을 찾을 수 없습니다."));
+        if (!Objects.equals(proposal.getPost().getId(), post.getId())) throw AiException.input("거래에 연결된 견적을 확인해주세요.");
         Map<String, String> sources = new LinkedHashMap<>();
         sources.put("POST", post.getTitle() + "\n" + post.getContent());
-
-        if (proposal.getEstimatedPrice() == null || proposal.getEstimatedPrice() <= 0){
+        if (proposal.getEstimatedPrice() == null || proposal.getEstimatedPrice() <= 0)
             throw AiException.input("채택된 제안의 금액을 확인해주세요.");
-        }
-
         sources.put("ADOPTED_PROPOSAL", proposal.getContent());
         sources.put("PROPOSAL_AMOUNT", proposal.getEstimatedPrice().toString());
-
-        List<ChatTextMessage> history = chat.getTextMessages(roomId, userId);
-
-        if (history.size() > 500) {
-            throw AiException.input("텍스트 대화가 500개를 넘어 자동 정리할 수 없습니다. 계약 내용을 직접 작성해주세요.");
+        List<ChatRoomClient.TextMessage> history;
+        try {
+            history = chatRoomClient.textMessages(roomId, 501);
+        } catch (FeignException e) {
+            throw new AiException(HttpStatus.BAD_GATEWAY, "CHAT_SERVICE_UNAVAILABLE", "대화 내용을 확인할 수 없습니다. 잠시 후 다시 시도해주세요.");
         }
-
-        for (ChatTextMessage message : history) {
-            if (!roomId.equals(message.chatRoomId()) || (!Objects.equals(message.senderId(), deal.getRequesterId()) && !Objects.equals(message.senderId(), deal.getRepairerId()))){
-                throw AiException.input("채팅방 대화 정보를 확인하지 못했습니다.");
-            }
+        if (history.size() > 500) throw AiException.input("텍스트 대화가 500개를 넘어 자동 정리할 수 없습니다. 계약 내용을 직접 작성해주세요.");
+        for (var message : history) {
             String role = Objects.equals(message.senderId(), deal.getRequesterId()) ? "의뢰인" : "수리자";
             sources.put("MESSAGE_" + message.id(), "[" + role + "] " + message.content());
         }
-
         return sources;
     }
 }

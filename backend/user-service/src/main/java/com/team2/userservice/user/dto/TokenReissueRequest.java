@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class TokenReissueRequest {
 
-    // Legacy clients may send contact email; authentication uses only the refresh token.
+    @NotBlank(message = "Email cannot be blank")
     private String email;
 
     @NotBlank(message = "Refresh Token cannot be blank")

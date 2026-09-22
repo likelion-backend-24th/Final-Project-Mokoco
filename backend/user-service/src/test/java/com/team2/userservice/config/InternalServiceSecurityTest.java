@@ -22,30 +22,29 @@ class InternalServiceSecurityTest {
 
     @RestController
     static class ProbeController {
-        @GetMapping("/internal/users/by-id")
+        @GetMapping("/internal/users/by-email")
         Map<String, Object> user() { return Map.of("id", 1, "email", "test@example.com"); }
     }
 
     @Test
     void missingKeyReturnsJson401WithoutLoginRedirect() throws Exception {
-        mvc.perform(get("/internal/users/by-id"))
+        mvc.perform(get("/internal/users/by-email"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().doesNotExist("Location"))
-                .andExpect(header().string("X-Internal-Auth-Error", "UNAUTHORIZED_INTERNAL_SERVICE"))
                 .andExpect(content().contentTypeCompatibleWith("application/json"))
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED_INTERNAL_SERVICE"));
     }
 
     @Test
     void incorrectKeyIsRejected() throws Exception {
-        mvc.perform(get("/internal/users/by-id").header("X-Internal-Service-Key", "wrong"))
+        mvc.perform(get("/internal/users/by-email").header("X-Internal-Service-Key", "wrong"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void correctKeyCanReadJsonAndDoesNotAuthenticateNextRequest() throws Exception {
-        mvc.perform(get("/internal/users/by-id").header("X-Internal-Service-Key", "test-internal-key"))
+        mvc.perform(get("/internal/users/by-email").header("X-Internal-Service-Key", "test-internal-key"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(1));
-        mvc.perform(get("/internal/users/by-id")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/internal/users/by-email")).andExpect(status().isUnauthorized());
     }
 }

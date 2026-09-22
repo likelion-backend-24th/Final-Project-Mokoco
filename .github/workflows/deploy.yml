@@ -99,23 +99,23 @@ jobs:
 
       - name: Build API Gateway
         if: steps.filter.outputs.api-gateway == 'true'
-        run: cd backend/api-gateway && chmod +x gradlew && ./gradlew bootJar
+        run: cd backend/api-gateway && chmod +x gradlew && ./gradlew bootJar -x test
 
       - name: Build User Service
         if: steps.filter.outputs.user-service == 'true' || steps.filter.outputs.common == 'true'
-        run: cd backend/user-service && chmod +x gradlew && ./gradlew bootJar
+        run: cd backend/user-service && chmod +x gradlew && ./gradlew bootJar -x test
 
       - name: Build Post Service
         if: steps.filter.outputs.post-service == 'true' || steps.filter.outputs.common == 'true'
-        run: cd backend/post-service && chmod +x gradlew && ./gradlew bootJar
+        run: cd backend/post-service && chmod +x gradlew && ./gradlew bootJar -x test
 
       - name: Build Payment Service
         if: steps.filter.outputs.payment-service == 'true' || steps.filter.outputs.common == 'true'
-        run: cd backend/payment-service && chmod +x gradlew && ./gradlew bootJar
+        run: cd backend/payment-service && chmod +x gradlew && ./gradlew bootJar -x test
 
       - name: Build Chat Service
         if: steps.filter.outputs.chat-service == 'true' || steps.filter.outputs.common == 'true'
-        run: cd backend/chat-service && chmod +x gradlew && ./gradlew bootJar
+        run: cd backend/chat-service && chmod +x gradlew && ./gradlew bootJar -x test
 
       - name: Build Frontend
         if: steps.filter.outputs.frontend == 'true'

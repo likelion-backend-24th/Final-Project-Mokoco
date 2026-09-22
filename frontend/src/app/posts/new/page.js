@@ -8,7 +8,7 @@ export default async function NewRepairPostPage() {
   const userEmail = cookieStore.get("user_email")?.value;
   const accessToken = cookieStore.get("access_token")?.value;
 
-  if (!accessToken) redirect("/login");
+  if (!userEmail || !accessToken) redirect("/login");
 
   return (
     <div className="min-h-screen bg-[#f7f9fc]">

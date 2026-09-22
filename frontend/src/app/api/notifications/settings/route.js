@@ -6,7 +6,7 @@ export async function GET() {
   if (!accessToken) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
   try {
     const response = await fetch(backendUrl("/notifications/settings"), {
-      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,  },
+      headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
       signal: AbortSignal.timeout(10000),
     });
@@ -29,7 +29,7 @@ export async function PUT(request) {
   try {
     const response = await fetch(backendUrl("/notifications/settings"), {
       method: "PUT",
-      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,  "Content-Type": "application/json", },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify({
         proposalReceived: Boolean(body.proposalReceived),
         proposalAdopted: Boolean(body.proposalAdopted),

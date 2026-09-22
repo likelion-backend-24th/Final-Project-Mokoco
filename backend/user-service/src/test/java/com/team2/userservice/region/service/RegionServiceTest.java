@@ -37,7 +37,7 @@ class RegionServiceTest {
     @Test
     void setUserRegion() {
         // given
-        Long userId = 1L;
+        String email = "test@test.com";
 
         RegionRequest request =
                 new RegionRequest(37.4979, 127.0276);
@@ -51,7 +51,7 @@ class RegionServiceTest {
                 );
 
         User user = User.builder()
-                .email("test@test.com")
+                .email(email)
                 .build();
 
         Region region = Region.builder()
@@ -66,7 +66,7 @@ class RegionServiceTest {
                 request.longitude()
         )).willReturn(regionInfo);
 
-        given(userRepository.findById(userId))
+        given(userRepository.findByEmail(email))
                 .willReturn(Optional.of(user));
 
         given(regionRepository.findByRegionCode("1165053100"))
@@ -74,7 +74,7 @@ class RegionServiceTest {
 
         // when
         RegionResponse response =
-                regionService.setMyRegion(userId, request);
+                regionService.setMyRegion(email, request);
 
         // then
         assertThat(user.getRegionCode())

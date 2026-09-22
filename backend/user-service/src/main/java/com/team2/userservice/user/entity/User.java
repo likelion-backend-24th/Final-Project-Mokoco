@@ -91,10 +91,21 @@ public class User {
         this.password = encodedPassword;
     }
 
-    public void changeRole(Role role) { this.role = role; }
-    public void suspend() { this.status = AccountStatus.SUSPENDED; }
-    public void activate() { this.status = AccountStatus.ACTIVE; }
-    public boolean isSuspended() { return this.status == AccountStatus.SUSPENDED; }
+    public void changeRole(Role role) {
+        this.role = role;
+    }
+
+    public void suspend() {
+        this.status = AccountStatus.SUSPENDED;
+    }
+
+    public void activate() {
+        this.status = AccountStatus.ACTIVE;
+    }
+
+    public boolean isSuspended() {
+        return this.status == AccountStatus.SUSPENDED;
+    }
 
     public String getRegionCode() {
         return this.region != null ? this.region.getRegionCode() : null;

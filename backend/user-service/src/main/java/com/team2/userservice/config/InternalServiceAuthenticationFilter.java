@@ -27,7 +27,6 @@ public class InternalServiceAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
         String suppliedKey = request.getHeader("X-Internal-Service-Key");
         if (suppliedKey == null || !MessageDigest.isEqual(expectedKey, suppliedKey.getBytes(StandardCharsets.UTF_8))) {
-            response.setHeader("X-Internal-Auth-Error", "UNAUTHORIZED_INTERNAL_SERVICE");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");

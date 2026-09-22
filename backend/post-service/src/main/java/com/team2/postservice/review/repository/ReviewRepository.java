@@ -14,10 +14,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     Optional<Review> findByPostId(Long postId);
 
-    Page<Review> findByRevieweeIdOrderByCreatedAtDesc(Long revieweeId, Pageable pageable);
+    Page<Review> findByRevieweeEmailOrderByCreatedAtDesc(String revieweeEmail, Pageable pageable);
 
-    Page<Review> findByReviewerIdOrderByCreatedAtDesc(Long reviewerId, Pageable pageable);
+    Page<Review> findByReviewerEmailOrderByCreatedAtDesc(String reviewerEmail, Pageable pageable);
 
-    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.revieweeId = :revieweeId")
-    Double findAverageRatingByRevieweeId(@Param("revieweeId") Long revieweeId);
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.revieweeEmail = :revieweeEmail")
+    Double findAverageRatingByRevieweeEmail(@Param("revieweeEmail") String revieweeEmail);
 }

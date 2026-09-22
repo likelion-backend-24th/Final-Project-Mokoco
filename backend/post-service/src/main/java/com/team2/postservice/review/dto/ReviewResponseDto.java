@@ -8,8 +8,8 @@ import java.util.List;
 public record ReviewResponseDto(
         Long id,
         Long postId,
-        Long reviewerId,
-        Long revieweeId,
+        String reviewerEmail,
+        String revieweeEmail,
         Integer rating,
         String content,
         List<String> imageUrls,
@@ -19,8 +19,8 @@ public record ReviewResponseDto(
         return new ReviewResponseDto(
                 review.getId(),
                 review.getPostId(),
-                review.getReviewerId(),
-                review.getRevieweeId(),
+                review.getReviewerEmail(),
+                review.getRevieweeEmail(),
                 review.getRating(),
                 review.getContent(),
                 review.getImages().stream()
