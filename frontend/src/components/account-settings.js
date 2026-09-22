@@ -165,31 +165,31 @@ export default function AccountSettings() {
 
       {!editingProfile && !editingPassword && (
         <div>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-lg font-bold text-slate-800">{me.name} · {me.nickname}</p>
-              <p className="mt-1 text-sm text-slate-500">{me.email}</p>
-              {me.regionName && <p className="mt-0.5 text-sm text-slate-400">{me.regionName}</p>}
-            </div>
-            <div className="flex w-36 shrink-0 flex-col gap-2">
-              {SOCIAL_PROVIDERS.map(({ id, label, icon, boxClass }) => {
-                const linked = linkedProviders?.includes(id.toUpperCase());
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => navigateToOAuth(id)}
-                    disabled={linkedProviders === null || linked}
-                    className={`inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors disabled:cursor-default disabled:opacity-90 ${boxClass}`}
-                  >
-                    {icon}
-                    {label} {linked ? "연결됨" : "연결하기"}
-                    {linked && <CheckCircle size={14} weight="fill" className="text-emerald-600" />}
-                  </button>
-                );
-              })}
-            </div>
+          <div>
+            <p className="text-lg font-bold text-slate-800">{me.name} · {me.nickname}</p>
+            <p className="mt-1 text-sm text-slate-500">{me.email}</p>
+            {me.regionName && <p className="mt-0.5 text-sm text-slate-400">{me.regionName}</p>}
           </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {SOCIAL_PROVIDERS.map(({ id, label, icon, boxClass }) => {
+              const linked = linkedProviders?.includes(id.toUpperCase());
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => navigateToOAuth(id)}
+                  disabled={linkedProviders === null || linked}
+                  className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors disabled:cursor-default ${boxClass}`}
+                >
+                  {icon}
+                  {label} {linked ? "연결됨" : "연결하기"}
+                  {linked && <CheckCircle size={13} weight="fill" className="text-emerald-600" />}
+                </button>
+              );
+            })}
+          </div>
+
           <div className="mt-4 flex gap-3">
             <button
               type="button"
