@@ -137,6 +137,7 @@ export default function ContractActionCard({ roomId }) {
   if (!latest || latest.status !== "SIGNED" || overview.dealStatus === "CANCELED") return null;
 
   const paid = overview.payment?.status === "COMPLETED";
+  const cancelled = overview.payment?.status === "CANCELLED";
   const settlement = calculateSettlement(overview.estimatedPrice);
   const isRequester = userId === overview.requesterId;
   const isRepairer = userId === overview.repairerId;
@@ -155,6 +156,9 @@ export default function ContractActionCard({ roomId }) {
       )}
       {overview.dealStatus === "MATCHED" && isRequester && !paid && (
         <div className="mt-2">
+          {cancelled && (
+            <p className="mb-1.5 text-sm font-semibold text-amber-600">이전 결제가 취소되었습니다. 다시 결제해주세요.</p>
+          )}
           <p className="text-sm text-slate-600">계약이 체결되었습니다. 결제하면 수리자가 작업을 시작할 수 있어요. 결제 금액은 완료될 때까지 안전하게 보관됩니다.</p>
           <button type="button" disabled={paymentBusy} onClick={startPayment} className={`mt-2 ${buttonClass}`}>
             {paymentBusy ? "결제 확인 중..." : `안전결제 하기 (${settlement.base.toLocaleString("ko-KR")}원)`}
@@ -166,7 +170,7 @@ export default function ContractActionCard({ roomId }) {
         </div>
       )}
       {overview.dealStatus === "MATCHED" && isRepairer && !paid && (
-        <p className="mt-2 text-sm text-slate-500">의뢰인의 결제를 기다리고 있어요.</p>
+        <p className="mt-2 text-sm text-slate-500">{cancelled ? "결제가 취소되어 의뢰인의 재결제를 기다리고 있어요." : "의뢰인의 결제를 기다리고 있어요."}</p>
       )}
       {overview.dealStatus === "MATCHED" && paid && !isRepairer && (
         <p className="mt-2 text-sm text-slate-500">결제 완료 — 수리자의 작업 시작을 기다리고 있어요.</p>
