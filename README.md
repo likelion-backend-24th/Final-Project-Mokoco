@@ -118,6 +118,8 @@ JWT Subject와 서비스 내부 소유권 기준을 `userId`로 변경하고 공
 
 각 서비스는 자신의 데이터베이스에 속한 Entity만 직접 관리하고, 다른 서비스의 데이터는 ID를 통해 참조하도록 구성.
 
+현재는 데이터 보존을 위해 물리 DB를 공유하는 transitional architecture이며, 논리적 소유권 분리.
+
 ex) 채팅 서비스는 `Post`, `Proposal`, `FixDeal`, `User` Entity를 직접 참조하지 않고 다음 식별값만 저장.
 
 * `postId`
