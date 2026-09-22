@@ -22,7 +22,6 @@ public class PostRequestDto {
             @NotNull(message = "카테고리는 필수입니다.")
             PostCategory category,
 
-            ContentFormat contentFormat
     ) {
         public Create { contentFormat = contentFormat == null ? ContentFormat.PLAIN_TEXT : contentFormat; }
     }
