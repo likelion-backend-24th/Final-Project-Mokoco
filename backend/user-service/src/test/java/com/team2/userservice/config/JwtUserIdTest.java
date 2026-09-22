@@ -2,7 +2,6 @@ package com.team2.userservice.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team2.common.exception.CustomException;
-import com.team2.common.security.Role;
 import com.team2.userservice.region.repository.RegionRepository;
 import com.team2.userservice.user.controller.UserClientController;
 import com.team2.userservice.user.dto.TokenReissueRequest;

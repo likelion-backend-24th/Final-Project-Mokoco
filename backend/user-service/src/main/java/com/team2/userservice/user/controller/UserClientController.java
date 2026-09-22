@@ -1,6 +1,5 @@
 package com.team2.userservice.user.controller;
 
-import com.team2.userservice.config.JwtTokenProvider;
 import com.team2.userservice.user.dto.UserResponse;
 import com.team2.userservice.user.entity.AccountStatus;
 import com.team2.userservice.user.service.UserService;
@@ -20,7 +19,7 @@ public class UserClientController {
         var user = userService.findById(userId);
         return new UserNicknameResponse(user.getId(), user.getNickname());
     }
-    private final JwtTokenProvider tokenProvider;
+    private final com.team2.userservice.config.JwtTokenProvider tokenProvider;
 
     @PostMapping("/verify-token")
     public ResponseEntity<UserResponse> verifyToken(@RequestBody String token) {

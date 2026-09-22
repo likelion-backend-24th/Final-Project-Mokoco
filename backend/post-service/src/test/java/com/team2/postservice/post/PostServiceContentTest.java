@@ -1,6 +1,5 @@
 package com.team2.postservice.post;
 
-import com.team2.common.security.LoginUser;
 import com.team2.postservice.client.dto.RegionResponse;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
 import com.team2.postservice.post.dto.PostRequestDto;
@@ -23,10 +22,8 @@ class PostServiceContentTest {
         PostService service = new PostService(posts, mock(FileStorageService.class), viewers,
                 mock(ProposalRepository.class), mock(FixDealRepository.class));
 
-        LoginUser loginUser = new LoginUser(7L, "test");
-
         service.createPost(new PostRequestDto.Create("수리", "<p onclick=\"x()\">고장</p><script>x()</script>",
-                PostCategory.LIVING_ETC, ContentFormat.HTML), null, loginUser);
+                PostCategory.LIVING_ETC, ContentFormat.HTML), null, 7L);
 
         ArgumentCaptor<Post> saved = ArgumentCaptor.forClass(Post.class);
         verify(posts).save(saved.capture());
