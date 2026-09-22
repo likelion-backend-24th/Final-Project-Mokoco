@@ -97,14 +97,33 @@ public class PaymentService {
                     .ifPresent(Payment::cancel);
             return;
         }
+        // 카드 승인 거절 등으로 PortOne이 최종 실패 처리한 건 — 프론트가 confirm을 아예 호출하지
+        // 못하고 끝나는 경우(리다이렉트 결제수단 등)가 있어 웹훅이 유일한 신호일 수 있다. 감사 기록으로 남긴다.
+        if ("FAILED".equals(remote.status())) {
+            recordFailureOnce(order);
+            return;
+        }
         if (paymentRepository.existsByPortonePaymentId(paymentId)) return;
         if ("PAID".equals(remote.status())) confirm(order, remote);
+    }
+
+    // 같은 주문에 대해 웹훅과 프론트 confirm 양쪽이 동시에 실패를 기록하려 할 수 있어 중복 저장을 막는다.
+    private void recordFailureOnce(PaymentOrder order) {
+        if (paymentRepository.existsByPortonePaymentId(order.getPaymentId())) return;
+        try {
+            paymentRepository.saveAndFlush(Payment.failed(order));
+        } catch (DataIntegrityViolationException alreadyRecorded) {
+            // 다른 경로가 먼저 기록했다면 그걸로 충분하다.
+        }
     }
 
     private Payment confirm(PaymentOrder order, PortOnePaymentResponse remote) {
         if (remote == null || !order.getPaymentId().equals(remote.id()))
             throw new CustomException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
-        if (!"PAID".equals(remote.status())) throw new CustomException(ErrorCode.PAYMENT_NOT_PAID);
+        if (!"PAID".equals(remote.status())) {
+            if ("FAILED".equals(remote.status())) recordFailureOnce(order);
+            throw new CustomException(ErrorCode.PAYMENT_NOT_PAID);
+        }
         if (remote.amount() == null || remote.amount().total() != order.getTotalAmount() || !"KRW".equals(remote.currency()))
             throw new CustomException(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
 

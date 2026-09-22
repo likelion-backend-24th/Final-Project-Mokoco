@@ -76,6 +76,22 @@ public class Payment {
         this.paidAt = LocalDateTime.now();
     }
 
+    // PortOne이 결제 실패(카드 승인 거절 등)로 확정한 건을 감사 기록으로 남길 때 쓴다.
+    // COMPLETED 빌더와 달리 paidAt을 남기지 않고 바로 FAILED로 저장한다.
+    public static Payment failed(PaymentOrder order) {
+        Payment payment = new Payment();
+        payment.postId = order.getPostId();
+        payment.portonePaymentId = order.getPaymentId();
+        payment.payerEmail = order.getPayerEmail();
+        payment.payeeEmail = order.getPayeeEmail();
+        payment.amount = order.getTotalAmount();
+        payment.feeAmount = calculateFee(order.getBaseAmount());
+        payment.netAmount = order.getBaseAmount() - payment.feeAmount;
+        payment.status = PaymentStatus.FAILED;
+        payment.createdAt = LocalDateTime.now();
+        return payment;
+    }
+
     public void settle() {
         if (settledAt == null) settledAt = LocalDateTime.now();
     }

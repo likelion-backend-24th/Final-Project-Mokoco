@@ -84,6 +84,7 @@ export default function RepairContract({ roomId }) {
   const isLatest = selected?.id === latest?.id;
   const paid = overview?.payment?.status === "COMPLETED";
   const cancelled = overview?.payment?.status === "CANCELLED";
+  const failed = overview?.payment?.status === "FAILED";
   useEffect(() => {
     if (overview?.dealStatus !== "COMPLETED" || !overview?.postId) return;
     let active = true;
@@ -219,6 +220,7 @@ export default function RepairContract({ roomId }) {
           {overview.dealStatus === "MATCHED" && userId === overview.requesterId && !paid &&
             <div>
               {cancelled && <p className="contract-error">이전 결제가 취소되었습니다. 다시 결제해주세요.</p>}
+              {failed && <p className="contract-error">이전 결제 시도가 실패했습니다. 다시 시도해주세요.</p>}
               <p>계약이 체결되었습니다. 결제하면 수리자가 작업을 시작할 수 있어요. 결제 금액은 완료될 때까지 안전하게 보관됩니다.</p>
               <button disabled={paymentBusy} onClick={startPayment}>
                 {paymentBusy ? "결제 확인 중..." : `안전결제 하기 (${calculateSettlement(overview.estimatedPrice).base.toLocaleString("ko-KR")}원)`}
@@ -229,7 +231,7 @@ export default function RepairContract({ roomId }) {
               {paymentError && <p role="alert" className="contract-error">{paymentError}</p>}
             </div>}
           {overview.dealStatus === "MATCHED" && userId === overview.repairerId && !paid &&
-            <p>{cancelled ? "결제가 취소되어 의뢰인의 재결제를 기다리고 있어요." : "의뢰인의 결제를 기다리고 있어요. 결제가 완료되면 작업을 시작할 수 있어요."}</p>}
+            <p>{cancelled ? "결제가 취소되어 의뢰인의 재결제를 기다리고 있어요." : failed ? "결제 시도가 실패해 의뢰인의 재시도를 기다리고 있어요." : "의뢰인의 결제를 기다리고 있어요. 결제가 완료되면 작업을 시작할 수 있어요."}</p>}
           {overview.dealStatus === "MATCHED" && paid &&
             <p className="contract-hash">결제 완료 — 수리자의 작업 시작을 기다리고 있어요.</p>}
 
