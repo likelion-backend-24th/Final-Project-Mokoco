@@ -239,3 +239,9 @@ jobs:
             # Caddyfile(바인드 마운트)이 바뀌어도 컨테이너는 재생성되지 않으므로 설정을 다시 읽도록 재시작
             docker compose restart caddy
             docker compose ps
+
+      - name: Verify services
+        run: |
+          sleep 15
+          docker compose ps
+          docker compose logs --tail=100 post-service
