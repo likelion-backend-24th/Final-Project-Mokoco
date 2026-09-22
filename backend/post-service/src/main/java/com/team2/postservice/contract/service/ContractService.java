@@ -1,10 +1,14 @@
-package com.team2.postservice.contract;
+package com.team2.postservice.contract.service;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team2.postservice.client.ChatRoomClient;
 import com.team2.postservice.client.PaymentClient;
 import com.team2.postservice.client.dto.PaymentClientResponse;
+import com.team2.postservice.contract.dto.ContractTerms;
+import com.team2.postservice.contract.entity.ContractSignature;
+import com.team2.postservice.contract.entity.RepairContract;
+import com.team2.postservice.contract.repository.ContractRepository;
+import com.team2.postservice.contract.repository.SignatureRepository;
 import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
@@ -24,7 +28,6 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.time.Instant;
 import java.util.*;
 
 @Slf4j

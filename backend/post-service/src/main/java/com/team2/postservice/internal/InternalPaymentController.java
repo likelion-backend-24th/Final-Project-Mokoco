@@ -33,7 +33,7 @@ public class InternalPaymentController {
                 || proposal.getEstimatedPrice() == null || proposal.getEstimatedPrice() <= 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT);
         }
-        return new PaymentContext(postId, deal.getId(), deal.getRequesterId(),
-                proposal.getRepairerId(), proposal.getEstimatedPrice(), deal.getStatus().name());
+        return new PaymentContext(postId, deal.getId(), deal.getRequesterId(), deal.getRequesterEmail(),
+                proposal.getRepairerId(), proposal.getRepairerEmail(), proposal.getEstimatedPrice(), deal.getStatus().name());
     }
 }

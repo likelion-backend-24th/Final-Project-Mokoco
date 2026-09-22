@@ -3,6 +3,8 @@ package com.team2.postservice.contract;
 import com.team2.postservice.client.ChatRoomClient;
 import com.team2.postservice.client.PaymentClient;
 import com.team2.postservice.client.dto.PaymentClientResponse;
+import com.team2.postservice.contract.dto.ContractTerms;
+import com.team2.postservice.contract.service.ContractService;
 import com.team2.postservice.fixDeal.entity.*;
 import com.team2.postservice.post.dto.Version;
 import com.team2.postservice.post.entity.Post;
