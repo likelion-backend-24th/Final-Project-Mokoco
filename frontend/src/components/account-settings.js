@@ -172,29 +172,32 @@ export default function AccountSettings() {
               {me.regionName && <p className="mt-0.5 text-sm text-slate-400">{me.regionName}</p>}
             </div>
 
-            <div className="flex shrink-0 flex-col items-end gap-3">
-              <div className="flex gap-3">
-                {SOCIAL_PROVIDERS.map(({ id, label, icon, boxClass }) => {
-                  const linked = linkedProviders?.includes(id.toUpperCase());
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => navigateToOAuth(id)}
-                      disabled={linkedProviders === null || linked}
-                      aria-label={`${label} ${linked ? "연결됨" : "연결하기"}`}
-                      title={`${label} ${linked ? "연결됨" : "연결하기"}`}
-                      className={`relative flex h-11 w-11 items-center justify-center rounded-full shadow-sm transition-transform disabled:cursor-default ${linked ? "" : "hover:scale-105"} ${boxClass}`}
-                    >
-                      {icon}
-                      {linked && (
-                        <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-white">
-                          <Check size={10} weight="bold" className="text-white" />
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+            <div className="flex shrink-0 flex-col items-end gap-6">
+              <div>
+                <p className="mb-1.5 text-right text-xs font-semibold text-slate-400">소셜 로그인</p>
+                <div className="flex gap-3">
+                  {SOCIAL_PROVIDERS.map(({ id, label, icon, boxClass }) => {
+                    const linked = linkedProviders?.includes(id.toUpperCase());
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => navigateToOAuth(id)}
+                        disabled={linkedProviders === null || linked}
+                        aria-label={`${label} ${linked ? "연결됨" : "연결하기"}`}
+                        title={`${label} ${linked ? "연결됨" : "연결하기"}`}
+                        className={`relative flex h-11 w-11 items-center justify-center rounded-full shadow-sm transition-transform disabled:cursor-default ${linked ? "" : "hover:scale-105"} ${boxClass}`}
+                      >
+                        {icon}
+                        {linked && (
+                          <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-white">
+                            <Check size={10} weight="bold" className="text-white" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="flex gap-3">
