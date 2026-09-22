@@ -104,13 +104,12 @@ Docker가 없으면 테스트를 건너뛰지 않고 실패하므로 CI에서도
 데이터가 보존되는 경로도 검증한다. H2 기반 테스트는 기존대로 유지한다.
 이 테스트는 채택 동시성이나 서비스 간 전체 흐름을 검증하지 않는다.
 
-## V2: 채택·거래 무결성
+## 채택·거래 무결성
 
-post-service V2는 취소되지 않은 거래의 post_id/proposal_id와 채택된 제안의 post_id에
-생성 컬럼 기반 UNIQUE를 추가한다. CANCELED 이력은 여러 개 보존하고 COMPLETED 거래는
-중복 생성을 계속 차단한다. V1 파일은 수정하지 않는다.
-기존 중복 데이터가 있으면 V2는 실패한다. 적용 전 아래 조회 결과를 검토하고 실제 업무 이력에
-맞게 정리한다. 마이그레이션이 임의로 거래를 삭제하거나 취소하지 않는다.
+release production과 release V1에 이미 반영된 unique 컬럼·제약을 중복 생성하지 않도록
+`V2__active_deal_uniqueness.sql`은 제거했다. post-service V6가 컬럼과 제약이 없는 신규/legacy
+DB에서만 생성한다. CANCELED 이력은 여러 개 보존하고 COMPLETED 거래는 중복 생성을 차단한다.
+기존 중복 데이터가 있으면 V6는 실패하며 데이터를 임의로 삭제하거나 취소하지 않는다.
 
 ```sql
 SELECT post_id, COUNT(*) FROM fix_deals WHERE status <> 'CANCELED' GROUP BY post_id HAVING COUNT(*) > 1;

@@ -27,7 +27,7 @@ class FlywayUpgradeTest {
                     VALUES (1, 1, 10, 20, 'CANCELED', NOW()), (1, 1, 10, 20, 'MATCHED', NOW())
                     """);
             Flyway flyway = Flyway.configure().dataSource(MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword()).load();
-            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(5);
+            assertThat(flyway.migrate().migrationsExecuted).isEqualTo(4);
             flyway.validate();
             try (ResultSet rows = statement.executeQuery("SELECT COUNT(*), COUNT(active_post_id) FROM fix_deals")) {
                 assertThat(rows.next()).isTrue();
@@ -40,7 +40,7 @@ class FlywayUpgradeTest {
         String url = "jdbc:mysql://" + MYSQL.getHost() + ":" + MYSQL.getMappedPort(3306)
                 + "/missing_post_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true";
         Flyway flyway = Flyway.configure().dataSource(url, "root", MYSQL.getPassword()).load();
-        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(6);
+        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(5);
         flyway.validate();
     }
 
