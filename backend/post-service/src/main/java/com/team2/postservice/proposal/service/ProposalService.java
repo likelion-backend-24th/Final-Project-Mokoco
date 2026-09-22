@@ -115,19 +115,39 @@ public class ProposalService {
         // best-effort로 시도한다(실패해도 로그만 남기고 넘어감 — 알림 실패 처리와 같은 철학).
         Long requesterId = savedDeal.getRequesterId(), repairerId = savedDeal.getRepairerId(), postIdForLink = post.getId();
         Long dealIdForLink = savedDeal.getId();
-        afterCommit(() -> {
-            try {
-                chatRoomClient.attachDeal(new ChatRoomClient.DealLinkRequest(
-                        proposalId, dealIdForLink, requesterId, repairerId, postIdForLink));
-            } catch (Exception e) {
-                log.warn("채팅방-거래 연결 실패 proposalId={}", proposalId, e);
-            }
-        });
+        afterCommit(() -> attachDealWithRetry(proposalId, dealIdForLink, requesterId, repairerId, postIdForLink));
 
         try {
             notificationService.notifyProposalAdopted(post, proposal);
         } catch (Exception e) {
             log.warn("제안 채택 알림 전송 실패 proposalId={}", proposalId, e);
+        }
+    }
+
+    // chat-service가 재배포/재시작 중이라 첫 시도가 실패해도, 채팅방-거래 연결이 영영 안 되는 채로
+    // 남지 않도록 짧게 재시도한다. 그래도 실패하면(예: 실제 데이터 불일치) 로그만 남기고 넘어간다 —
+    // 제안 채택 자체는 이미 커밋됐으므로 여기서 예외를 던지지 않는다.
+    private void attachDealWithRetry(Long proposalId, Long dealId, Long requesterId, Long repairerId, Long postId) {
+        ChatRoomClient.DealLinkRequest request =
+                new ChatRoomClient.DealLinkRequest(proposalId, dealId, requesterId, repairerId, postId);
+        final int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                chatRoomClient.attachDeal(request);
+                return;
+            } catch (Exception e) {
+                if (attempt == maxAttempts) {
+                    log.warn("채팅방-거래 연결 실패(최종, {}회 시도) proposalId={}", maxAttempts, proposalId, e);
+                    return;
+                }
+                log.warn("채팅방-거래 연결 재시도 {}/{} proposalId={}", attempt, maxAttempts, proposalId);
+                try {
+                    Thread.sleep(500L * attempt);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
         }
     }
 

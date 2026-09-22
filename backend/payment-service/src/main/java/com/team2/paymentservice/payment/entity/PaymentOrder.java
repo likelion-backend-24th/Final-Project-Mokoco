@@ -20,7 +20,8 @@ public class PaymentOrder {
     @Column(length = 64)
     private String paymentId;
 
-    @Column(nullable = false, unique = true)
+    // 취소 후 재결제 시 새 주문을 또 만들 수 있어야 하므로 더 이상 unique가 아니다.
+    @Column(nullable = false)
     private Long postId;
 
     @Column(nullable = false)

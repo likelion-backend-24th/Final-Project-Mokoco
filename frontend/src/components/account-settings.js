@@ -1,8 +1,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PencilSimple, LockKey, FileText, X } from "@phosphor-icons/react";
+import { PencilSimple, LockKey, FileText, X, Check } from "@phosphor-icons/react";
 import ResumeEditor from "./resume-editor";
+
+// 로그인 페이지 소셜 버튼과 같은 아이콘 — 여기서도 같은 브랜드 그림으로 어떤 provider인지 바로 알아보게 한다.
+const GOOGLE_ICON = (
+  <svg className="size-5 shrink-0" viewBox="0 0 24 24">
+    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.18v3.15C3.15 21.32 7.21 24 12 24z"/>
+    <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.18C.43 8.13 0 9.87 0 11.7s.43 3.57 1.18 5.09l4.09-2.55z"/>
+    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.21 0 3.15 2.68 1.18 6.61l4.09 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+  </svg>
+);
+const KAKAO_ICON = (
+  <svg className="size-5 shrink-0" viewBox="0 0 24 24" fill="#191919">
+    <path d="M12 3C6.48 3 2 6.58 2 11c0 2.84 1.83 5.32 4.58 6.72-.16.59-.59 2.15-.68 2.48-.11.41.15.4.32.28.13-.09 2.05-1.39 2.87-1.95.62.09 1.26.14 1.91.14 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
+  </svg>
+);
+
+// 로그인 페이지 소셜 버튼과 같은 브랜드 배경색 — 구글은 흰 바탕에 테두리, 카카오는 카카오 옐로우.
+const SOCIAL_PROVIDERS = [
+  { id: "google", label: "구글", icon: GOOGLE_ICON, boxClass: "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" },
+  { id: "kakao", label: "카카오", icon: KAKAO_ICON, boxClass: "bg-[#FEE500] text-[#191919] hover:bg-[#FDD835]" },
+];
+
+// 로그인 페이지의 소셜 버튼과 같은 경로다 — 이미 로그인된 상태에서 타면 백엔드가
+// "새 로그인"이 아니라 "지금 계정에 연결"로 처리한다(CustomOAuth2UserService 참고).
+function navigateToOAuth(providerId) {
+  window.location.href = `/oauth2/authorization/${providerId}`;
+}
 
 export default function AccountSettings() {
   const [me, setMe] = useState(null);
@@ -19,6 +46,7 @@ export default function AccountSettings() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [refreshToken, setRefreshToken] = useState(0);
+  const [linkedProviders, setLinkedProviders] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -34,6 +62,15 @@ export default function AccountSettings() {
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
+    return () => controller.abort();
+  }, [refreshToken]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/users/me/social-accounts", { signal: controller.signal, cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((providers) => setLinkedProviders(Array.isArray(providers) ? providers : []))
+      .catch(() => {});
     return () => controller.abort();
   }, [refreshToken]);
 
@@ -128,43 +165,75 @@ export default function AccountSettings() {
 
       {!editingProfile && !editingPassword && (
         <div>
-          <div>
-            <p className="text-lg font-bold text-slate-800">{me.name} · {me.nickname}</p>
-            <p className="mt-1 text-sm text-slate-500">{me.email}</p>
-            {me.regionName && <p className="mt-0.5 text-sm text-slate-400">{me.regionName}</p>}
-          </div>
-          <div className="mt-4 flex gap-3">
-            <button
-              type="button"
-              onClick={startEditProfile}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-            >
-              <PencilSimple size={16} weight="bold" />
-              정보 수정
-            </button>
-            <button
-              type="button"
-              onClick={startEditPassword}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
-            >
-              <LockKey size={16} weight="bold" />
-              비밀번호 변경
-            </button>
-            <button
-              type="button"
-              onClick={() => setResumeOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
-            >
-              <FileText size={16} weight="bold" />
-              내 이력서
-            </button>
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <p className="text-lg font-bold text-slate-800">{me.name} · {me.nickname}</p>
+              <p className="mt-1 text-sm text-slate-500">{me.email}</p>
+              {me.regionName && <p className="mt-0.5 text-sm text-slate-400">{me.regionName}</p>}
+            </div>
+
+            <div className="flex shrink-0 flex-col items-end gap-6">
+              <div className="flex items-center gap-3">
+                <p className="text-xs font-semibold text-slate-400">소셜 로그인</p>
+                <div className="flex gap-3">
+                  {SOCIAL_PROVIDERS.map(({ id, label, icon, boxClass }) => {
+                    const linked = linkedProviders?.includes(id.toUpperCase());
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => navigateToOAuth(id)}
+                        disabled={linkedProviders === null || linked}
+                        aria-label={`${label} ${linked ? "연결됨" : "연결하기"}`}
+                        title={`${label} ${linked ? "연결됨" : "연결하기"}`}
+                        className={`relative flex h-11 w-11 items-center justify-center rounded-full shadow-sm transition-transform disabled:cursor-default ${linked ? "" : "hover:scale-105"} ${boxClass}`}
+                      >
+                        {icon}
+                        {linked && (
+                          <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-white">
+                            <Check size={10} weight="bold" className="text-white" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={startEditProfile}
+                  className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  <PencilSimple size={16} weight="bold" />
+                  회원정보 수정
+                </button>
+                <button
+                  type="button"
+                  onClick={startEditPassword}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
+                >
+                  <LockKey size={16} weight="bold" />
+                  비밀번호 변경
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResumeOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
+                >
+                  <FileText size={16} weight="bold" />
+                  내 이력서
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {editingProfile && (
         <form onSubmit={handleProfileSubmit}>
-          <p className="mb-4 text-base font-bold text-slate-800">개인정보 수정</p>
+          <p className="mb-4 text-base font-bold text-slate-800">회원정보 수정</p>
           <label className="block text-sm font-semibold text-slate-500">이름</label>
           <input
             value={name}
