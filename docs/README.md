@@ -16,7 +16,7 @@
 | 시퀀스 | [[시퀀스]](https://app.notion.com/p/3cd73873401a809e80b1f87ac8301e54) | 곽승욱, 변재웅, 정선우, 박준성 | 없음 — Sprint Review 뒤 `docs/시퀀스.md` 생성 |
 | 테스트 전략 | [[테스트 전략]](https://app.notion.com/p/3cd73873401a80b29a18e302583fbd45) | 곽승욱, 변재웅, 정선우, 박준성 | 없음 — Sprint Review 뒤 `docs/테스트전략.md` 생성 |
 | 테스트 체크리스트 | [[테스트 체크리스트]](https://app.notion.com/p/3cd73873401a80df8824cc9efca3641b) | 곽승욱, 변재웅, 정선우, 박준성 | 없음 — Sprint Review 뒤 `docs/테스트체크리스트.md` 생성 |
-| 실행·배포 가이드 | [[실행·배포 가이드]](https://app.notion.com/p/3cd73873401a80a4be9fc747d7acd744) | 곽승욱, 변재웅, 정선우, 박준성 | 없음 — Sprint Review 뒤 `docs/배포가이드.md` 생성 |
-| 트러블슈팅 | [[트러블슈팅]](https://app.notion.com/p/3cd73873401a802781f3c9e0687203b4) | 곽승욱, 변재웅, 정선우, 박준성 | 없음 — Sprint Review 뒤 `docs/트러블슈팅.md` 생성 |
+| 실행·배포 가이드 | [[실행·배포 가이드]](https://app.notion.com/p/3cd73873401a80a4be9fc747d7acd744) | 곽승욱, 변재웅, 정선우, 박준성 | [docs/배포가이드.md](https://github.com/likelion-backend-24th/Final-Project-Mokoco/blob/main/docs/배포가이드.md) |
+| 트러블슈팅 | [[트러블슈팅]](https://app.notion.com/p/3cd73873401a802781f3c9e0687203b4) | 곽승욱, 변재웅, 정선우, 박준성 | [docs/트러블슈팅.md](https://github.com/likelion-backend-24th/Final-Project-Mokoco/blob/main/docs/트러블슈팅.md) |
 | Sprint Review | [[Sprint Review](https://app.notion.com/p/3cd73873401a80e5b086fa304edf53c9)] | 곽승욱, 변재웅, 정선우, 박준성 | 없음 — Sprint Review 뒤 `docs/스프린트리뷰.md` 생성 |
 | Sprint Retrospective | [[Sprint Retrospective]](https://app.notion.com/p/retrospective-3cd73873401a809c8c66c26e9ea7f761) | 곽승욱, 변재웅, 정선우, 박준성 | 없음 — Sprint Review 뒤 `docs/retrospective.md` 생성 |
