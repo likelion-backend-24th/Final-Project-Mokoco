@@ -8,7 +8,10 @@ async function forwardPost(id, method, body) {
   const userEmail = cookieStore.get("user_email")?.value;
 
   if (!accessToken || !userEmail) {
-    return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
+    return NextResponse.json(
+        { message: "로그인이 필요합니다." },
+        { status: 401 },
+    );
   }
 
   try {
@@ -31,38 +34,83 @@ async function forwardPost(id, method, body) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { message: errorMessage(payload, "요청을 처리하지 못했습니다.") },
-        { status: response.status },
+          {
+            message: errorMessage(
+                payload,
+                "요청을 처리하지 못했습니다.",
+            ),
+          },
+          { status: response.status },
       );
     }
 
     return NextResponse.json(payload);
   } catch {
-    return NextResponse.json({ message: "수리 요청 서버에 연결할 수 없습니다." }, { status: 503 });
+    return NextResponse.json(
+        { message: "수리 요청 서버에 연결할 수 없습니다." },
+        { status: 503 },
+    );
   }
 }
 
 export async function PATCH(request, { params }) {
   const { id } = await params;
+
   let body;
+
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ message: "요청 형식이 올바르지 않습니다." }, { status: 400 });
+    return NextResponse.json(
+        { message: "요청 형식이 올바르지 않습니다." },
+        { status: 400 },
+    );
   }
 
-  const title = typeof body.title === "string" ? body.title.trim() : "";
-  const content = typeof body.content === "string" ? body.content.trim() : "";
-  if (!title || !content) {
-    return NextResponse.json({ message: "제목과 요청 내용을 모두 입력해주세요." }, { status: 400 });
+  const title =
+      typeof body.title === "string"
+          ? body.title.trim()
+          : "";
+
+  const content =
+      typeof body.content === "string"
+          ? body.content.trim()
+          : "";
+
+  const category =
+      typeof body.category === "string"
+          ? body.category
+          : "";
+
+  const contentFormat =
+      body.contentFormat === "HTML"
+          ? "HTML"
+          : "PLAIN_TEXT";
+
+  if (!title || !content || !category) {
+    return NextResponse.json(
+        {
+          message:
+              "제목, 요청 내용과 카테고리를 모두 입력해주세요.",
+        },
+        { status: 400 },
+    );
   }
 
-  const payload = { title, content };
-  if (typeof body.category === "string" && body.category) payload.category = body.category;
-  return forwardPost(id, "PATCH", payload);
+  return forwardPost(
+      id,
+      "PATCH",
+      {
+        title,
+        content,
+        category,
+        contentFormat,
+      },
+  );
 }
 
 export async function DELETE(_post, { params }) {
   const { id } = await params;
+
   return forwardPost(id, "DELETE");
 }

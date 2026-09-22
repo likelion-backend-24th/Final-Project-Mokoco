@@ -34,10 +34,14 @@ dependencyManagement {
 dependencies {
 	implementation project(':common')
 
+	// Flyway
 	implementation 'org.flywaydb:flyway-core'
 	implementation 'org.flywaydb:flyway-mysql'
 
+	// Content / file processing
 	implementation 'org.apache.tika:tika-core:3.2.3'
+	implementation 'org.jsoup:jsoup:1.21.2'
+
 	// Spring Boot & Cloud Starters
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -64,7 +68,7 @@ dependencies {
 	testImplementation 'org.testcontainers:mysql'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-	// API 문서 (Swagger UI)
+	// API docs
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5'
 }
 

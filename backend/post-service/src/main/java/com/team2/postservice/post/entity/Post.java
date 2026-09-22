@@ -14,7 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "posts", indexes = @Index(name = "idx_posts_nearby", columnList = "regionCode,publiclyVisible,status,createdAt,id"))
+@Table(
+        name = "posts",
+        indexes = @Index(
+                name = "idx_posts_nearby",
+                columnList = "regionCode,publiclyVisible,status,createdAt,id"
+        )
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
@@ -30,11 +36,15 @@ public class Post {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ContentFormat contentFormat;
+
     @Column(nullable = false)
     private String authorEmail;
 
     @Column(nullable = false, length = 100)
-    private String regionName; // 지역 이름 필드
+    private String regionName;
 
     @Column(length = 20)
     private String regionCode;
@@ -50,7 +60,11 @@ public class Post {
     @Column(nullable = false)
     private PostStatus status;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(
+            mappedBy = "post",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
     @OrderBy("sortOrder ASC")
     private List<PostImage> images = new ArrayList<>();
 
@@ -61,19 +75,40 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Post(String title, String content, String authorEmail, String regionName, String regionCode, PostCategory category) {
+    public Post(
+            String title,
+            String content,
+            ContentFormat contentFormat,
+            String authorEmail,
+            String regionName,
+            String regionCode,
+            PostCategory category
+    ) {
         this.title = title;
         this.content = content;
+        this.contentFormat =
+                contentFormat == null
+                        ? ContentFormat.PLAIN_TEXT
+                        : contentFormat;
         this.authorEmail = authorEmail;
-        this.regionName = regionName; // 빌더에 지역 이름 추가
+        this.regionName = regionName;
         this.regionCode = regionCode;
         this.category = category;
         this.status = PostStatus.WAITING;
     }
 
-    public void update(String title, String content, PostCategory category) {
+    public void update(
+            String title,
+            String content,
+            ContentFormat contentFormat,
+            PostCategory category
+    ) {
         this.title = title;
         this.content = content;
+        this.contentFormat =
+                contentFormat == null
+                        ? ContentFormat.PLAIN_TEXT
+                        : contentFormat;
         this.category = category;
     }
 
@@ -98,13 +133,17 @@ public class Post {
         return publiclyVisible && status == PostStatus.WAITING;
     }
 
-    public PostImage addImage(String imageUrl, String storedFileName) {
+    public PostImage addImage(
+            String imageUrl,
+            String storedFileName
+    ) {
         PostImage postImage = PostImage.builder()
                 .post(this)
                 .imageUrl(imageUrl)
                 .storedFileName(storedFileName)
                 .sortOrder(images.size())
                 .build();
+
         images.add(postImage);
         return postImage;
     }
