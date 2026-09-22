@@ -48,6 +48,8 @@ public class NotificationSetting {
             case PROPOSAL_RECEIVED -> proposalReceived;
             case PROPOSAL_ADOPTED -> proposalAdopted;
             case CHAT_MESSAGE -> chatMessage;
+            // 리마인드 알림은 별도 on/off 설정이 없어 항상 발송한다.
+            case NO_PROPOSAL_REMINDER, PROPOSAL_NOT_ADOPTED_REMINDER -> true;
         };
     }
 }

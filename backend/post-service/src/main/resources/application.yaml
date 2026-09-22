@@ -44,6 +44,12 @@ internal:
 chat:
   allowed-origins: ${CHAT_ALLOWED_ORIGINS:http://localhost:3000}
 
+post:
+  reminder:
+    cron: ${POST_REMINDER_CRON:0 0 * * * *} # 매 정시 실행
+    no-proposal-days: ${POST_REMINDER_NO_PROPOSAL_DAYS:3}   # 제안이 없을 때 알림+끌어올리기까지 걸리는 일수
+    not-adopted-days: ${POST_REMINDER_NOT_ADOPTED_DAYS:3}   # 제안을 채택하지 않았을 때 알림까지 걸리는 일수
+
 ai:
   enabled: ${AI_ASSIST_ENABLED:true}
   gemini:

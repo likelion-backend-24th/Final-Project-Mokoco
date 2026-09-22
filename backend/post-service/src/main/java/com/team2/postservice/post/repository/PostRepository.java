@@ -10,9 +10,29 @@ import com.team2.postservice.post.dto.NearbyRepairRequest;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
+
+    // 아직 공개 상태로 제안을 기다리는데(WAITING), 제안이 하나도 없고 마지막으로 끌어올린 지 오래된 게시글
+    @Query("""
+        select p from Post p
+        where p.publiclyVisible = true and p.status = com.team2.postservice.post.entity.PostStatus.WAITING
+          and p.bumpedAt <= :cutoff
+          and not exists (select 1 from Proposal pr where pr.post = p)
+        """)
+    List<Post> findWaitingPostsWithoutProposalsBumpedBefore(@Param("cutoff") LocalDateTime cutoff);
+
+    // 제안은 도착했지만 아직 하나도 채택하지 않은 게시글
+    @Query("""
+        select p from Post p
+        where p.publiclyVisible = true and p.status = com.team2.postservice.post.entity.PostStatus.WAITING
+          and exists (select 1 from Proposal pr where pr.post = p)
+          and not exists (select 1 from Proposal pr2 where pr2.post = p and pr2.isAdopted = true)
+        """)
+    List<Post> findWaitingPostsWithUnadoptedProposals();
 
     @Query(value = """
         select new com.team2.postservice.post.dto.NearbyRepairRequest(

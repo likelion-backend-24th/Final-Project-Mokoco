@@ -81,6 +81,24 @@ public class NotificationService {
                 postId, null, chatRoomId, "새 채팅 메시지: " + preview);
     }
 
+    /** 일정 기간 제안이 오지 않아 게시글을 끌어올렸을 때 (작성자에게) */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void notifyNoProposal(Post post) {
+        Long recipientId = safeResolveIdByEmail(post.getAuthorEmail());
+        create(recipientId, post.getAuthorEmail(), NotificationType.NO_PROPOSAL_REMINDER,
+                post.getId(), null, null,
+                "\"" + post.getTitle() + "\" 게시글에 아직 제안이 오지 않아 목록 맨 위로 끌어올렸습니다.");
+    }
+
+    /** 제안은 왔지만 일정 기간 채택하지 않았을 때 (작성자에게) */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void notifyProposalNotAdopted(Post post) {
+        Long recipientId = safeResolveIdByEmail(post.getAuthorEmail());
+        create(recipientId, post.getAuthorEmail(), NotificationType.PROPOSAL_NOT_ADOPTED_REMINDER,
+                post.getId(), null, null,
+                "\"" + post.getTitle() + "\" 게시글에 도착한 제안을 아직 채택하지 않았습니다.");
+    }
+
     private Long safeResolveIdByEmail(String email) {
         try {
             return userClient.getUserByEmail(email).id();

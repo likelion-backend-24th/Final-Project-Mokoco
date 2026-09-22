@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "posts", indexes = @Index(name = "idx_posts_nearby", columnList = "regionCode,publiclyVisible,status,createdAt,id"))
+@Table(name = "posts", indexes = @Index(name = "idx_posts_nearby", columnList = "regionCode,publiclyVisible,status,bumpedAt,id"))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
@@ -60,6 +60,13 @@ public class Post {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
+    // 목록 정렬 기준 시각. 최초에는 createdAt과 같고, 끌어올리기(bump) 시 갱신된다.
+    @Column(nullable = false)
+    private LocalDateTime bumpedAt;
+
+    // 제안은 있으나 채택하지 않았다는 리마인드 알림을 마지막으로 보낸 시각
+    private LocalDateTime notAdoptedReminderSentAt;
+
     @Builder
     public Post(String title, String content, String authorEmail, String regionName, String regionCode, PostCategory category) {
         this.title = title;
@@ -69,6 +76,17 @@ public class Post {
         this.regionCode = regionCode;
         this.category = category;
         this.status = PostStatus.WAITING;
+        this.bumpedAt = LocalDateTime.now();
+    }
+
+    /** 제안이 오지 않아 게시글을 목록 맨 위로 끌어올린다. */
+    public void bumpToTop() {
+        this.bumpedAt = LocalDateTime.now();
+    }
+
+    /** 제안 미채택 리마인드 알림을 보냈음을 기록한다(중복 발송 방지용). */
+    public void markNotAdoptedReminderSent() {
+        this.notAdoptedReminderSentAt = LocalDateTime.now();
     }
 
     public void update(String title, String content, PostCategory category) {

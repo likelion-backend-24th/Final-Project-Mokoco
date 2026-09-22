@@ -58,7 +58,7 @@ public class PostService {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         var region = email == null ? null : postViewerService.requireRegion(email);
         var pageable = PageRequest.of(page, size,
-                Sort.by(Sort.Direction.DESC, "createdAt", "id"));
+                Sort.by(Sort.Direction.DESC, "bumpedAt", "id"));
         return NearbyRepairRequest.Result.from(
                 postRepository.findNearby(region == null ? null : regionScope.queryPattern(region.regionCode()),
                         category == PostCategory.ALL ? null : category, pageable), regionScope, region);
