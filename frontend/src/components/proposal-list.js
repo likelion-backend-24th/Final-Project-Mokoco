@@ -10,6 +10,32 @@ import RepairerTransactionsModal from "@/components/repairer-transactions-modal"
 import RepairerReportModal from "@/components/repairer-report-modal";
 import ResumeViewModal from "@/components/resume-view-modal";
 
+// 제안에 별도 생성 시각이 저장돼 있지 않아서(엔티티에 createdAt 없음), "최신순"은 id가 큰
+// 쪽(=나중에 생성됨)을 최신으로 취급한다.
+const SORT_OPTIONS = [
+  { value: "latest", label: "최신순" },
+  { value: "oldest", label: "오래된순" },
+  { value: "priceAsc", label: "희망 견적 낮은순" },
+  { value: "priceDesc", label: "희망 견적 높은순" },
+  { value: "completedDesc", label: "완료한 수리 많은순" },
+];
+
+function compareBySort(a, b, sortBy) {
+  switch (sortBy) {
+    case "oldest":
+      return a.id - b.id;
+    case "priceAsc":
+      return (a.estimatedPrice ?? 0) - (b.estimatedPrice ?? 0);
+    case "priceDesc":
+      return (b.estimatedPrice ?? 0) - (a.estimatedPrice ?? 0);
+    case "completedDesc":
+      return (b.repairerCompletedCount ?? 0) - (a.repairerCompletedCount ?? 0);
+    case "latest":
+    default:
+      return b.id - a.id;
+  }
+}
+
 export default function ProposalList({ postId, proposals: initialProposals, isMine, userEmail }) {
   const [proposals, setProposals] = useState(initialProposals);
   const [previousProposals, setPreviousProposals] = useState(initialProposals);
@@ -18,6 +44,7 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
   const [transactionsEmail, setTransactionsEmail] = useState(null);
   const [reportEmail, setReportEmail] = useState(null);
   const [adoptedDealStatus, setAdoptedDealStatus] = useState(null);
+  const [sortBy, setSortBy] = useState("latest");
   const router = useRouter();
 
   // 부모 컴포넌트에서 router.refresh()로 새로운 데이터가 내려올 때 상태 동기화
@@ -50,10 +77,10 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
   // 이미 채택된 제안이 하나라도 존재하는지 확인
   const hasAdopted = proposals.some((p) => p.isAdopted);
 
-  // 채택된 제안(isAdopted === true)이 맨 위로 오도록 정렬
+  // 채택된 제안(isAdopted === true)이 항상 맨 위, 그 안에서는 선택한 기준으로 정렬
   const sortedProposals = [...proposals].sort((a, b) => {
-    if (a.isAdopted === b.isAdopted) return 0;
-    return a.isAdopted ? -1 : 1;
+    if (a.isAdopted !== b.isAdopted) return a.isAdopted ? -1 : 1;
+    return compareBySort(a, b, sortBy);
   });
 
   const handleAdopt = async (proposalId) => {
@@ -129,6 +156,23 @@ export default function ProposalList({ postId, proposals: initialProposals, isMi
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-end gap-2">
+        <label htmlFor="proposal-sort" className="text-xs font-semibold text-slate-500">
+          정렬
+        </label>
+        <select
+          id="proposal-sort"
+          value={sortBy}
+          onChange={(event) => setSortBy(event.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:border-blue-400 focus:outline-none"
+        >
+          {SORT_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
       {sortedProposals.map((proposal) => {
         const isMyProposal = userEmail && proposal.repairerEmail === userEmail;
         const isAdopted = proposal.isAdopted;
