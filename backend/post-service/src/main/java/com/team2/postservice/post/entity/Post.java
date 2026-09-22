@@ -1,6 +1,8 @@
 package com.team2.postservice.post.entity;
 
 import jakarta.persistence.*;
+import com.team2.common.exception.CustomException;
+import com.team2.postservice.common.exception.ErrorCode;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,7 +16,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "posts", indexes = @Index(name = "idx_posts_nearby", columnList = "regionCode,publiclyVisible,status,createdAt,id"))
+@Table(
+        name = "posts",
+        indexes = @Index(
+                name = "idx_posts_nearby",
+                columnList = "regionCode,publiclyVisible,status,createdAt,id"
+        )
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
@@ -38,7 +46,7 @@ public class Post {
     private String authorEmail;
 
     @Column(nullable = false, length = 100)
-    private String regionName; // 지역 이름 필드
+    private String regionName;
 
     @Column(length = 20)
     private String regionCode;
@@ -65,7 +73,15 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Post(String title, String content, ContentFormat contentFormat, String authorEmail, String regionName, String regionCode, PostCategory category) {
+    public Post(
+            String title,
+            String content,
+            ContentFormat contentFormat,
+            String authorEmail,
+            String regionName,
+            String regionCode,
+            PostCategory category
+    ) {
         this.title = title;
         this.content = content;
         this.contentFormat =
@@ -73,7 +89,7 @@ public class Post {
                         ? ContentFormat.PLAIN_TEXT
                         : contentFormat;
         this.authorEmail = authorEmail;
-        this.regionName = regionName; // 빌더에 지역 이름 추가
+        this.regionName = regionName;
         this.regionCode = regionCode;
         this.category = category;
         this.status = PostStatus.WAITING;
@@ -87,23 +103,42 @@ public class Post {
     ) {
         this.title = title;
         this.content = content;
-        this.contentFormat = contentFormat;
+        this.contentFormat =
+                contentFormat == null
+                        ? ContentFormat.PLAIN_TEXT
+                        : contentFormat;
         this.category = category;
     }
 
-
-
     public void updateStatusToMatched() {
-        this.status = PostStatus.MATCHED;
+        changeStatus(PostStatus.MATCHED);
     }
 
-    // 채택 취소로 거래가 무효화되면 다시 제안을 받을 수 있는 상태로 되돌린다.
-    public void updateStatusToWaiting() {
-        this.status = PostStatus.WAITING;
-    }
+    public void changeStatus(PostStatus status) {
+        if (status == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
 
-    public void updateStatusToCompleted() {
-        this.status = PostStatus.COMPLETED;
+        if (this.status == status) {
+            return;
+        }
+
+        boolean allowed =
+                this.status == PostStatus.WAITING
+                        && status == PostStatus.MATCHED
+                        || this.status == PostStatus.MATCHED
+                        && (
+                        status == PostStatus.WAITING
+                                || status == PostStatus.COMPLETED
+                );
+
+        if (!allowed) {
+            throw new CustomException(
+                    ErrorCode.INVALID_FIX_DEAL_STATUS
+            );
+        }
+
+        this.status = status;
     }
 
     public void changeVisibility(boolean publiclyVisible) {
@@ -111,17 +146,23 @@ public class Post {
     }
 
     public boolean isAcceptingProposals() {
-        return publiclyVisible && status == PostStatus.WAITING;
+        return publiclyVisible
+                && status == PostStatus.WAITING;
     }
 
-    public PostImage addImage(String imageUrl, String storedFileName) {
+    public PostImage addImage(
+            String imageUrl,
+            String storedFileName
+    ) {
         PostImage postImage = PostImage.builder()
                 .post(this)
                 .imageUrl(imageUrl)
                 .storedFileName(storedFileName)
                 .sortOrder(images.size())
                 .build();
+
         images.add(postImage);
+
         return postImage;
     }
 

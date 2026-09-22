@@ -65,6 +65,9 @@ public class AiContractContext {
         Map<String, String> sources = new LinkedHashMap<>();
         sources.put("POST", post.getTitle() + "\n" + PostContent.sanitize(post.getContent(), post.getContentFormat()));
         if (proposal.getEstimatedPrice() == null || proposal.getEstimatedPrice() <= 0)
+        sources.put("POST", post.getTitle() + "\n" + PostContent.plainText(post.getContent(), post.getContentFormat()));
+
+        if (proposal.getEstimatedPrice() == null || proposal.getEstimatedPrice() <= 0){
             throw AiException.input("채택된 제안의 금액을 확인해주세요.");
         sources.put("ADOPTED_PROPOSAL", proposal.getContent());
         sources.put("PROPOSAL_AMOUNT", proposal.getEstimatedPrice().toString());
