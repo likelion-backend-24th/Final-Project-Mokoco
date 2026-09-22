@@ -22,3 +22,69 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Uploaded post images (local file storage)
+**/uploads/
+
+# Gradle build output at repo root
+/.gradle/
+/build/
+
+# Accidental Gradle user-home dirs (created at repo root when GRADLE_USER_HOME
+# points here, e.g. IntelliJ's "Gradle user home" set to the project dir)
+/caches/
+/daemon/
+/native/
+/wrapper/
+/notifications/
+/.tmp/
+/jdks/
+.npm-cache/
+**/private-chat-files/
+
+# 서비스별 실 시크릿(PortOne 키, 서비스 간 내부 인증 키 등) — CI가 배포 직전에 GitHub Secrets
+# 값으로 덮어써서 만드는 파일이라 로컬/git에는 절대 안 남아야 한다.
+**/src/main/resources/application-secret.yml
+**/src/main/resources/application-secret.yaml

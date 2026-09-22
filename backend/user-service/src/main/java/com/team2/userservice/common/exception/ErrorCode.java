@@ -1,0 +1,35 @@
+package com.team2.userservice.common.exception;
+
+import lombok.Getter;
+import com.team2.common.exception.ApiErrorCode;
+import org.springframework.http.HttpStatus;
+
+@Getter
+public enum ErrorCode implements ApiErrorCode {
+
+    // User
+    DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "이미 존재하는 이메일입니다."),
+    DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST, "이미 사용중인 닉네임입니다."),
+    USER_NOT_FOUND(HttpStatus.BAD_REQUEST, "존재하지 않는 회원입니다."),
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "비밀번호가 일치하지 않습니다."),
+
+    // Token / Auth
+    INVALID_REFRESH_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않은 Refresh Token입니다."),
+    EXPIRED_SESSION(HttpStatus.BAD_REQUEST, "존재하지 않거나 만료된 세션입니다. 다시 로그인해주세요."),
+    INVALID_TOKEN_VALUE(HttpStatus.BAD_REQUEST, "토큰 정보가 일치하지 않습니다."),
+
+    // Region
+    REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "지역 정보를 찾을 수 없습니다."),
+    REGION_LOOKUP_FAILED(HttpStatus.BAD_GATEWAY, "지역 조회 서비스 호출에 실패했습니다.");
+
+    private final HttpStatus status;
+    private final String message;
+
+    ErrorCode(HttpStatus status, String message) {
+        this.status = status;
+        this.message = message;
+    }
+
+    @Override public HttpStatus getHttpStatus() { return status; }
+    @Override public String getCode() { return name(); }
+}

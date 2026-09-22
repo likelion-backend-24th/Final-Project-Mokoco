@@ -1,0 +1,46 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: payment-service
+  profiles:
+    include: secret
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # 운영 최초 편입 때만 FLYWAY_BASELINE_ON_MIGRATE=true로 덮어쓴다.
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:false}
+    baseline-version: ${FLYWAY_BASELINE_VERSION:3}
+    clean-disabled: true
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+  datasource:
+    url: jdbc:mysql://mysql:3306/payment_db?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: root
+    password: root1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+post-service:
+  base-url: http://mokoco-post-service:8082
+
+user-service:
+  base-url: http://mokoco-user-service:8081
+
+portone:
+  base-url: https://api.portone.io
+  # api-secret / webhook-secret / store-id 는 application-secret.yaml (GitHub Secret) 에서 주입
+
+internal:
+  service-key: ${INTERNAL_SERVICE_KEY}

@@ -1,0 +1,199 @@
+services:
+  # --------------------
+  # Database
+  # --------------------
+  mysql:
+    image: mysql:8.0
+    container_name: mokoco-mysql
+    restart: always
+    # 1GB RAM 인스턴스에서 MySQL 메모리 사용량을 낮춘다 (기본값이면 ~400MB 이상 점유)
+    command: >
+      --innodb-buffer-pool-size=128M
+      --performance-schema=OFF
+      --skip-name-resolve
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - mokoco-net
+    # 백엔드가 "MySQL 연결 거부"로 죽지 않도록, MySQL이 실제 접속을 받을 수 있을 때만 healthy 처리
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot1234"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  # --------------------
+  # Caddy (Reverse Proxy + 자동 HTTPS)
+  # --------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: mokoco-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile
+      # 발급받은 인증서/ACME 계정 저장. 이게 없으면 재배포 때마다 Let's Encrypt 한도(주 5회)에 걸린다.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - api-gateway
+    networks:
+      - mokoco-net
+
+  # --------------------
+  # Backend: API Gateway
+  # --------------------
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: mokoco-api-gateway
+    restart: always
+    # Nginx가 80번을 받아서 내부 네트워크로 토스하므로 외부 ports 매핑은 제거합니다.
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      # 컨테이너 기본 시간대가 UTC라 LocalDateTime.now() 로 찍는 생성시각이 실제(한국) 시간보다
+      # 9시간 느리게 저장/표시되던 문제 — 한국 사용자 대상 서비스라 컨테이너 자체를 KST로 고정.
+      - TZ=Asia/Seoul
+      # 힙 상한 (1GB RAM 인스턴스에서 JVM 3개가 메모리를 다 먹지 않도록)
+      - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
+    depends_on:
+      - mysql
+    networks:
+      - mokoco-net
+
+  # --------------------
+  # Backend: User Service
+  # --------------------
+  user-service:
+    build:
+      context: ./backend/user-service
+      dockerfile: Dockerfile
+    container_name: mokoco-user-service
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - FLYWAY_BASELINE_ON_MIGRATE=${USER_FLYWAY_BASELINE_ON_MIGRATE:-false}
+      - FLYWAY_BASELINE_VERSION=2
+      - TZ=Asia/Seoul
+      - JAVA_TOOL_OPTIONS=-Xmx200m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - mokoco-net
+
+  # --------------------
+  # Backend: Post Service
+  # --------------------
+  post-service:
+    build:
+      context: ./backend/post-service
+      dockerfile: Dockerfile
+    container_name: mokoco-post-service
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - FLYWAY_BASELINE_ON_MIGRATE=${POST_FLYWAY_BASELINE_ON_MIGRATE:-false}
+      - FLYWAY_BASELINE_VERSION=5
+      - TZ=Asia/Seoul
+      - JAVA_TOOL_OPTIONS=-Xmx240m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
+    volumes:
+      # 업로드된 게시글 이미지 영속화 (컨테이너는 CWD=/ 이므로 uploads -> /uploads)
+      - post_uploads:/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - mokoco-net
+
+  # --------------------
+  # Backend: Payment Service (PortOne 결제)
+  # --------------------
+  payment-service:
+    build:
+      context: ./backend/payment-service
+      dockerfile: Dockerfile
+    container_name: mokoco-payment-service
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - FLYWAY_BASELINE_ON_MIGRATE=${PAYMENT_FLYWAY_BASELINE_ON_MIGRATE:-false}
+      - FLYWAY_BASELINE_VERSION=3
+      - TZ=Asia/Seoul
+      - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - mokoco-net
+
+  # --------------------
+  # Backend: Chat Service
+  # --------------------
+  chat-service:
+    build:
+      context: ./backend/chat-service
+      dockerfile: Dockerfile
+    container_name: mokoco-chat-service
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - TZ=Asia/Seoul
+      - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
+    volumes:
+      # 채팅 첨부파일(chat.attachment-dir 기본값 ./private-chat-files -> CWD=/ 이므로 /private-chat-files) 영속화.
+      # 원래 post-service가 쓰던 것과 같은 named volume을 그대로 재마운트한 것 — 기존 파일 유지됨.
+      - chat_attachments:/private-chat-files
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - mokoco-net
+
+  # --------------------
+  # Frontend (Next.js)
+  # --------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # 브라우저용 base URL. 빈 값이면 프론트는 같은 오리진(상대경로)으로 호출한다 (권장).
+        - NEXT_PUBLIC_BACKEND_API_URL=
+        # PortOne 브라우저 SDK용 (공개 값 — 브라우저 번들에 포함됨). CI 빌드 인자로도 주입.
+        - NEXT_PUBLIC_PORTONE_STORE_ID=${NEXT_PUBLIC_PORTONE_STORE_ID:-}
+        - NEXT_PUBLIC_PORTONE_CHANNEL_KEY=${NEXT_PUBLIC_PORTONE_CHANNEL_KEY:-}
+    container_name: mokoco-frontend
+    restart: always
+    # Caddy가 80/443을 대신 받으므로 3000포트 매핑은 제거합니다.
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Seoul
+      # SSR(Next 서버)에서 백엔드를 부를 때 쓰는 내부 주소.
+      # 공개 도메인으로 나가면 Caddy가 다시 프론트로 돌려보내 프론트가 자기 자신을 재귀 호출 -> CPU/메모리 폭주.
+      - BACKEND_API_URL=http://mokoco-api-gateway:8000
+    depends_on:
+      - api-gateway
+    networks:
+      - mokoco-net
+
+volumes:
+  mysql_data:
+  caddy_data:
+  caddy_config:
+  post_uploads:
+  chat_attachments:
+
+networks:
+  mokoco-net:
+    driver: bridge

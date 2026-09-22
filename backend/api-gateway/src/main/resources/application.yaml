@@ -1,0 +1,144 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      default-filters:
+        - RemoveRequestHeader=X-User-Email
+        - RemoveRequestHeader=X-Internal-Service-Key
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins:
+              - "http://localhost:3000"
+              - "https://32.199.114.190.nip.io"
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowed-headers:
+              - "*"
+            allow-credentials: true
+      routes:
+        - id: user-service
+          uri: http://mokoco-user-service:8081
+          predicates:
+            - Path=/api/auth/**, /api/users/**, /oauth2/**, /login/oauth2/**, /api/admin/users/**
+
+        # 프론트(브라우저)가 보내는 /api/* — /api 를 떼고 post-service 로 (컨트롤러는 /posts, /fix-deals)
+        - id: post-service-api
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/api/posts/**, /api/fix-deals/**, /api/images/**
+          filters:
+            - StripPrefix=1
+
+        - id: user-service-policy
+          uri: http://mokoco-user-service:8081
+          predicates:
+            - Path=/policy/**
+
+        - id: chat-websocket
+          uri: ws://mokoco-chat-service:8084
+          predicates:
+            - Path=/ws/chat, /ws/chat/**
+
+        # 계약서(ContractController)는 URL만 /api/chat-rooms/{roomId}/contract/** 아래 있을 뿐
+        # post-service에 그대로 남아있다 — 아래 chat-service 라우트보다 반드시 먼저 매치돼야 한다
+        # (Spring Cloud Gateway는 라우트 목록 순서대로 첫 매치를 채택).
+        - id: post-service-contract
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/api/chat-rooms/*/contract/**
+
+        # 제안/거래 단위 채팅방 개설·조회(ChatRoomController)도 URL만 /api/chat-rooms 아래 있을 뿐
+        # post-service에 있다 — Proposal/FixDeal 컨텍스트가 로컬에 있어서 여기서 인가까지 마친 뒤
+        # chat-service에는 방을 찾거나 만드는 것만 위임한다. 아래 chat-service 라우트보다 반드시
+        # 먼저 매치돼야 한다(post-service-contract와 같은 이유).
+        - id: post-chat-rooms
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/api/chat-rooms/proposals/**, /api/chat-rooms/fix-deals/**, /api/chat-rooms/*/detail
+
+        # 그 외 채팅 관련 엔드포인트(방 목록/메시지/첨부)는 chat-service로 — 컨트롤러가
+        # 이미 /api/chat-rooms 매핑이라 접두어 유지
+        - id: chat-service-chat
+          uri: http://mokoco-chat-service:8084
+          predicates:
+            - Path=/api/chat-rooms/**, /chat/**
+
+        # AI 작성 도움(사진 분석/계약 초안) — 컨트롤러가 이미 /api/ai/* 매핑이라 접두어 유지
+        - id: post-service-ai
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/api/ai/**
+
+        # SSR(Next 서버)이 게이트웨이로 직접 부르는 접두어 없는 경로
+        - id: post-service-direct
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/posts/**, /fix-deals/**, /images/**, /notifications/**, /reviews/**, /profile/**, /resumes/**
+
+        # 관리자용 글 삭제/신고 처리 — 컨트롤러가 이미 /api/admin/* 매핑이라 접두어 유지
+        - id: post-service-admin
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/api/admin/posts/**, /api/admin/reports/**
+
+        # 신고 접수 — 컨트롤러가 이미 /api/reports 매핑이라 접두어 유지
+        - id: post-service-reports
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/api/reports/**
+
+        # Next BFF(/api/payments/*)가 접두어 없이 /payments 로 호출한다
+        - id: payment-service
+          uri: http://mokoco-payment-service:8083
+          predicates:
+            - Path=/payments/**
+
+        # 아래 3개는 각 서비스의 API 문서(OpenAPI JSON)를 게이트웨이 하나로 모으기 위한 라우트.
+        # 서비스 이름을 경로에 붙여 구분하고(/user-service/v3/api-docs 등), 실제 서비스에는
+        # 표준 경로(/v3/api-docs)로 되돌려서 전달한다. springdoc.swagger-ui.urls가 이 경로들을 참조한다.
+        - id: user-service-docs
+          uri: http://mokoco-user-service:8081
+          predicates:
+            - Path=/user-service/v3/api-docs
+          filters:
+            - RewritePath=/user-service/v3/api-docs, /v3/api-docs
+        - id: post-service-docs
+          uri: http://mokoco-post-service:8082
+          predicates:
+            - Path=/post-service/v3/api-docs
+          filters:
+            - RewritePath=/post-service/v3/api-docs, /v3/api-docs
+        - id: payment-service-docs
+          uri: http://mokoco-payment-service:8083
+          predicates:
+            - Path=/payment-service/v3/api-docs
+          filters:
+            - RewritePath=/payment-service/v3/api-docs, /v3/api-docs
+        - id: chat-service-docs
+          uri: http://mokoco-chat-service:8084
+          predicates:
+            - Path=/chat-service/v3/api-docs
+          filters:
+            - RewritePath=/chat-service/v3/api-docs, /v3/api-docs
+
+springdoc:
+  swagger-ui:
+    urls:
+      - name: user-service
+        url: /user-service/v3/api-docs
+      - name: post-service
+        url: /post-service/v3/api-docs
+      - name: payment-service
+        url: /payment-service/v3/api-docs
+      - name: chat-service
+        url: /chat-service/v3/api-docs

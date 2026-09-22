@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>개인정보처리방침</title>
+<link rel="stylesheet" href="assets/policy.css">
+</head>
+<body>
+
+<header class="policy-topbar">
+  <a href="#" id="homeLink" class="policy-logo">
+    <span class="policy-logo-dot"></span>
+    고객센터
+  </a>
+</header>
+<nav class="policy-breadcrumb">
+  <a href="#" id="homeBreadcrumb">홈</a>
+</nav>
+
+<main class="policy-main">
+  <h1>개인정보처리방침</h1>
+  <p class="policy-subtitle">개인정보 수집·이용에 관한 안내를 확인하세요</p>
+  <hr class="policy-divider">
+  <section>
+    <h2>개요</h2>
+    <p>동네수리는 신뢰와 존중을 바탕으로 이웃 간 안전한 연결이 만들어지는 곳으로, 본 방침은 서비스 이용 중 수집하는 개인정보 항목, 이용 목적, 보관 기간 등을 안내합니다. (실제 서비스에 맞게 내용을 채워 넣으세요.)</p>
+  </section>
+  <section>
+    <h2>수집하는 개인정보 항목</h2>
+    <p>여기에 수집 항목(이메일, 닉네임, 위치정보 등)을 입력하세요.</p>
+  </section>
+  <section>
+    <h2>개인정보의 이용 목적</h2>
+    <p>여기에 이용 목적을 입력하세요.</p>
+  </section>
+  <section>
+    <h2>개인정보의 보관 및 파기</h2>
+    <p>여기에 보관 기간 및 파기 절차를 입력하세요.</p>
+  </section>
+  <section>
+    <h2>제3자 제공 및 위탁</h2>
+    <p>여기에 제3자 제공/위탁 여부를 입력하세요.</p>
+  </section>
+
+</main>
+
+<script>
+  // 프론트엔드(동네수리 서비스) 홈 주소로 연결합니다.
+  // 배포 도메인이 바뀌면 이 값만 수정하세요.
+  var FRONTEND_HOME = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? 'http://localhost:3000'
+    : 'https://32.199.114.190.nip.io';
+  document.getElementById('homeLink').href = FRONTEND_HOME;
+  document.getElementById('homeBreadcrumb').href = FRONTEND_HOME;
+</script>
+
+</body>
+</html>

@@ -1,0 +1,192 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Wrench, Upload, X } from "@phosphor-icons/react";
+import Link from "next/link";
+import { backendUrl } from "@/lib/backend";
+import PostAiAssist from "./post-ai-assist";
+
+const categories = [
+  { value: "ELECTRIC_LIGHT", label: "전기·조명" },
+  { value: "PLUMBING", label: "배관·설비" },
+  { value: "FURNITURE_INSTALL", label: "가구·설치" },
+  { value: "HOME_LIANCE", label: "가전제품" },
+  { value: "DOOR_WINDOW", label: "문·창문" },
+  { value: "LIVING_ETC", label: "생활·기타" },
+];
+
+export default function PostForm({ postId, initialValue, userEmail, accessToken }) {
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [title, setTitle] = useState(initialValue?.title || "");
+  const [content, setContent] = useState(initialValue?.content || "");
+
+  const [existingImages, setExistingImages] = useState(initialValue?.images || []);
+  const [selectedCategory, setSelectedCategory] = useState(initialValue?.category || "ELECTRIC_LIGHT");
+  const isEdit = Boolean(postId);
+
+  const handleFileChange = (e) => {
+    if (!e.target.files) return;
+    const filesArray = Array.from(e.target.files);
+
+    if (existingImages.length + selectedFiles.length + filesArray.length > 5) {
+      setMessage("이미지는 최대 5장까지 등록할 수 있습니다.");
+      return;
+    }
+
+    setSelectedFiles((prev) => [...prev, ...filesArray]);
+    setMessage("");
+  };
+
+  const removeNewFile = (index) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (index) => {
+    setExistingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  async function submitPost(event) {
+    event.preventDefault();
+    setSubmitting(true);
+    setMessage("");
+
+    const formElement = event.currentTarget;
+    const title = formElement.elements.namedItem("title").value;
+    const content = formElement.elements.namedItem("content").value;
+
+    const formData = new FormData();
+
+    const postDto = {
+      title,
+      content,
+      category: selectedCategory
+    };
+
+    formData.append(
+      "post",
+      new Blob([JSON.stringify(postDto)], { type: "application/json" })
+    );
+
+    selectedFiles.forEach((file) => {
+      formData.append("images", file);
+    });
+
+    try {
+      const response = await fetch(isEdit ? backendUrl(`/posts/${postId}`) : backendUrl("/posts"), {
+        method: isEdit ? "PATCH" : "POST",
+        headers: {
+
+          ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
+        },
+        credentials: "include",
+        body: formData,
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        setMessage(payload.message ?? "수리 요청을 등록하지 못했습니다.");
+        return;
+      }
+
+      router.push(isEdit ? `/posts/${postId}` : `/posts/${payload}`);
+      router.refresh();
+    } catch {
+      setMessage("수리 요청 서버와 통신할 수 없습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <section className="repair-form-card">
+      <Link href="/posts" className="repair-form-back"><ArrowLeft size={18} />목록으로 돌아가기</Link>
+      <span className="repair-form-icon"><Wrench size={30} weight="duotone" /></span>
+      <h1>{isEdit ? "수리 요청 수정" : "수리 요청하기"}</h1>
+      <p>{isEdit ? "내용을 고치고 저장하면 바로 반영돼요." : "어떤 도움이 필요한지 이웃이 이해하기 쉽게 알려주세요."}</p>
+
+      <form onSubmit={submitPost} className="repair-form">
+        <label className="form-field">
+          <span>카테고리</span>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none bg-white"
+          >
+            {categories.map((cat) => (
+              <option key={cat.value} value={cat.value}>
+                {cat.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {/* 제목 입력 */}
+        <label className="form-field">
+          <span>제목</span>
+          <input
+            name="title"
+            type="text"
+            value={title} onChange={e => setTitle(e.target.value)} maxLength={100}
+            placeholder="제목을 입력해주세요"
+            required
+            className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+          />
+        </label>
+
+        {/* 내용 입력 */}
+        <label className="form-field">
+          <span>내용</span>
+          <textarea
+            name="content"
+            rows={6}
+            value={content} onChange={e => setContent(e.target.value)}
+            placeholder="어떤 도움이 필요한지 자세히 적어주세요"
+            required
+            className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+          />
+        </label>
+
+        {/* 파일 첨부 영역 */}
+        <div className="form-field">
+          <span>사진 첨부 (최대 5장)</span>
+          <label className="flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-4 cursor-pointer hover:border-blue-500 transition">
+            <Upload size={20} className="mr-2 text-slate-500" />
+            <span className="text-sm text-slate-600">이미지 파일 업로드</span>
+            <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
+          </label>
+
+          {/* 선택된 파일 목록 프리뷰 */}
+          <div className="flex flex-wrap gap-2 mt-2">
+            {selectedFiles.map((file, idx) => (
+              <div key={idx} className="relative bg-slate-100 px-3 py-1 rounded-lg text-xs flex items-center">
+                <span>{file.name}</span>
+                <button type="button" onClick={() => removeNewFile(idx)} className="ml-2 text-red-500">
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <PostAiAssist files={selectedFiles} values={{ title, content, category: selectedCategory }} categories={categories}
+          onApply={(field, value) => { if (field === "title") setTitle(value); else if (field === "content") setContent(value); else if (field === "category") setSelectedCategory(value); }} />
+
+        {/* 💡 에러 메시지를 파란색 등록 버튼 바로 위로 이동 */}
+        {message && (
+          <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm font-medium text-center">
+            {message}
+          </div>
+        )}
+
+        <button type="submit" disabled={submitting} className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition disabled:opacity-50">
+          {submitting ? "저장 중..." : (isEdit ? "수정하기" : "등록하기")}
+        </button>
+      </form>
+    </section>
+  );
+}

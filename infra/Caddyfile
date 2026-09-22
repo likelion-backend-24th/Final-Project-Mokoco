@@ -1,0 +1,150 @@
+# 프로덕션 리버스 프록시 + 자동 HTTPS (Let's Encrypt)
+# 로컬에서 테스트하려면: caddy run --config infra/Caddyfile
+#
+# 32.199.114.190.nip.io -> 이 EC2 의 탄력적 IP 로 resolve 되는 도메인.
+# Caddy 가 80 포트로 ACME(HTTP-01) 인증을 받아 인증서를 자동 발급/갱신한다.
+# 인증서는 caddy_data 볼륨에 저장되므로 컨테이너를 재생성해도 유지된다. (docker compose down -v 금지!)
+
+32.199.114.190.nip.io {
+	encode gzip
+
+	# 멀티파트 업로드 + 정적 이미지만 post-service 직결 (/api 제거).
+	# Spring Cloud Gateway 가 multipart 파일 파트를 제대로 전달 못 하고, Next BFF 로 재구성해 보내도 게이트웨이에서
+	# 같은 문제가 나므로, 파일이 오가는 경로만 post-service 로 바로 보낸다.
+	#   POST   /api/posts                       -> 글 작성(이미지 포함)
+	#   POST   /api/posts/{id}/images           -> 수정 시 이미지 추가
+	#   DELETE /api/posts/{id}/images/{imageId} -> 이미지 삭제 (프론트가 헤더를 직접 실어 보냄)
+	#   GET    /api/images/*                    -> 저장된 이미지 서빙
+	@postsvc_direct path /api/posts /api/posts/*/images /api/posts/*/images/* /api/images/*
+	handle @postsvc_direct {
+		uri strip_prefix /api
+		reverse_proxy post-service:8082
+	}
+
+	# PortOne 웹훅: 포트원 서버가 서명 헤더와 함께 직접 호출 (쿠키 없음) -> payment-service 직결
+	@payment_webhook path /api/payments/webhook
+	handle @payment_webhook {
+		uri strip_prefix /api
+		reverse_proxy payment-service:8083
+	}
+
+	# 채팅 첨부 업로드(멀티파트)만 chat-service 직결. SCG가 파일 파트를 유실하는 문제 회피.
+	# (다운로드 GET .../attachments/{id} 는 BFF 경유 유지 — 인증 쿠키 주입 필요)
+	@chat_attach_upload {
+		path /api/chat-rooms/*/attachments
+		method POST
+	}
+	handle @chat_attach_upload {
+		reverse_proxy chat-service:8084
+	}
+
+	# 후기 작성(멀티파트, 이미지 포함)만 post-service 직결. SCG가 파일 파트를 유실하는 문제 회피
+	# (사진 없이 작성할 땐 파일 파트가 아예 없어 문제가 안 드러났었음). 조회(GET /api/reviews*)는 BFF 경유 유지.
+	@review_upload {
+		path /api/reviews
+		method POST
+	}
+	handle @review_upload {
+		uri strip_prefix /api
+		reverse_proxy post-service:8082
+	}
+
+	# 나머지 API 는 전부 Next BFF(route handler) 경유 — 쿠키의 access_token/user_email 을
+	# Authorization / X-User-Email 헤더로 주입한 뒤 백엔드로 포워딩한다.
+	# (프론트 컴포넌트들이 인증 헤더 없이 상대경로로 호출하는 BFF 우선 설계라, 직결하면 400/401)
+	handle /api/posts/* {
+		reverse_proxy frontend:3000
+	}
+	handle /api/fix-deals/* {
+		reverse_proxy frontend:3000
+	}
+	# payments* : 경로 없는 결제 확인 호출(POST /api/payments) 도 포함 (webhook 은 위에서 이미 직결 처리)
+	handle /api/payments* {
+		reverse_proxy frontend:3000
+	}
+	# chat-rooms* : 뒤 경로 없는 목록 호출(/api/chat-rooms?page=..) 도 포함하도록 슬래시 없는 와일드카드
+	handle /api/chat-rooms* {
+		reverse_proxy frontend:3000
+	}
+	handle /api/chat/* {
+		reverse_proxy frontend:3000
+	}
+	# notifications* : 목록 조회(/api/notifications) 같은 경로 없는 호출도 포함하도록 슬래시 없는 와일드카드
+	handle /api/notifications* {
+		reverse_proxy frontend:3000
+	}
+	# 관리자 기능(유저 role/상태 변경, 글 삭제, 신고 처리) — 백엔드가 Authorization: Bearer로
+	# 직접 검증하므로 BFF가 httpOnly access_token 쿠키를 읽어 헤더로 실어 보내야 한다.
+	handle /api/admin* {
+		reverse_proxy frontend:3000
+	}
+	# 신고 접수 (일반 유저)
+	handle /api/reports* {
+		reverse_proxy frontend:3000
+	}
+	# 후기(평점) 조회/작성
+	handle /api/reviews* {
+		reverse_proxy frontend:3000
+	}
+	# 로그인한 본인 프로필(role/status 포함, 정보 수정·비밀번호 변경 포함) — 관리자 메뉴 노출 여부 판단에도 사용
+	handle /api/users/me* {
+		reverse_proxy frontend:3000
+	}
+	# 거래 이력 / 내가 쓴 후기 (마이페이지)
+	handle /api/profile* {
+		reverse_proxy frontend:3000
+	}
+	# 이력서 작성/조회
+	handle /api/resume* {
+		reverse_proxy frontend:3000
+	}
+	# AI 작성 도움(사진 분석) — 백엔드가 Authorization: Bearer로 직접 검증하므로
+	# BFF가 httpOnly access_token 쿠키를 읽어 헤더로 실어 보내야 한다.
+	handle /api/ai/* {
+		reverse_proxy frontend:3000
+	}
+
+	# 재발급/로그아웃은 httpOnly 쿠키를 서버(Next BFF)에서 읽고/지워야 하므로 BFF 경유
+	handle /api/auth/reissue {
+		reverse_proxy frontend:3000
+	}
+	handle /api/auth/logout {
+		reverse_proxy frontend:3000
+	}
+
+	# 나머지 /api/* (auth signin/logout, users) 는 게이트웨이 -> user-service
+	handle /api/* {
+		reverse_proxy api-gateway:8000
+	}
+
+	# STOMP WebSocket (채팅) -> chat-service 직결. Caddy가 Upgrade 자동 처리.
+	handle /ws/chat {
+		reverse_proxy chat-service:8084
+	}
+
+	# 소셜 로그인 진입/콜백
+	handle /oauth2/authorization/* {
+		reverse_proxy user-service:8081
+	}
+	handle /login/oauth2/* {
+		reverse_proxy user-service:8081
+	}
+
+	# 정책 페이지(이용약관/개인정보처리방침 등) — 로그인 불필요한 정적 리소스라 user-service 직결
+	handle /policy/* {
+		reverse_proxy user-service:8081
+	}
+
+	# API 문서(Swagger) — 게이트웨이가 3개 서비스 문서를 하나로 모아 보여준다 (api-gateway application.yaml 참고)
+	@api_docs path /swagger-ui* /v3/api-docs* /webjars* /user-service/v3/api-docs /post-service/v3/api-docs /payment-service/v3/api-docs /chat-service/v3/api-docs
+	handle @api_docs {
+		reverse_proxy api-gateway:8000
+	}
+
+	# 그 외 전부 프론트엔드 (Next.js). WebSocket 업그레이드는 Caddy 가 자동 처리.
+	handle {
+		reverse_proxy frontend:3000
+	}
+}
+
+# http 로 들어오면 Caddy 가 자동으로 https 로 301 리다이렉트 (기본 동작)

@@ -1,0 +1,87 @@
+package com.team2.chatservice.config;
+
+import com.team2.chatservice.chatMessage.service.ChatService;
+import com.team2.chatservice.client.UserClient;
+import com.team2.chatservice.client.dto.UserClientResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.*;
+import org.springframework.messaging.simp.config.*;
+import org.springframework.messaging.simp.stomp.*;
+import org.springframework.messaging.support.*;
+import org.springframework.web.socket.config.annotation.*;
+
+import java.util.Objects;
+
+@Configuration
+@EnableWebSocketMessageBroker
+@RequiredArgsConstructor
+public class ChatWebSocketConfig implements WebSocketMessageBrokerConfigurer {
+    private final UserClient users;
+    private final ChatService chat;
+    @Value("${chat.allowed-origins:http://localhost:3000}") private String[] origins;
+
+    @Override public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws/chat").setAllowedOrigins(origins);
+    }
+
+    @Override public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker("/topic", "/queue");
+        registry.setApplicationDestinationPrefixes("/app");
+        registry.setUserDestinationPrefix("/user");
+        registry.setPreservePublishOrder(true);
+    }
+
+    @Override public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        registration.setMessageSizeLimit(16384).setSendBufferSizeLimit(65536).setSendTimeLimit(10000);
+    }
+
+    @Override public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(new ChannelInterceptor() {
+            @Override public Message<?> preSend(Message<?> message, MessageChannel channel) {
+                StompHeaderAccessor headers = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+                if (headers == null || headers.getCommand() == null) {
+                    return message;
+                }
+
+                StompCommand command = headers.getCommand();
+
+                if (command == StompCommand.CONNECT) {
+                    String auth = headers.getFirstNativeHeader("Authorization");
+
+                    if (auth == null || !auth.startsWith("Bearer ")) {
+                        throw new MessagingException("Authentication required");
+                    }
+
+                    UserClientResponse user = users.verifyToken(auth.substring(7));
+
+                    headers.setUser(new com.team2.common.security.LoginUser(user.id(), user.role()));
+                    Objects.requireNonNull(headers.getSessionAttributes()).put("accessToken", auth.substring(7));
+
+                } else if (command == StompCommand.SEND || command == StompCommand.SUBSCRIBE) {
+                    if (headers.getUser() == null) {
+                        throw new MessagingException("Authentication required");
+                    }
+
+                    // Revalidate expiry/revocation on each operation, including long-lived connections.
+                    users.verifyToken((String) Objects.requireNonNull(headers.getSessionAttributes()).get("accessToken"));
+
+                    String destination = headers.getDestination();
+
+                    // 인증된 본인 개인 알림 큐 구독은 방 권한 검사 없이 허용
+                    if (command == StompCommand.SUBSCRIBE && "/user/queue/notifications".equals(destination))
+                        return message;
+
+                    String prefix = command == StompCommand.SEND ? "/app/chat/" : "/topic/chat/";
+
+                    if (destination == null || !destination.matches(java.util.regex.Pattern.quote(prefix) + "[0-9]+"))
+                        throw new MessagingException("Destination not allowed");
+
+                    chat.authorize(Long.valueOf(destination.substring(prefix.length())), Long.valueOf(headers.getUser().getName()));
+                }
+                return message;
+            }
+        });
+    }
+}

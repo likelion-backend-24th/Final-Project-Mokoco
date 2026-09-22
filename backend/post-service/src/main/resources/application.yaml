@@ -1,0 +1,68 @@
+server:
+  port: 8082 # user-service가 8081을 쓰고 있으므로 포트 변경
+
+spring:
+  profiles:
+    include: secret
+  application:
+    name: post-service # 서비스 이름 변경
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 51MB
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # 운영 최초 편입 때만 FLYWAY_BASELINE_ON_MIGRATE=true로 덮어쓴다.
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:false}
+    baseline-version: ${FLYWAY_BASELINE_VERSION:5}
+    clean-disabled: true
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+  datasource:
+    url: jdbc:mysql://mysql:3306/post_db?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: root
+    password: root1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+file:
+  upload-dir: ./uploads/post-images # 이미지 파일이 저장되는 로컬 경로
+  base-url: http://localhost:8082/images # 저장된 이미지에 접근하는 공개 URL
+
+
+services:
+  user-service:
+    url: http://mokoco-user-service:8081
+  payment-service:
+    url: http://mokoco-payment-service:8083
+  chat-service:
+    url: http://mokoco-chat-service:8084
+internal:
+  service-key: ${INTERNAL_SERVICE_KEY}
+
+chat:
+  # WebSocket(STOMP) 핸드셰이크 Origin 허용 목록 (콤마 구분). prod 도메인 + 로컬 개발용.
+  allowed-origins: ${CHAT_ALLOWED_ORIGINS:https://32.199.114.190.nip.io,http://localhost:3000}
+
+ai:
+  enabled: ${AI_ASSIST_ENABLED:true}
+  gemini:
+    api-key: ${GEMINI_API_KEY:${GOOGLE_API_KEY:}}
+    model: ${GEMINI_MODEL:gemini-flash-lite-latest}
+  limit:
+    per-minute: ${AI_REQUESTS_PER_MINUTE:3}
+    per-day: ${AI_REQUESTS_PER_DAY:20}
+    global-per-day: ${AI_GLOBAL_REQUESTS_PER_DAY:500}

@@ -1,0 +1,311 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import * as PortOne from "@portone/browser-sdk/v2";
+import { CheckCircle, CreditCard, Wrench } from "@phosphor-icons/react";
+import ReviewForm from "@/components/review-form";
+
+const STATUS_LABEL = {
+  MATCHED: "매칭 완료",
+  PRODUCT_SENT: "제품 전달 완료",
+  REPAIRING: "수리 진행중",
+  REPAIR_DONE: "수리완료 신청됨",
+  COMPLETED: "거래 완료",
+  CANCELED: "거래 취소됨",
+};
+
+const FEE_RATE = 0.1; // 백엔드 Payment.FEE_RATE와 동일하게 유지 (수리자 제안 금액의 10%)
+
+function calculateTotalWithFee(baseAmount) {
+  const base = baseAmount ?? 0;
+  const fee = Math.round(base * FEE_RATE);
+  return { base, fee, total: base + fee };
+}
+
+export default function FixDealProgress({ fixDealId, postId, isRequester, isRepairer, estimatedPrice, repairerId, userEmail }) {
+  const [deal, setDeal] = useState(null);
+  const [payment, setPayment] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [refreshToken, setRefreshToken] = useState(0);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewDeadlinePassed, setReviewDeadlinePassed] = useState(false);
+
+  function refresh() {
+    setRefreshToken((token) => token + 1);
+  }
+
+  useEffect(() => {
+    if (!fixDealId) return;
+    const controller = new AbortController();
+
+    fetch(`/api/fix-deals/${fixDealId}`, { signal: controller.signal, cache: "no-store" })
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "거래 상태를 불러오지 못했습니다.");
+        setDeal(data);
+        setError("");
+
+        if (data.status === "REPAIR_DONE" || data.status === "COMPLETED") {
+          const payRes = await fetch(`/api/payments/post/${postId}`, { signal: controller.signal, cache: "no-store" });
+          setPayment(payRes.ok ? await payRes.json() : null);
+        } else {
+          setPayment(null);
+        }
+
+        if (data.status === "COMPLETED") {
+          const reviewRes = await fetch(`/api/reviews/exists?postId=${postId}`, { signal: controller.signal, cache: "no-store" });
+          const reviewData = reviewRes.ok ? await reviewRes.json() : null;
+          setReviewSubmitted(Boolean(reviewData?.exists));
+
+          if (data.completedAt) {
+            const elapsed = Date.now() - new Date(data.completedAt).getTime();
+            setReviewDeadlinePassed(elapsed >= 3 * 24 * 60 * 60 * 1000);
+          }
+        }
+      })
+      .catch((failure) => {
+        if (!controller.signal.aborted) setError(failure.message ?? "서버에 연결할 수 없습니다.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [fixDealId, postId, refreshToken]);
+
+  async function startRepair() {
+    setActionLoading(true);
+    setError("");
+    try {
+      const sendRes = await fetch(`/api/fix-deals/${fixDealId}/product-sent`, { method: "PATCH" });
+      const sendData = await sendRes.json().catch(() => ({}));
+      if (!sendRes.ok) {
+        setError(sendData.error ?? "거래 시작 처리에 실패했습니다.");
+        return;
+      }
+
+      const repairRes = await fetch(`/api/fix-deals/${fixDealId}/repairing`, { method: "PATCH" });
+      const repairData = await repairRes.json().catch(() => ({}));
+      if (!repairRes.ok) {
+        // product-sent는 이미 반영됐으니, 상태를 다시 불러와 "수리 시작" 버튼이 이어서 뜨도록 한다.
+        setError(repairData.error ?? "수리 시작 처리에 실패했습니다.");
+        refresh();
+        return;
+      }
+
+      refresh();
+    } catch {
+      setError("서버에 연결할 수 없습니다.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function startPayment() {
+    setActionLoading(true);
+    setError("");
+    try {
+      const prepareRes = await fetch("/api/payments/prepare", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ postId }),
+      });
+      const order = await prepareRes.json();
+      if (!prepareRes.ok) { setError(order.error ?? "결제를 준비하지 못했습니다."); return; }
+      const { paymentId, totalAmount: total } = order;
+
+      const paymentResult = await PortOne.requestPayment({
+        storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID,
+        channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY,
+        paymentId,
+        orderName: "동네수리 - 수리 대금 안전결제",
+        totalAmount: total, // 수리자 제안 금액 + 수수료 10%
+        currency: "CURRENCY_KRW",
+        payMethod: "CARD",
+        isEscrow: true, // 안전거래(에스크로)
+        customer: userEmail ? { email: userEmail } : undefined,
+        // paymentId is linked to the authoritative order stored by the server.
+      });
+
+      // 사용자가 결제창을 닫았거나 결제가 실패한 경우
+      if (paymentResult?.code != null) {
+        setError(paymentResult.message ?? "결제가 취소되었거나 실패했습니다.");
+        return;
+      }
+
+      // 결제창에서의 성공 응답은 참고용일 뿐, 실제 완료 처리는 백엔드가
+      // PortOne 서버에 재조회해 검증한 뒤에만 이루어진다.
+      const confirmRes = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          paymentId,
+        }),
+      });
+      const confirmData = await confirmRes.json().catch(() => ({}));
+      if (!confirmRes.ok) {
+        setError(confirmData.error ?? "결제 확인에 실패했습니다. 잠시 후 다시 확인해주세요.");
+        return;
+      }
+
+      refresh();
+    } catch {
+      setError("결제 진행 중 문제가 발생했습니다.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function runAction(url, method, body) {
+    setActionLoading(true);
+    setError("");
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "처리하지 못했습니다.");
+        return;
+      }
+      refresh();
+    } catch {
+      setError("서버에 연결할 수 없습니다.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  if (!fixDealId) return null;
+  if (loading) return <p className="mt-4 text-sm text-slate-400">거래 상태 확인 중...</p>;
+  if (error && !deal) {
+    return (
+      <p role="alert" className="mt-4 text-sm text-red-600">
+        거래 상태를 불러오지 못했어요: {error}
+      </p>
+    );
+  }
+  if (!deal) return null;
+
+  const status = deal.status;
+  const paid = payment?.status === "COMPLETED";
+
+  return (
+    <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+      <span className="text-sm font-bold text-slate-800">
+        거래 진행 상태: {STATUS_LABEL[status] ?? status}
+      </span>
+
+      {error && (
+        <p role="alert" className="mt-2 text-sm text-red-600">
+          {error}
+        </p>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {status === "MATCHED" && isRepairer && (
+          <button
+            type="button"
+            onClick={startRepair}
+            disabled={actionLoading}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            <Wrench size={16} weight="bold" />
+            {actionLoading ? "처리 중..." : "수리 시작"}
+          </button>
+        )}
+        {status === "MATCHED" && isRequester && (
+          <p className="text-xs text-slate-500">수리자에게 제품을 전달해주세요. 수리자가 확인하면 다음 단계로 넘어가요.</p>
+        )}
+
+        {status === "PRODUCT_SENT" && isRepairer && (
+          <button
+            type="button"
+            onClick={() => runAction(`/api/fix-deals/${fixDealId}/repairing`, "PATCH")}
+            disabled={actionLoading}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            <Wrench size={16} weight="bold" />
+            {actionLoading ? "처리 중..." : "수리 시작 계속하기"}
+          </button>
+        )}
+        {status === "PRODUCT_SENT" && isRequester && (
+          <p className="text-xs text-slate-500">수리자가 수리를 시작하기를 기다리는 중이에요.</p>
+        )}
+
+        {status === "REPAIRING" && isRepairer && (
+          <button
+            type="button"
+            onClick={() => runAction(`/api/fix-deals/${fixDealId}/repair-done`, "PATCH")}
+            disabled={actionLoading}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            <CheckCircle size={16} weight="bold" />
+            {actionLoading ? "처리 중..." : "수리완료 신청"}
+          </button>
+        )}
+        {status === "REPAIRING" && isRequester && (
+          <p className="text-xs text-slate-500">수리가 진행되고 있어요. 완료 신청이 오면 결제를 진행할 수 있어요.</p>
+        )}
+
+        {status === "REPAIR_DONE" && isRequester && !paid && (
+          <button
+            type="button"
+            onClick={startPayment}
+            disabled={actionLoading}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            <CreditCard size={16} weight="bold" />
+            {actionLoading
+              ? "결제 확인 중..."
+              : `안전결제 하기 (${calculateTotalWithFee(estimatedPrice).total.toLocaleString()}원)`}
+          </button>
+        )}
+        {status === "REPAIR_DONE" && isRequester && !paid && (
+          <p className="w-full text-xs text-slate-400">
+            수리비 {calculateTotalWithFee(estimatedPrice).base.toLocaleString()}원 + 수수료(10%){" "}
+            {calculateTotalWithFee(estimatedPrice).fee.toLocaleString()}원
+          </p>
+        )}
+        {status === "REPAIR_DONE" && isRequester && paid && (
+          <>
+            <button
+              type="button"
+              onClick={() => runAction(`/api/fix-deals/${fixDealId}/complete`, "PATCH")}
+              disabled={actionLoading}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              <CheckCircle size={16} weight="bold" />
+              {actionLoading ? "처리 중..." : "수리완료 수락"}
+            </button>
+            <p className="w-full text-xs text-slate-400">
+              결제 총액 {payment.amount?.toLocaleString()}원 (수리비 {payment.netAmount?.toLocaleString()}원 + 수수료{" "}
+              {payment.feeAmount?.toLocaleString()}원)
+            </p>
+          </>
+        )}
+        {status === "REPAIR_DONE" && isRepairer && (
+          <p className="text-xs text-slate-500">의뢰자의 결제와 완료 수락을 기다리는 중이에요.</p>
+        )}
+
+        {status === "COMPLETED" && (
+          <p className="text-xs font-semibold text-emerald-700">거래가 완료되었습니다.</p>
+        )}
+        {status === "COMPLETED" && isRequester && !reviewSubmitted && !reviewDeadlinePassed && (
+          <ReviewForm postId={postId} userEmail={userEmail} onSubmitted={() => setReviewSubmitted(true)} />
+        )}
+        {status === "COMPLETED" && isRequester && !reviewSubmitted && reviewDeadlinePassed && (
+          <p className="w-full text-xs text-slate-400">
+            거래 완료 후 3일이 지나 더 이상 후기를 작성할 수 없어요.
+          </p>
+        )}
+        {status === "COMPLETED" && isRequester && reviewSubmitted && (
+          <p className="w-full text-xs text-slate-400">후기를 남겨주셔서 감사해요.</p>
+        )}
+      </div>
+    </div>
+  );
+}

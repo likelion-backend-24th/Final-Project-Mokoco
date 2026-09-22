@@ -1,0 +1,51 @@
+server:
+  port: 8084 # user-service 8081 / post-service 8082 / payment-service 8083 다음
+
+spring:
+  profiles:
+    include: secret
+  application:
+    name: chat-service
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 51MB
+
+  flyway:
+    # post_db의 마이그레이션은 post-service만 실행한다.
+    enabled: false
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+  # post-service와 같은 DB를 공유하되 Hibernate는 채팅 엔티티와 스키마의 호환성만 검증한다.
+  datasource:
+    url: jdbc:mysql://mysql:3306/post_db?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+    username: root
+    password: root1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+services:
+  user-service:
+    url: http://mokoco-user-service:8081
+  post-service:
+    url: http://mokoco-post-service:8082
+
+internal:
+  service-key: ${INTERNAL_SERVICE_KEY}
+
+chat:
+  # WebSocket(STOMP) 핸드셰이크 Origin 허용 목록 (콤마 구분). prod 도메인 + 로컬 개발용.
+  allowed-origins: ${CHAT_ALLOWED_ORIGINS:https://32.199.114.190.nip.io,http://localhost:3000}
+  # 채팅 첨부파일 저장 경로. docker-compose의 chat_attachments 볼륨이 이 경로에 마운트된다.
+  attachment-dir: ${CHAT_ATTACHMENT_DIR:./private-chat-files}
