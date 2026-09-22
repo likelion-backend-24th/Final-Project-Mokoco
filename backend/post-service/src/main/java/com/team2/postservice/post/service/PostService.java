@@ -40,10 +40,12 @@ public class PostService {
     public Long createPost(PostRequestDto.Create request, List<MultipartFile> images, Long authorId) {
         // 사용자 ID로 최신 지역 정보를 조회한다.
         RegionResponse response = postViewerService.requireRegion(authorId);
+        String content = PostContent.sanitize(request.content(), request.contentFormat());
 
         Post post = Post.builder()
                 .title(request.title())
-                .content(request.content())
+                .content(content)
+                .contentFormat(request.contentFormat())
                 .category(request.category())
                 .authorId(authorId)
                 .regionName(response.regionName())
@@ -85,7 +87,8 @@ public class PostService {
         Post post = getPostOrThrow(id);
         validateAuthor(post, userId, ErrorCode.UNAUTHORIZED_POST_UPDATE);
 
-        post.update(request.title(), request.content(), request.category());
+        post.update(request.title(), PostContent.sanitize(request.content(), request.contentFormat()),
+                request.contentFormat(), request.category());
     }
 
     @Transactional

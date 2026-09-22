@@ -6,12 +6,14 @@ import { ArrowLeft, Wrench, Upload, X } from "@phosphor-icons/react";
 import Link from "next/link";
 import { backendUrl } from "@/lib/backend";
 import PostAiAssist from "./post-ai-assist";
+import PostRichTextEditor from "./rich-text/post-rich-text-editor";
+import { plainTextToHtml } from "@/lib/rich-text";
 
 const categories = [
   { value: "ELECTRIC_LIGHT", label: "전기·조명" },
   { value: "PLUMBING", label: "배관·설비" },
   { value: "FURNITURE_INSTALL", label: "가구·설치" },
-  { value: "HOME_LIANCE", label: "가전제품" },
+  { value: "HOME_APPLIANCE", label: "가전제품" },
   { value: "DOOR_WINDOW", label: "문·창문" },
   { value: "LIVING_ETC", label: "생활·기타" },
 ];
@@ -22,7 +24,9 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [title, setTitle] = useState(initialValue?.title || "");
-  const [content, setContent] = useState(initialValue?.content || "");
+  const [content, setContent] = useState(() => initialValue?.contentFormat === "HTML"
+    ? initialValue.content : plainTextToHtml(initialValue?.content || ""));
+  const [contentText, setContentText] = useState(initialValue?.contentFormat === "PLAIN_TEXT" ? initialValue.content : "");
 
   const [existingImages, setExistingImages] = useState(initialValue?.images || []);
   const [selectedCategory, setSelectedCategory] = useState(initialValue?.category || "ELECTRIC_LIGHT");
@@ -54,16 +58,21 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
     setSubmitting(true);
     setMessage("");
 
-    const formElement = event.currentTarget;
-    const title = formElement.elements.namedItem("title").value;
-    const content = formElement.elements.namedItem("content").value;
+    if (!title.trim() || !contentText.trim() || contentText.length > 5000 || content.length > 10000) {
+      setMessage(contentText.length > 5000 || content.length > 10000
+        ? "요청 내용은 일반 텍스트 5,000자 이내로 작성해주세요."
+        : "제목과 요청 내용을 모두 입력해주세요.");
+      setSubmitting(false);
+      return;
+    }
 
     const formData = new FormData();
 
     const postDto = {
       title,
       content,
-      category: selectedCategory
+      category: selectedCategory,
+      contentFormat: "HTML",
     };
 
     formData.append(
@@ -76,21 +85,39 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
     });
 
     try {
-      const response = await fetch(isEdit ? backendUrl(`/posts/${postId}`) : backendUrl("/posts"), {
-        method: isEdit ? "PATCH" : "POST",
-        headers: {
-
-          ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
-        },
+      const response = await fetch(isEdit ? backendUrl(`/posts/${postId}`) : backendUrl("/posts"), isEdit ? {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}) },
+        credentials: "include",
+        body: JSON.stringify(postDto),
+      } : {
+        method: "POST",
+        headers: { ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}) },
         credentials: "include",
         body: formData,
       });
 
-      const payload = await response.json();
+      const responseText = await response.text();
+      const payload = responseText ? JSON.parse(responseText) : null;
 
       if (!response.ok) {
-        setMessage(payload.message ?? "수리 요청을 등록하지 못했습니다.");
+        setMessage(payload?.message ?? "수리 요청을 등록하지 못했습니다.");
         return;
+      }
+
+      if (isEdit && selectedFiles.length) {
+        const imageData = new FormData();
+        selectedFiles.forEach((file) => imageData.append("images", file));
+        const imageResponse = await fetch(backendUrl(`/posts/${postId}/images`), {
+          method: "POST",
+          headers: { ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}) },
+          credentials: "include",
+          body: imageData,
+        });
+        if (!imageResponse.ok) {
+          setMessage("글은 수정했지만 새 이미지를 추가하지 못했습니다.");
+          return;
+        }
       }
 
       router.push(isEdit ? `/posts/${postId}` : `/posts/${payload}`);
@@ -139,17 +166,11 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
         </label>
 
         {/* 내용 입력 */}
-        <label className="form-field">
+        <div className="form-field">
           <span>내용</span>
-          <textarea
-            name="content"
-            rows={6}
-            value={content} onChange={e => setContent(e.target.value)}
-            placeholder="어떤 도움이 필요한지 자세히 적어주세요"
-            required
-            className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
-          />
-        </label>
+          <PostRichTextEditor value={content} onChange={(html, text) => { setContent(html); setContentText(text); }} />
+          <small className="text-xs text-slate-500">{contentText.length}/5,000자</small>
+        </div>
 
         {/* 파일 첨부 영역 */}
         <div className="form-field">
@@ -173,8 +194,8 @@ export default function PostForm({ postId, initialValue, userEmail, accessToken 
           </div>
         </div>
 
-        <PostAiAssist files={selectedFiles} values={{ title, content, category: selectedCategory }} categories={categories}
-          onApply={(field, value) => { if (field === "title") setTitle(value); else if (field === "content") setContent(value); else if (field === "category") setSelectedCategory(value); }} />
+        <PostAiAssist files={selectedFiles} values={{ title, content: contentText, category: selectedCategory }} categories={categories}
+          onApply={(field, value) => { if (field === "title") setTitle(value); else if (field === "content") { setContent(plainTextToHtml(value)); setContentText(value); } else if (field === "category") setSelectedCategory(value); }} />
 
         {/* 💡 에러 메시지를 파란색 등록 버튼 바로 위로 이동 */}
         {message && (

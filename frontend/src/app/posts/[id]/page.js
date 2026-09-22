@@ -8,6 +8,7 @@ import PostActions from "@/components/post-actions";
 import RepairProposalForm from "@/components/proposal-form";
 import ProposalList from "@/components/proposal-list";
 import { backendUrl } from "@/lib/backend";
+import RichTextRenderer from "@/components/rich-text/rich-text-renderer";
 
 const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "수리 완료" };
 
@@ -103,7 +104,8 @@ export default async function PostDetailPage({ params }) {
                 <span>{formatDate(post.createdAt)}</span>
               </div>
 
-              <p className="mt-6 whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{post.content}</p>
+              <RichTextRenderer content={post.content} contentFormat={post.contentFormat}
+                className="mt-6 text-[15px] leading-relaxed text-slate-700" />
 
               {post.images && post.images.length > 0 && (
                 <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">

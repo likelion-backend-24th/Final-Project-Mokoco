@@ -18,7 +18,7 @@ const categories = [
   { value: "ELECTRIC_LIGHT", label: "전기·조명", icon: Lightbulb },
   { value: "PLUMBING", label: "배관·설비", icon: Drop },
   { value: "FURNITURE_INSTALL", label: "가구·설치", icon: Hammer },
-  { value: "HOME_APP_LIANCE", label: "가전제품", icon: WashingMachine },
+  { value: "HOME_APPLIANCE", label: "가전제품", icon: WashingMachine },
   { value: "DOOR_WINDOW", label: "문·창문", icon: DoorOpen },
   { value: "LIVING_ETC", label: "생활·기타", icon: Toolbox },
 ];

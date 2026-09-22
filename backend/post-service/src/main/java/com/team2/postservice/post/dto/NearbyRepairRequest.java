@@ -3,14 +3,20 @@ package com.team2.postservice.post.dto;
 import com.team2.postservice.post.entity.PostCategory;
 import com.team2.postservice.post.entity.PostStatus;
 import com.team2.postservice.post.entity.RegionScope;
+import com.team2.postservice.post.entity.ContentFormat;
+import com.team2.postservice.post.service.PostContent;
 import com.team2.postservice.client.dto.RegionResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
 
-public record NearbyRepairRequest(Long id, String title, String content, Long authorId,
+public record NearbyRepairRequest(Long id, String title, String content, ContentFormat contentFormat, Long authorId,
         PostCategory category, PostStatus status, String regionCode, String regionName, LocalDateTime createdAt,
         String thumbnailUrl) {
+    public NearbyRepairRequest {
+        content = PostContent.plainText(content, contentFormat);
+        contentFormat = ContentFormat.PLAIN_TEXT;
+    }
     public record Result(List<NearbyRepairRequest> content, int number, int size,
                          long totalElements, int totalPages, boolean first, boolean last, RegionFilter regionFilter) {
         public static Result from(Page<NearbyRepairRequest> page, RegionScope scope, RegionResponse region) {

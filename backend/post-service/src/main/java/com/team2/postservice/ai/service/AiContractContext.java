@@ -11,6 +11,7 @@ import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.repository.PostRepository;
+import com.team2.postservice.post.service.PostContent;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
 import lombok.RequiredArgsConstructor;
@@ -76,7 +77,7 @@ public class AiContractContext {
         }
 
         Map<String, String> sources = new LinkedHashMap<>();
-        sources.put("POST", post.getTitle() + "\n" + post.getContent());
+        sources.put("POST", post.getTitle() + "\n" + PostContent.plainText(post.getContent(), post.getContentFormat()));
 
         if (proposal.getEstimatedPrice() == null || proposal.getEstimatedPrice() <= 0){
             throw AiException.input("채택된 제안의 금액을 확인해주세요.");

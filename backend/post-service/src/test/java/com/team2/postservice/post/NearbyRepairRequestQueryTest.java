@@ -75,6 +75,23 @@ class NearbyRepairRequestQueryTest {
         assertThat(detail.content()).isEqualTo("전원이 켜지지 않음");
         assertThat(detail.regionCode()).isEqualTo("A");
         assertThat(detail.regionName()).isEqualTo("같은 표시 이름");
+        assertThat(detail.contentFormat()).isEqualTo(ContentFormat.PLAIN_TEXT);
+    }
+
+    @Test void htmlContentIsPlainTextInListButPreservedInDetail() {
+        Post post = em.persist(Post.builder().title("제품 수리")
+                .content("<h2>전원 고장</h2><p>버튼을 눌러도 <strong>켜지지 않음</strong></p>")
+                .contentFormat(ContentFormat.HTML).authorId(999L).regionCode("A").regionName("지역")
+                .category(PostCategory.LIVING_ETC).build());
+        em.flush(); em.clear();
+
+        NearbyRepairRequest listItem = repository.findNearby("A", null, PageRequest.of(0, 20)).getContent().getFirst();
+        PostResponseDto.Detail detail = PostResponseDto.Detail.from(repository.findById(post.getId()).orElseThrow());
+
+        assertThat(listItem.content()).isEqualTo("전원 고장 버튼을 눌러도 켜지지 않음");
+        assertThat(listItem.contentFormat()).isEqualTo(ContentFormat.PLAIN_TEXT);
+        assertThat(detail.content()).contains("<h2>", "<strong>");
+        assertThat(detail.contentFormat()).isEqualTo(ContentFormat.HTML);
     }
 
     @Test void broaderScopesIncludeOtherDongsAndDistrictsButNeverOtherProvinces() {

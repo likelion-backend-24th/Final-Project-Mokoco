@@ -54,11 +54,13 @@ export async function PATCH(request, { params }) {
 
   const title = typeof body.title === "string" ? body.title.trim() : "";
   const content = typeof body.content === "string" ? body.content.trim() : "";
-  if (!title || !content) {
-    return NextResponse.json({ message: "제목과 요청 내용을 모두 입력해주세요." }, { status: 400 });
+  const category = typeof body.category === "string" ? body.category : "";
+  const contentFormat = body.contentFormat === "HTML" ? "HTML" : "PLAIN_TEXT";
+  if (!title || !content || !category) {
+    return NextResponse.json({ message: "제목, 요청 내용과 카테고리를 모두 입력해주세요." }, { status: 400 });
   }
 
-  return forwardPost(id, "PATCH", { title, content });
+  return forwardPost(id, "PATCH", { title, content, category, contentFormat });
 }
 
 export async function DELETE(_post, { params }) {
