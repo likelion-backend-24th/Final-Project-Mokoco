@@ -1,5 +1,8 @@
 package com.team2.userservice.user.controller;
 
+import com.team2.userservice.config.JwtTokenProvider;
+import com.team2.userservice.region.dto.RegionResponse;
+import com.team2.userservice.region.service.RegionService;
 import com.team2.userservice.user.dto.UserResponse;
 import com.team2.userservice.user.entity.AccountStatus;
 import com.team2.userservice.user.service.UserService;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserClientController {
     private final UserService userService;
+    private final RegionService regionService;
     public record UserNicknameResponse(Long id, String nickname) {}
 
     @GetMapping("/by-id/{userId}")
@@ -19,7 +23,7 @@ public class UserClientController {
         var user = userService.findById(userId);
         return new UserNicknameResponse(user.getId(), user.getNickname());
     }
-    private final com.team2.userservice.config.JwtTokenProvider tokenProvider;
+    private final JwtTokenProvider tokenProvider;
 
     @PostMapping("/verify-token")
     public ResponseEntity<UserResponse> verifyToken(@RequestBody String token) {
@@ -41,5 +45,14 @@ public class UserClientController {
     @GetMapping("/by-id")
     public ResponseEntity<UserResponse> getUserById(@RequestParam Long id) {
         return ResponseEntity.ok(userService.findUserById(id));
+    }
+
+    @GetMapping("/by-id/{userId}/region")
+    public ResponseEntity<RegionResponse> getRegionByUserId(
+            @PathVariable Long userId
+    ) {
+        return ResponseEntity.ok(
+                regionService.getRegionInfoByUserId(userId)
+        );
     }
 }
