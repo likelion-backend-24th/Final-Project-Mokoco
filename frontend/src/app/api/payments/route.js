@@ -19,14 +19,10 @@ export async function POST(request) {
       method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
-
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         postId: body.postId,
-        payeeEmail: body.payeeEmail,
-        amount: body.amount,
-        baseAmount: body.baseAmount,
         paymentId: body.paymentId,
       }),
       cache: "no-store",

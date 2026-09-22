@@ -1,7 +1,7 @@
 package com.team2.userservice.config;
 
-import com.team2.userservice.user.service.CustomOAuth2UserService;
 import com.team2.userservice.user.repository.UserRepository;
+import com.team2.userservice.user.service.CustomOAuth2UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/regions/test").permitAll()
                         .requestMatchers("/api/internal/**").permitAll()
                         .requestMatchers("/policy/**").permitAll() // 정책 페이지(개인정보처리방침 등) 공개 접근
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // API 문서
                         .requestMatchers("/api/users/me/region").authenticated() // 명시적 지정
                         .anyRequest().authenticated()
                 )

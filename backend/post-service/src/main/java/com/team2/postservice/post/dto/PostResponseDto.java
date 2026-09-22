@@ -13,32 +13,43 @@ public class PostResponseDto {
             Long id,
             String title,
             String content,
-            Long authorId,
+            String authorEmail,
+            String authorNickname,
             PostCategory category,
             PostStatus status,
             String regionName,
-            List<String> images,
+            List<ImageInfo> images,
             String createdAt,
             String updatedAt,
             String regionCode,
             boolean publiclyVisible
     ) {
-        public static Detail from(Post post) {
+        public static Detail from(Post post, String authorNickname) {
             return new Detail(
                     post.getId(),
                     post.getTitle(),
                     post.getContent(),
-                    post.getAuthorId(),
+                    post.getAuthorEmail(),
+                    authorNickname,
                     post.getCategory(),
                     post.getStatus(),
                     post.getRegionName(),
                     post.getImages().stream()
-                            .map(PostImage::getImageUrl)
+                            .map(ImageInfo::from)
                             .toList(),
                     post.getCreatedAt() != null ? post.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,
                     post.getUpdatedAt() != null ? post.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,
-                    post.getRegionCode(), post.isPubliclyVisible()
+                    post.getRegionCode(),
+                    post.isPubliclyVisible()
             );
+        }
+    }
+
+    // 프론트가 개별 이미지를 삭제(DELETE /posts/{id}/images/{imageId})하려면 id가 필요해서
+    // 단순 URL 문자열 대신 {id, imageUrl} 객체로 내려준다.
+    public record ImageInfo(Long id, String imageUrl) {
+        public static ImageInfo from(PostImage image) {
+            return new ImageInfo(image.getId(), image.getImageUrl());
         }
     }
 }

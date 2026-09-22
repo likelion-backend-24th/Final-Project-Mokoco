@@ -26,7 +26,7 @@ public class ReportService {
     private final PostViewerService postViewerService;
 
     @Transactional
-    public Long createReport(ReportCreateRequest request, Long reporterId) {
+    public Long createReport(ReportCreateRequest request, String reporterEmail) {
         if (request.targetType() == null || request.reason() == null)
             throw new CustomException(ErrorCode.INVALID_REPORT_TARGET);
 
@@ -43,7 +43,7 @@ public class ReportService {
                 .targetType(request.targetType())
                 .targetId(request.targetId())
                 .targetEmail(request.targetEmail())
-                .reporterEmail(postViewerService.requireEmail(reporterId))
+                .reporterEmail(reporterEmail)
                 .reason(request.reason())
                 .detail(request.detail())
                 .build();

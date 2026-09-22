@@ -13,14 +13,14 @@ const STATUS_LABEL = {
   CANCELED: "거래 취소됨",
 };
 
-export default function RepairerTransactionsModal({ userId, onClose }) {
+export default function RepairerTransactionsModal({ email, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`/api/profile/${encodeURIComponent(userId)}/transactions?role=repairer&size=20`, {
+    fetch(`/api/profile/${encodeURIComponent(email)}/transactions?role=repairer&size=20`, {
       signal: controller.signal,
       cache: "no-store",
     })
@@ -36,7 +36,7 @@ export default function RepairerTransactionsModal({ userId, onClose }) {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [userId]);
+  }, [email]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose} role="presentation">
@@ -47,7 +47,7 @@ export default function RepairerTransactionsModal({ userId, onClose }) {
         <div className="flex items-center justify-between border-b border-slate-100 p-4">
           <div>
             <h3 className="text-sm font-bold text-slate-800">거래 내역</h3>
-            <p className="mt-0.5 text-xs text-slate-400">{userId}</p>
+            <p className="mt-0.5 text-xs text-slate-400">{email}</p>
           </div>
           <button type="button" onClick={onClose} aria-label="닫기" className="rounded-full p-1 text-slate-400 hover:bg-slate-100">
             <X size={18} />

@@ -21,14 +21,14 @@ public class ResumeService {
     private final ResumeRepository resumeRepository;
 
     @Transactional
-    public Long createResume(ResumeRequestDto.Upsert request, Long userId) {
-        if (resumeRepository.existsByUserId(userId)) {
+    public Long createResume(ResumeRequestDto.Upsert request, String userEmail) {
+        if (resumeRepository.existsByUserEmail(userEmail)) {
             throw new CustomException(ErrorCode.DUPLICATE_RESUME);
         }
         validate(request);
 
         Resume resume = Resume.builder()
-                .userId(userId)
+                .userEmail(userEmail)
                 .build();
         resume.updateContent(request.headline(), request.introduction(), request.skills(), request.careers());
 
@@ -37,28 +37,28 @@ public class ResumeService {
     }
 
     @Transactional
-    public void updateResume(ResumeRequestDto.Upsert request, Long userId) {
+    public void updateResume(ResumeRequestDto.Upsert request, String userEmail) {
         validate(request);
-        Resume resume = resumeRepository.findByUserId(userId)
+        Resume resume = resumeRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESUME_NOT_FOUND));
         resume.updateContent(request.headline(), request.introduction(), request.skills(), request.careers());
     }
 
     @Transactional
-    public void deleteResume(Long userId) {
-        Resume resume = resumeRepository.findByUserId(userId)
+    public void deleteResume(String userEmail) {
+        Resume resume = resumeRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESUME_NOT_FOUND));
         resumeRepository.delete(resume);
     }
 
-    public ResumeResponseDto getMyResume(Long userId) {
-        Resume resume = resumeRepository.findByUserId(userId)
+    public ResumeResponseDto getMyResume(String userEmail) {
+        Resume resume = resumeRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESUME_NOT_FOUND));
         return ResumeResponseDto.from(resume);
     }
 
-    public ResumeResponseDto getResumeByUserId(Long userId) {
-        Resume resume = resumeRepository.findByUserId(userId)
+    public ResumeResponseDto getResumeByEmail(String userEmail) {
+        Resume resume = resumeRepository.findByUserEmail(userEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESUME_NOT_FOUND));
         return ResumeResponseDto.from(resume);
     }

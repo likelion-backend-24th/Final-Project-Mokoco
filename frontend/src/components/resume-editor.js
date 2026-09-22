@@ -173,37 +173,37 @@ export default function ResumeEditor() {
     }
   }
 
-  if (loading) return <p className="text-sm text-slate-400">이력서 확인 중...</p>;
+  if (loading) return <p className="text-base text-slate-400">이력서 확인 중...</p>;
 
   if (editing) {
     return (
-      <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white p-5">
-        <p className="mb-4 text-sm font-bold text-slate-800">{resume ? "이력서 수정" : "이력서 작성"}</p>
+      <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white p-6">
+        <p className="mb-5 text-base font-bold text-slate-800">{resume ? "이력서 수정" : "이력서 작성"}</p>
 
-        <label className="block text-xs font-semibold text-slate-500">한 줄 소개</label>
+        <label className="block text-sm font-semibold text-slate-500">한 줄 소개</label>
         <input
           value={form.headline}
           onChange={(event) => setForm((c) => ({ ...c, headline: event.target.value }))}
           placeholder="예) 10년차 가전 수리 전문가"
           maxLength={100}
-          className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
+          className="mt-1.5 w-full rounded-lg border border-slate-200 px-4 py-2.5 text-base outline-none focus:border-blue-400"
         />
 
-        <label className="mt-4 block text-xs font-semibold text-slate-500">전문 분야</label>
-        <div className="mt-1 flex flex-wrap gap-1.5">
+        <label className="mt-5 block text-sm font-semibold text-slate-500">전문 분야</label>
+        <div className="mt-1.5 flex flex-wrap gap-2">
           {form.skills.map((skill, index) => (
             <span
               key={`${skill}-${index}`}
-              className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700"
+              className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-700"
             >
               {skill}
               <button type="button" onClick={() => removeSkill(index)} aria-label={`${skill} 제거`}>
-                <X size={12} weight="bold" />
+                <X size={14} weight="bold" />
               </button>
             </span>
           ))}
         </div>
-        <div className="mt-1.5 flex gap-1.5">
+        <div className="mt-2 flex gap-2">
           <input
             value={skillInput}
             onChange={(event) => setSkillInput(event.target.value)}
@@ -214,37 +214,37 @@ export default function ResumeEditor() {
               }
             }}
             placeholder="예) 세탁기 (Enter로 추가)"
-            className="flex-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-blue-400"
+            className="flex-1 rounded-lg border border-slate-200 px-4 py-2 text-base outline-none focus:border-blue-400"
           />
           <button
             type="button"
             onClick={addSkill}
-            className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
+            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
           >
             추가
           </button>
         </div>
 
-        <label className="mt-4 block text-xs font-semibold text-slate-500">경력 사항</label>
-        <div className="mt-1 space-y-2">
+        <label className="mt-5 block text-sm font-semibold text-slate-500">경력 사항</label>
+        <div className="mt-1.5 space-y-3">
           {form.careers.map((career, index) => (
-            <div key={index} className="rounded-lg border border-slate-100 p-2.5">
-              <div className="flex flex-wrap items-center gap-1.5">
+            <div key={index} className="rounded-lg border border-slate-100 p-3.5">
+              <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="month"
                   value={career.start}
                   onChange={(event) => updateCareer(index, "start", event.target.value)}
-                  className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400"
+                  className="rounded-lg border border-slate-200 px-2.5 py-2 text-sm outline-none focus:border-blue-400"
                 />
-                <span className="text-xs text-slate-400">~</span>
+                <span className="text-sm text-slate-400">~</span>
                 <input
                   type="month"
                   value={career.end}
                   disabled={career.ongoing}
                   onChange={(event) => updateCareer(index, "end", event.target.value)}
-                  className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs outline-none focus:border-blue-400 disabled:bg-slate-50 disabled:text-slate-300"
+                  className="rounded-lg border border-slate-200 px-2.5 py-2 text-sm outline-none focus:border-blue-400 disabled:bg-slate-50 disabled:text-slate-300"
                 />
-                <label className="flex items-center gap-1 text-xs text-slate-500">
+                <label className="flex items-center gap-1.5 text-sm text-slate-500">
                   <input
                     type="checkbox"
                     checked={career.ongoing}
@@ -258,14 +258,14 @@ export default function ResumeEditor() {
                   aria-label="경력 삭제"
                   className="ml-auto rounded-lg px-2 text-slate-400 hover:bg-slate-50"
                 >
-                  <Trash size={14} />
+                  <Trash size={16} />
                 </button>
               </div>
               <input
                 value={career.description}
                 onChange={(event) => updateCareer(index, "description", event.target.value)}
                 placeholder="내용 (예: OO전자서비스 가전 수리 담당)"
-                className="mt-1.5 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs outline-none focus:border-blue-400"
+                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
               />
             </div>
           ))}
@@ -274,36 +274,36 @@ export default function ResumeEditor() {
           <button
             type="button"
             onClick={addCareerRow}
-            className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
+            className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:underline"
           >
-            <Plus size={12} weight="bold" /> 경력 추가
+            <Plus size={14} weight="bold" /> 경력 추가
           </button>
         )}
 
-        <label className="mt-4 block text-xs font-semibold text-slate-500">자기소개</label>
+        <label className="mt-5 block text-sm font-semibold text-slate-500">자기소개</label>
         <textarea
           value={form.introduction}
           onChange={(event) => setForm((c) => ({ ...c, introduction: event.target.value }))}
           placeholder="경력, 강점, 작업 방식 등을 자유롭게 소개해주세요."
           rows={5}
           maxLength={2000}
-          className="mt-1 w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-400"
+          className="mt-1.5 w-full resize-none rounded-lg border border-slate-200 px-4 py-2.5 text-base text-slate-700 outline-none focus:border-blue-400"
         />
 
-        {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-5 flex gap-3">
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {submitting ? "저장 중..." : "저장"}
           </button>
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="rounded-lg border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
+            className="rounded-lg border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
           >
             취소
           </button>
@@ -314,14 +314,14 @@ export default function ResumeEditor() {
 
   if (!resume) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center">
-        <FileText size={28} weight="duotone" className="mx-auto text-slate-300" />
-        <p className="mt-2 text-sm text-slate-500">아직 작성한 이력서가 없어요.</p>
-        <p className="mt-0.5 text-xs text-slate-400">수리자로 활동하신다면 이력서로 자신을 어필해보세요.</p>
+      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
+        <FileText size={32} weight="duotone" className="mx-auto text-slate-300" />
+        <p className="mt-3 text-base text-slate-500">아직 작성한 이력서가 없어요.</p>
+        <p className="mt-1 text-sm text-slate-400">수리자로 활동하신다면 이력서로 자신을 어필해보세요.</p>
         <button
           type="button"
           onClick={startCreate}
-          className="mt-3 rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+          className="mt-4 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
         >
           이력서 작성하기
         </button>
@@ -331,31 +331,31 @@ export default function ResumeEditor() {
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-5 text-white">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-6 text-white">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-semibold text-blue-100">{resume.userId}</p>
-            <h3 className="mt-0.5 text-lg font-extrabold">{resume.headline}</h3>
+            <p className="text-sm font-semibold text-blue-100">{resume.userEmail}</p>
+            <h3 className="mt-1 text-xl font-extrabold">{resume.headline}</h3>
           </div>
           <div className="flex gap-1">
-            <button type="button" onClick={startEdit} aria-label="수정" className="rounded-full p-1.5 text-blue-100 hover:bg-white/15">
-              <PencilSimple size={16} />
+            <button type="button" onClick={startEdit} aria-label="수정" className="rounded-full p-2 text-blue-100 hover:bg-white/15">
+              <PencilSimple size={18} />
             </button>
             <button
               type="button"
               onClick={handleDelete}
               disabled={submitting}
               aria-label="삭제"
-              className="rounded-full p-1.5 text-blue-100 hover:bg-white/15"
+              className="rounded-full p-2 text-blue-100 hover:bg-white/15"
             >
-              <Trash size={16} />
+              <Trash size={18} />
             </button>
           </div>
         </div>
         {resume.skills?.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
+          <div className="mt-4 flex flex-wrap gap-2">
             {resume.skills.map((skill) => (
-              <span key={skill} className="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold">
+              <span key={skill} className="rounded-full bg-white/20 px-3 py-1 text-sm font-semibold">
                 {skill}
               </span>
             ))}
@@ -363,17 +363,17 @@ export default function ResumeEditor() {
         )}
       </div>
 
-      <div className="p-5">
+      <div className="p-6">
         {resume.careers?.length > 0 && (
-          <div className="mb-4">
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-bold text-slate-500">
-              <Briefcase size={14} weight="bold" /> 경력 사항
+          <div className="mb-5">
+            <p className="mb-2.5 flex items-center gap-2 text-sm font-bold text-slate-500">
+              <Briefcase size={16} weight="bold" /> 경력 사항
             </p>
-            <ul className="space-y-2 border-l-2 border-slate-100 pl-3">
+            <ul className="space-y-3 border-l-2 border-slate-100 pl-4">
               {resume.careers.map((career, index) => (
                 <li key={index}>
-                  <p className="text-xs font-semibold text-slate-400">{career.period}</p>
-                  <p className="text-sm text-slate-700">{career.description}</p>
+                  <p className="text-sm font-semibold text-slate-400">{career.period}</p>
+                  <p className="text-base text-slate-700">{career.description}</p>
                 </li>
               ))}
             </ul>
@@ -382,14 +382,14 @@ export default function ResumeEditor() {
 
         {resume.introduction && (
           <div>
-            <p className="mb-1.5 text-xs font-bold text-slate-500">자기소개</p>
-            <p className="whitespace-pre-line text-sm text-slate-600">{resume.introduction}</p>
+            <p className="mb-2 text-sm font-bold text-slate-500">자기소개</p>
+            <p className="whitespace-pre-line text-base text-slate-600">{resume.introduction}</p>
           </div>
         )}
 
-        {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
 
-        <p className="mt-4 text-xs text-slate-400">
+        <p className="mt-5 text-sm text-slate-400">
           {resume.updatedAt ? `${new Date(resume.updatedAt).toLocaleDateString()} 수정됨` : ""}
         </p>
       </div>

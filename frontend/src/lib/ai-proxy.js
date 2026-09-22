@@ -4,8 +4,11 @@ import { backendUrl } from "@/lib/backend";
 export async function aiProxy(request, path, multipart = false) {
   const token = (await cookies()).get("access_token")?.value;
   if (!token) return Response.json({ message: "로그인이 필요합니다." }, { status: 401 });
+  // Caddy가 TLS를 종단하고 frontend 컨테이너로는 평문 HTTP로 전달하므로, request.url의 스킴은
+  // 항상 http가 되어 브라우저가 보낸 https Origin과 어긋난다. 스킴은 무시하고 host만 비교한다.
   const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin) return Response.json({ message: "잘못된 요청 출처입니다." }, { status: 403 });
+  const host = request.headers.get("host");
+  if (origin && (!host || new URL(origin).host !== host)) return Response.json({ message: "잘못된 요청 출처입니다." }, { status: 403 });
   const size = Number(request.headers.get("content-length") || 0);
   if (size > (multipart ? 16 * 1024 * 1024 : 128 * 1024)) return Response.json({ message: "입력 용량을 줄여주세요." }, { status: 413 });
   let body;

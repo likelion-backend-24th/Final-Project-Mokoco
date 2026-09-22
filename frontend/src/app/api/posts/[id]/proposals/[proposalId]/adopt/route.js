@@ -6,7 +6,7 @@ export async function PATCH(request, { params }) {
     const resolvedParams = await params;
     const postId = resolvedParams.postId || resolvedParams.id;
     const proposalId = resolvedParams.proposalId;
-
+    
     const cookieStore = await cookies();
     const accessToken = cookieStore.get("access_token")?.value;
 
@@ -18,8 +18,8 @@ export async function PATCH(request, { params }) {
 
     const response = await fetch(targetUrl, {
       method: "PATCH",
-      headers: { Authorization: `Bearer ${(await cookies()).get("access_token")?.value ?? ""}`,
-
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 

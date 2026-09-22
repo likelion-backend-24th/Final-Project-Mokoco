@@ -4,15 +4,18 @@ import com.team2.postservice.client.dto.PaymentClientResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.PostMapping;
 
 @FeignClient(
         name = "payment-service",
         url = "${services.payment-service.url:http://localhost:8083}",
-        configuration = UserClientConfig.class
+        configuration = PaymentClientConfig.class
 )
 public interface PaymentClient {
 
     @GetMapping("/internal/payments/post/{postId}")
     PaymentClientResponse getPaymentByPostId(@PathVariable Long postId);
+
+    @PostMapping("/internal/payments/post/{postId}/settle")
+    void settle(@PathVariable Long postId);
 }

@@ -7,7 +7,7 @@ async function forwardPost(id, method, body) {
   const accessToken = cookieStore.get("access_token")?.value;
   const userEmail = cookieStore.get("user_email")?.value;
 
-  if (!accessToken) {
+  if (!accessToken || !userEmail) {
     return NextResponse.json({ message: "로그인이 필요합니다." }, { status: 401 });
   }
 
@@ -16,7 +16,6 @@ async function forwardPost(id, method, body) {
       method,
       headers: {
         Authorization: `Bearer ${accessToken}`,
-
         ...(body ? { "Content-Type": "application/json" } : {}),
       },
       ...(body ? { body: JSON.stringify(body) } : {}),
@@ -58,7 +57,9 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ message: "제목과 요청 내용을 모두 입력해주세요." }, { status: 400 });
   }
 
-  return forwardPost(id, "PATCH", { title, content });
+  const payload = { title, content };
+  if (typeof body.category === "string" && body.category) payload.category = body.category;
+  return forwardPost(id, "PATCH", payload);
 }
 
 export async function DELETE(_post, { params }) {

@@ -7,7 +7,6 @@ import ChatAttachment from "@/components/chat-attachment";
 import { Trash, ArrowLeft, ArrowUp, ChatCircleDots, ShieldCheck, User, Wrench } from "@phosphor-icons/react";
 import "./chat-room.css";
 import { chatThemes, useChatTheme } from "@/components/chat-theme";
-import SiteHeader from "@/components/site-header";
 
 function messageDate(value) {
   if (!value) return null;
@@ -19,10 +18,16 @@ function dayLabel(value) {
   return messageDate(value)?.toLocaleDateString("ko-KR", { month: "long", day: "numeric", weekday: "long" }) || "";
 }
 
+// 채팅에서 계약서 화면으로 넘어갈 때 지금 뭘 해야 하는지 바로 보이도록 배너 문구를 거래 상태별로 다르게 보여준다.
+const dealBannerLabel = {
+  MATCHED: "계약서 작성하고 결제하기 →",
+  PRODUCT_SENT: "수리 진행 상황 보기 →",
+  REPAIRING: "수리 진행 상황 보기 →",
+  REPAIR_DONE: "완료 확인하기 →",
+  COMPLETED: "계약서 · 후기 보기 →",
+};
+
 export default function ChatRoom({ roomId }) {
-
-  const userEmail = cookieStore.get("user_email")?.value ?? null;
-
   const [theme, selectTheme] = useChatTheme();
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
@@ -66,7 +71,7 @@ export default function ChatRoom({ roomId }) {
 
   useEffect(() => {
     let active = true;
-    const url = process.env.NEXT_PUBLIC_CHAT_WS_URL || (window.location.protocol === "https:" ? `wss://${window.location.host}/ws/chat` : "ws://localhost:8000/ws/chat");
+    const url = process.env.NEXT_PUBLIC_CHAT_WS_URL || (window.location.protocol === "https:" ? `wss://${window.location.host}/ws/chat` : "ws://localhost:8082/ws/chat");
     const client = new Client({
       brokerURL: url, reconnectDelay: 5000, connectionTimeout: 10000,
       heartbeatIncoming: 0, heartbeatOutgoing: 10000,
@@ -109,18 +114,20 @@ export default function ChatRoom({ roomId }) {
     return () => { active = false; clientRef.current = null; void client.deactivate(); };
   }, [roomId]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    const refresh = () => fetch(`/api/chat-rooms/${roomId}/detail`, { cache: "no-store", signal: controller.signal })
-      .then(async response => { const data = await response.json(); if (!response.ok) throw new Error(data.error); return data; })
-      .then(data => { if (!controller.signal.aborted) setDetail({ ...data, roomId }); })
-      .catch(failure => { if (!controller.signal.aborted) setError(failure.message); });
-    void refresh();
-    window.addEventListener("focus", refresh);
-    return () => { controller.abort(); window.removeEventListener("focus", refresh); };
-  }, [roomId]);
-
   useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length]);
+
+  useEffect(() => {
+    let active = true;
+    function loadDetail() {
+      fetch(`/api/chat-rooms/${roomId}/detail`, { cache: "no-store" })
+        .then(async response => { const data = await response.json(); if (!response.ok) throw new Error(data.error); return data; })
+        .then(data => { if (active) setDetail({ roomId, ...data }); })
+        .catch(() => {});
+    }
+    loadDetail();
+    window.addEventListener("focus", loadDetail);
+    return () => { active = false; window.removeEventListener("focus", loadDetail); };
+  }, [roomId]);
 
   function send(event) {
     event.preventDefault();
@@ -131,72 +138,69 @@ export default function ChatRoom({ roomId }) {
     } catch { setError("전송하지 못했습니다. 다시 시도해주세요."); }
   }
 
-  return  <div className="min-h-screen bg-[#f7f9fc]">
-    <SiteHeader userEmail={userEmail} />
-    <main className="conversation-shell" data-theme={theme}>
-      <header className="conversation-header">
-        <Link href="/#my-chats" className="chat-icon-button" aria-label="내 채팅 목록으로"><ArrowLeft size={22} /></Link>
-        <div className="conversation-mark"><Wrench size={24} weight="duotone" /></div>
-        <div className="conversation-heading"><span>동네수리 · 1:1 대화</span><h1>{nickname || "수리 상담"} <small>#{roomId}</small></h1></div>
-        <span role="status" className={`connection-status ${status === "연결됨" ? "is-connected" : ""}`}>{status}</span>
-      </header>
-      <div className="chat-theme-bar">
-        <label htmlFor="chat-theme">채팅 테마</label>
-        <select id="chat-theme" value={theme} onChange={event => selectTheme(event.target.value)}>
-          {chatThemes.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-        </select>
-        <span>내 화면에만 적용</span>
-      </div>
+  return <main className="conversation-shell" data-theme={theme}>
+    <header className="conversation-header">
+      <Link href="/#my-chats" className="chat-icon-button" aria-label="내 채팅 목록으로"><ArrowLeft size={22} /></Link>
+      <div className="conversation-mark"><Wrench size={24} weight="duotone" /></div>
+      <div className="conversation-heading"><span>동네수리 · 1:1 대화</span><h1>{nickname || "수리 상담"} <small>#{roomId}</small></h1></div>
+      <span role="status" className={`connection-status ${status === "연결됨" ? "is-connected" : ""}`}>{status}</span>
+    </header>
+    <div className="chat-theme-bar">
+      <label htmlFor="chat-theme">채팅 테마</label>
+      <select id="chat-theme" value={theme} onChange={event => selectTheme(event.target.value)}>
+        {chatThemes.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+      </select>
+      <span>내 화면에만 적용</span>
+    </div>
 
-      <div className="conversation-banner"><ShieldCheck size={17} /><span>수리 범위와 일정을 이곳에서 함께 확인하세요.</span></div>
-      {error && <p role="alert" className="conversation-error">{error}</p>}
-      <div className="conversation-messages" role="log" aria-label="채팅 메시지" aria-live="polite">
-        {more && <button className="history-button" disabled={loading} onClick={async () => {
-          setLoading(true); try { await history(messages[0]?.messageId); } catch (failure) { setError(failure.message); } finally { setLoading(false); }
-        }}>{loading ? "불러오는 중…" : "이전 대화 보기"}</button>}
-        {!messages.length && <div className="conversation-empty"><ChatCircleDots size={44} weight="duotone" /><h2>{status === "연결됨" ? "반가운 첫 인사를 건네보세요" : "대화를 준비하고 있어요"}</h2><p>수리가 필요한 부분과 궁금한 점을 나눠보세요.</p></div>}
-        {messages.map((message, index) => {
-          const mine = message.senderId === userId;
-          const date = messageDate(message.createdAt);
-          const newDay = index === 0 || dayLabel(messages[index - 1].createdAt) !== dayLabel(message.createdAt);
-          return <div key={message.messageId}>
-            {newDay && <div className="conversation-date"><span>{dayLabel(message.createdAt)}</span></div>}
-            <article className={`conversation-row ${mine ? "is-mine" : ""}`}>
-              {!mine && <div className="conversation-avatar" aria-hidden="true"><User size={21} weight="duotone" /></div>}
-              <div className="conversation-message">
-                <div className="message-meta"><span>{mine ? "나" : nickname || "이웃"}</span><time>{date?.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
-                  {mine && !message.deleted && <button type="button" aria-label="메시지 삭제" title="메시지 삭제" disabled={deleting !== null} onClick={() => deleteMessage(message.messageId)} className="message-delete"><Trash size={14} /></button>}
-                </div>
-                <div className={`message-bubble ${message.attachmentUrl ? "has-media" : ""} ${message.deleted ? "is-deleted" : ""}`}>
-                  {message.attachmentUrl ? message.type === "VIDEO"
-                    ? <video src={message.attachmentUrl} controls preload="metadata" />
-                    : <a href={message.attachmentUrl} target="_blank" rel="noreferrer">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={message.attachmentUrl} alt="첨부 이미지" loading="lazy" />
-                    </a>
-                    : <p>{message.content}</p>}
-                </div>
+    <div className="conversation-banner"><ShieldCheck size={17} /><span>수리 범위와 일정을 이곳에서 함께 확인하세요.</span></div>
+    {error && <p role="alert" className="conversation-error">{error}</p>}
+    <div className="conversation-messages" role="log" aria-label="채팅 메시지" aria-live="polite">
+      {more && <button className="history-button" disabled={loading} onClick={async () => {
+        setLoading(true); try { await history(messages[0]?.messageId); } catch (failure) { setError(failure.message); } finally { setLoading(false); }
+      }}>{loading ? "불러오는 중…" : "이전 대화 보기"}</button>}
+      {!messages.length && <div className="conversation-empty"><ChatCircleDots size={44} weight="duotone" /><h2>{status === "연결됨" ? "반가운 첫 인사를 건네보세요" : "대화를 준비하고 있어요"}</h2><p>수리가 필요한 부분과 궁금한 점을 나눠보세요.</p></div>}
+      {messages.map((message, index) => {
+        const mine = message.senderId === userId;
+        const date = messageDate(message.createdAt);
+        const newDay = index === 0 || dayLabel(messages[index - 1].createdAt) !== dayLabel(message.createdAt);
+        return <div key={message.messageId}>
+          {newDay && <div className="conversation-date"><span>{dayLabel(message.createdAt)}</span></div>}
+          <article className={`conversation-row ${mine ? "is-mine" : ""}`}>
+            {!mine && <div className="conversation-avatar" aria-hidden="true"><User size={21} weight="duotone" /></div>}
+            <div className="conversation-message">
+              <div className="message-meta"><span>{mine ? "나" : nickname || "이웃"}</span><time>{date?.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
+                {mine && !message.deleted && <button type="button" aria-label="메시지 삭제" title="메시지 삭제" disabled={deleting !== null} onClick={() => deleteMessage(message.messageId)} className="message-delete"><Trash size={14} /></button>}
               </div>
-            </article>
-          </div>;
-        })}<div ref={bottom} />
-      </div>
-      {detail?.roomId === roomId && (detail.fixDealId
-        ? <Link href={`/chat-rooms/${roomId}/contract`} className="conversation-banner" style={{ fontWeight: 600 }}>수리 계약서 작성 · 서명 · 작업 진행 →</Link>
-        : <p className="conversation-banner">견적 상담 중입니다. 이 견적이 채택되면 계약서를 작성할 수 있습니다.</p>)}
+              <div className={`message-bubble ${message.attachmentUrl ? "has-media" : ""} ${message.deleted ? "is-deleted" : ""}`}>
+                {message.attachmentUrl ? message.type === "VIDEO"
+                  ? <video src={message.attachmentUrl} controls preload="metadata" />
+                  : <a href={message.attachmentUrl} target="_blank" rel="noreferrer">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={message.attachmentUrl} alt="첨부 이미지" loading="lazy" />
+                  </a>
+                  : <p>{message.content}</p>}
+              </div>
+            </div>
+          </article>
+        </div>;
+      })}<div ref={bottom} />
+    </div>
+    {detail?.roomId === roomId && (detail.fixDealId
+      ? <Link href={`/chat-rooms/${roomId}/contract`} className="conversation-banner" style={{ fontWeight: 600 }}>{dealBannerLabel[detail.dealStatus] || "수리 계약서 작성 · 서명 · 작업 진행 →"}</Link>
+      : <p className="conversation-banner">견적 상담 중입니다. 이 견적이 채택되면 계약서를 작성할 수 있습니다.</p>)}
 
-      <footer className="conversation-footer">
-        <div className="conversation-composer">
-          <ChatAttachment key={roomId} roomId={roomId} onSent={message => merge([message])} />
-          <form onSubmit={send} className="message-form">
-            <textarea rows={1} aria-label="메시지" maxLength={2000} value={text} onChange={event => setText(event.target.value)}
-              onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); send(event); } }}
-              placeholder="메시지를 입력하세요" />
-            <button aria-label="메시지 전송" disabled={status !== "연결됨" || !text.trim()} className="message-send"><ArrowUp size={23} weight="bold" /></button>
-          </form>
-        </div>
-        <p className="composer-hint">사진과 동영상으로 수리할 부분을 더 자세히 알려주세요.</p>
-      </footer>
-    </main>
-  </div>;
+    <footer className="conversation-footer">
+      <div className="conversation-composer">
+        <ChatAttachment key={roomId} roomId={roomId} onSent={message => merge([message])} />
+        <form onSubmit={send} className="message-form">
+          <textarea rows={1} aria-label="메시지" maxLength={2000} value={text} onChange={event => setText(event.target.value)}
+            onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); send(event); } }}
+            placeholder="메시지를 입력하세요" />
+          <button aria-label="메시지 전송" disabled={status !== "연결됨" || !text.trim()} className="message-send"><ArrowUp size={23} weight="bold" /></button>
+        </form>
+      </div>
+      <p className="composer-hint">사진과 동영상으로 수리할 부분을 더 자세히 알려주세요.</p>
+    </footer>
+  </main>;
 }

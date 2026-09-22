@@ -1,4 +1,3 @@
-import { userIdFromToken } from "@/lib/user-id";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import PostForm from "@/components/post-form";
@@ -26,15 +25,14 @@ export default async function EditPostPage({ params }) {
   const id = resolvedParams?.id;
   
   const cookieStore = await cookies();
-  const userId = userIdFromToken(cookieStore.get("access_token")?.value);
   const userEmail = cookieStore.get("user_email")?.value;
   const accessToken = cookieStore.get("access_token")?.value;
 
-  if (!accessToken) redirect("/login");
+  if (!userEmail || !accessToken) redirect("/login");
 
   const post = await getPost(id, accessToken);
   if (!post) notFound();
-  if (String(post.authorId) !== userId) redirect(`/posts/${id}`);
+  if (post.authorEmail !== userEmail) redirect(`/posts/${id}`);
 
   return (
     <div className="min-h-screen bg-[#f7f9fc]">
