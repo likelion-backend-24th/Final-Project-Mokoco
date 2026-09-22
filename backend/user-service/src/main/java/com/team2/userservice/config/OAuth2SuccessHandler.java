@@ -1,5 +1,7 @@
 package com.team2.userservice.config;
 
+import com.team2.common.security.Role;
+import com.team2.userservice.user.dto.OAuthAttributes;
 import com.team2.common.exception.CustomException;
 import com.team2.userservice.common.exception.ErrorCode;
 import com.team2.userservice.user.entity.RefreshToken;

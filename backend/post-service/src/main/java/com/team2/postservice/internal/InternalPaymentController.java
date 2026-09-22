@@ -28,11 +28,12 @@ public class InternalPaymentController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         Proposal proposal = proposalRepository.findById(deal.getProposalId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
         if (!proposal.isAdopted() || !proposal.getPost().getId().equals(postId)
                 || proposal.getEstimatedPrice() == null || proposal.getEstimatedPrice() <= 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT);
         }
-        return new PaymentContext(postId, deal.getId(), deal.getRequesterId(), proposal.getPost().getAuthorEmail(),
-                proposal.getRepairerEmail(), proposal.getEstimatedPrice(), deal.getStatus().name());
+        return new PaymentContext(postId, deal.getId(), deal.getRequesterId(),
+                proposal.getRepairerId(), proposal.getEstimatedPrice(), deal.getStatus().name());
     }
 }

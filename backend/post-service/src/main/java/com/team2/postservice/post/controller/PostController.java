@@ -29,7 +29,7 @@ public class PostController {
     public ResponseEntity<Long> createPost(@RequestPart("post") @Valid PostRequestDto.Create request,
                                            @RequestPart(value = "images", required = false) List<MultipartFile> images,
                                            @AuthenticationPrincipal LoginUser user) {
-        Long postId = postService.createPost(request, images, user.email());
+        Long postId = postService.createPost(request, images, user.id());
         return ResponseEntity.ok(postId);
     }
 
@@ -40,7 +40,7 @@ public class PostController {
             @AuthenticationPrincipal LoginUser user,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(postService.getNearbyPosts(user == null ? null : user.email(), category, page, size, regionScope));
+        return ResponseEntity.ok(postService.getNearbyPosts(user == null ? null : user.id(), category, page, size, regionScope));
     }
 
     public record VisibilityRequest(@NotNull Boolean publiclyVisible) {}
@@ -49,7 +49,7 @@ public class PostController {
     public ResponseEntity<Void> changeVisibility(@PathVariable Long id,
             @RequestBody @Valid VisibilityRequest request,
             @AuthenticationPrincipal LoginUser user) {
-        postService.changeVisibility(id, request.publiclyVisible(), user.email());
+        postService.changeVisibility(id, request.publiclyVisible(), user.id());
         return ResponseEntity.noContent().build();
     }
 
@@ -62,14 +62,14 @@ public class PostController {
     public ResponseEntity<Void> updatePost(@PathVariable Long id,
                                            @RequestBody @Valid PostRequestDto.Update request,
                                            @AuthenticationPrincipal LoginUser user) {
-        postService.updatePost(id, request, user.email());
+        postService.updatePost(id, request, user.id());
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePost(@PathVariable Long id,
                                            @AuthenticationPrincipal LoginUser user) {
-        postService.deletePost(id, user.email());
+        postService.deletePost(id, user.id());
         return ResponseEntity.ok().build();
     }
 
@@ -77,14 +77,14 @@ public class PostController {
     public ResponseEntity<PostResponseDto.Detail> addImages(@PathVariable Long id,
                                                             @RequestPart("images") List<MultipartFile> images,
                                                             @AuthenticationPrincipal LoginUser user) {
-        return ResponseEntity.ok(postService.addImages(id, images, user.email()));
+        return ResponseEntity.ok(postService.addImages(id, images, user.id()));
     }
 
     @DeleteMapping("/{id}/images/{imageId}")
     public ResponseEntity<Void> deleteImage(@PathVariable Long id,
                                             @PathVariable Long imageId,
                                             @AuthenticationPrincipal LoginUser user) {
-        postService.deleteImage(id, imageId, user.email());
+        postService.deleteImage(id, imageId, user.id());
         return ResponseEntity.ok().build();
     }
 }

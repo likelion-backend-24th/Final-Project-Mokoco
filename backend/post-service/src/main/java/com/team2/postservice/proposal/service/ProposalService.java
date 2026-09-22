@@ -44,7 +44,7 @@ public class ProposalService {
     private final NotificationService notificationService;
 
     @Transactional
-    public Long createProposal(Long postId, ProposalRequestDto.Create request, String repairerEmail) {
+    public Long createProposal(Long postId, ProposalRequestDto.Create request, Long repairerId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
 
@@ -53,7 +53,7 @@ public class ProposalService {
 
         Proposal proposal = Proposal.builder()
                 .post(post)
-                .repairerEmail(repairerEmail)
+                .repairerId(repairerId)
                 .estimatedPrice(request.estimatedPrice().intValue())
                 .content(request.content())
                 .attachResume(Boolean.TRUE.equals(request.attachResume()))
@@ -71,11 +71,11 @@ public class ProposalService {
     }
 
     @Transactional
-    public void adoptProposal(Long postId, Long proposalId, String userEmail) {
+    public void adoptProposal(Long postId, Long proposalId, Long userId) {
         Post post = postRepository.lockById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
 
-        if (!post.getAuthorEmail().equals(userEmail)) {
+        if (!post.getAuthorId().equals(userId)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_PROPOSAL_ADOPT);
         }
 
@@ -85,6 +85,7 @@ public class ProposalService {
         if (!proposal.getPost().getId().equals(postId)) {
             throw new CustomException(ErrorCode.PROPOSAL_NOT_FOUND);
         }
+
         if (proposal.isAdopted()) return;
         if (proposalRepository.findByPost(post).stream().anyMatch(Proposal::isAdopted)) {
             throw new CustomException(ErrorCode.INVALID_INPUT);
@@ -101,8 +102,8 @@ public class ProposalService {
         FixDeal savedDeal = fixDealRepository.lockByProposalId(proposal.getId())
                 .map(existing -> { existing.changeStatus(FixDealStatus.MATCHED); return existing; })
                 .orElseGet(() -> {
-                    UserClientResponse requester = userClient.getUserByEmail(post.getAuthorEmail());
-                    UserClientResponse repairer = userClient.getUserByEmail(proposal.getRepairerEmail());
+                    UserClientResponse requester = userClient.getUserById(post.getAuthorId());
+                    UserClientResponse repairer = userClient.getUserById(proposal.getRepairerId());
                     return fixDealRepository.save(FixDeal.builder()
                             .postId(post.getId())
                             .proposalId(proposal.getId())
@@ -162,11 +163,11 @@ public class ProposalService {
     // 되돌릴 방법(환불)이 없어 여기서 막는다. 계약서·작업 진행 단계까지 갔다면 대신 거래를
     // 취소하는 별도 경로를 이용해야 한다.
     @Transactional
-    public void cancelProposal(Long postId, Long proposalId, String userEmail) {
+    public void cancelProposal(Long postId, Long proposalId, Long userId) {
         Post post = postRepository.lockById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
 
-        if (!post.getAuthorEmail().equals(userEmail)) {
+        if (!post.getAuthorId().equals(userId)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_PROPOSAL_ADOPT);
         }
 
@@ -231,7 +232,7 @@ public class ProposalService {
                 .map(proposal -> {
                     Long fixDealId = proposal.isAdopted() ? fixDealRepository.findByProposalId(proposal.getId())
                             .map(FixDeal::getId).orElse(null) : null;
-                    RepairerSummary summary = repairerSummary(proposal.getRepairerEmail());
+                    RepairerSummary summary = repairerSummary(proposal.getRepairerId());
                     return new ProposalResponseDto(proposal, fixDealId, summary.region(), summary.completedCount(), summary.nickname());
                 })
                 .toList();
@@ -240,12 +241,12 @@ public class ProposalService {
     private record RepairerSummary(String region, long completedCount, String nickname) {}
 
     // 수리공 지역/채택 횟수/닉네임 조회 — 실패해도 제안 목록 자체는 보여야 하므로 개별로 감싸서 무해하게 실패시킨다.
-    private RepairerSummary repairerSummary(String repairerEmail) {
+    private RepairerSummary repairerSummary(Long repairerId) {
         String region = null;
         long completedCount = 0;
         String nickname = null;
         try {
-            RegionResponse regionResponse = userClient.getRegionByEmail(repairerEmail);
+            RegionResponse regionResponse = userClient.getRegionByUserId(repairerId);
             if (regionResponse != null && regionResponse.sido() != null) {
                 region = regionResponse.sigungu() != null
                         ? regionResponse.sido() + " " + regionResponse.sigungu()
@@ -255,7 +256,7 @@ public class ProposalService {
             // 활동 지역 미설정 등 — 위치 미노출로 처리
         }
         try {
-            UserClientResponse repairer = userClient.getUserByEmail(repairerEmail);
+            UserClientResponse repairer = userClient.getUserById(repairerId);
             completedCount = fixDealRepository.countByRepairerIdAndStatus(repairer.id(), FixDealStatus.COMPLETED);
             nickname = repairer.nickname();
         } catch (Exception ignored) {
@@ -265,11 +266,11 @@ public class ProposalService {
     }
 
     @Transactional
-    public void deleteProposal(Long postId, Long proposalId, String userEmail) {
+    public void deleteProposal(Long postId, Long proposalId, Long userId) {
         Proposal proposal = proposalRepository.lockById(proposalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND_FOR_PROPOSAL));
 
-        if (!proposal.getRepairerEmail().equals(userEmail)) {
+        if (!proposal.getRepairerId().equals(userId)) {
             throw new CustomException(ErrorCode.UNAUTHORIZED_PROPOSAL_DELETE);
         }
 

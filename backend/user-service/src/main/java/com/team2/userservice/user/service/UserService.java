@@ -1,6 +1,7 @@
 package com.team2.userservice.user.service;
 
 import com.team2.common.exception.CustomException;
+import com.team2.common.security.Role;
 import com.team2.userservice.common.exception.ErrorCode;
 import com.team2.userservice.config.JwtTokenProvider;
 import com.team2.userservice.region.entity.Region;
@@ -12,7 +13,6 @@ import com.team2.userservice.user.dto.UserSignUpRequest;
 import com.team2.userservice.user.dto.*;
 import com.team2.userservice.user.entity.AccountStatus;
 import com.team2.userservice.user.entity.RefreshToken;
-import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
 import com.team2.userservice.user.repository.RefreshTokenRepository;
 import com.team2.userservice.user.repository.SocialAccountRepository;

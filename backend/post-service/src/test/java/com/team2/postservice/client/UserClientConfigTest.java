@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.*;
 class UserClientConfigTest {
     @Test
     void attachesInternalKey() {
-        var template = new RequestTemplate();
+        RequestTemplate template = new RequestTemplate();
         new UserClientConfig().internalServiceAuthentication("test-key").apply(template);
         assertThat(template.headers().get("X-Internal-Service-Key")).containsExactly("test-key");
     }

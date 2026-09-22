@@ -36,7 +36,10 @@ public class PostResponseDto {
                     post.getStatus(),
                     post.getRegionName(),
                     post.getImages().stream()
-                            .map(PostImage::getImageUrl)
+                            .map(image -> new ImageInfo(
+                                    image.getId(),
+                                    image.getImageUrl()
+                            ))
                             .toList(),
                     post.getCreatedAt() != null ? post.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,
                     post.getUpdatedAt() != null ? post.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,

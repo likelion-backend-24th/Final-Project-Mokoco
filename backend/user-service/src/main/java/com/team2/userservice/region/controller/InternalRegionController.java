@@ -20,4 +20,9 @@ public class InternalRegionController {
     public RegionResponse getRegionByEmail(@PathVariable("email") String email) {
         return regionService.getRegionInfo(email);
     }
+
+    @GetMapping("/by-id/{userId}/region")
+    public RegionResponse getRegionByUserId(@PathVariable Long userId) {
+        return regionService.getRegionInfo(userId);
+    }
 }

@@ -1,5 +1,6 @@
 package com.team2.userservice.user.entity;
 
+import com.team2.common.security.Role;
 import com.team2.userservice.region.entity.Region;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

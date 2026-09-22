@@ -46,10 +46,10 @@ class ChatRoomOrchestrationServiceTest {
 
     @BeforeEach void setup() {
         post = em.persist(Post.builder().title("의자 수리").content("다리가 흔들려요")
-                .authorEmail("requester@test.com").regionName("서울특별시").regionCode("11000")
+                .authorId(1L).regionName("서울특별시").regionCode("11000")
                 .category(PostCategory.LIVING_ETC).build());
         proposal = em.persist(Proposal.builder().post(post).estimatedPrice(50000)
-                .repairerEmail("repairer@test.com").content("견적 드립니다").build());
+                .repairerId(2L).content("견적 드립니다").build());
         Mockito.when(userClient.getUserByEmail("requester@test.com"))
                 .thenReturn(new UserClientResponse(10L, "requester@test.com", "req", null, "USER"));
         Mockito.when(userClient.getUserByEmail("repairer@test.com"))

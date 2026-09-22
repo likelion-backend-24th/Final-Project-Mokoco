@@ -1,5 +1,6 @@
 package com.team2.postservice.contract;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team2.postservice.client.ChatRoomClient;
 import com.team2.postservice.client.PaymentClient;
@@ -7,8 +8,12 @@ import com.team2.postservice.client.dto.PaymentClientResponse;
 import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
+import com.team2.postservice.post.dto.Overview;
+import com.team2.postservice.post.dto.PaymentSummary;
+import com.team2.postservice.post.dto.Version;
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.repository.PostRepository;
+import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
@@ -36,16 +41,6 @@ public class ContractService {
     private final PaymentClient paymentClient;
     private final ObjectMapper mapper;
 
-    public record Version(Long id, int revision, String status, Long authorId, ContractTerms terms,
-            String documentHash,
-            @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) Instant createdAt,
-            @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) Instant requestedAt,
-            @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) Instant signedAt,
-            List<ContractSignature> signatures) {}
-    public record PaymentSummary(String status, Integer amount, Integer feeAmount, Integer netAmount, boolean settled) {}
-    public record Overview(Long requesterId, Long repairerId, String requesterEmail, String repairerEmail,
-            Long postId, Long fixDealId, Integer estimatedPrice, FixDealStatus dealStatus,
-            PaymentSummary payment, String consentText, List<Version> versions) {}
 
     // 채팅방(참가자·연결된 거래)은 chat-service 소유라 원격으로 확인하고, 실제 잠금·상태 변경은
     // 여전히 이 서비스가 갖고 있는 FixDeal에 건다 — 서비스 경계 너머로 비관적 락을 걸 수는 없지만,
@@ -91,33 +86,45 @@ public class ContractService {
     }
     @Transactional(readOnly = true)
     public Overview get(Long roomId, Long userId) {
-        var deal = participant(roomId, userId, false);
+        FixDeal deal = participant(roomId, userId, false);
         Post post = posts.findById(deal.getPostId()).orElse(null);
-        var proposal = proposals.findById(deal.getProposalId()).orElse(null);
-        String requesterEmail = post != null ? post.getAuthorEmail() : null;
-        String repairerEmail = proposal != null ? proposal.getRepairerEmail() : null;
+        Proposal proposal = proposals.findById(deal.getProposalId()).orElse(null);
+        Long requesterId = post != null ? post.getAuthorId() : null;
         Integer estimatedPrice = proposal != null ? proposal.getEstimatedPrice() : null;
-        PaymentSummary payment = requesterEmail == null ? null : paymentSummaryOrNull(deal.getPostId());
-        return new Overview(deal.getRequesterId(), deal.getRepairerId(), requesterEmail, repairerEmail,
-                deal.getPostId(), deal.getId(), estimatedPrice, deal.getStatus(), payment, CONSENT,
+        PaymentSummary payment = requesterId == null ? null : paymentSummaryOrNull(deal.getPostId());
+        return new Overview(
+                deal.getRequesterId(),
+                deal.getRepairerId(),
+                deal.getPostId(),
+                deal.getId(),
+                estimatedPrice,
+                deal.getStatus(),
+                payment,
+                CONSENT,
                 contracts.findByChatRoomIdOrderByRevisionDesc(roomId).stream().map(this::view).toList());
     }
     private RepairContract latest(Long roomId, Long expectedId) {
-        var current = contracts.findFirstByChatRoomIdOrderByRevisionDesc(roomId)
+        RepairContract current = contracts.findFirstByChatRoomIdOrderByRevisionDesc(roomId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (!current.getId().equals(expectedId)) throw conflict("계약이 변경되었습니다. 최신 버전을 확인해주세요.");
+
+        if (!current.getId().equals(expectedId)) {
+            throw conflict("계약이 변경되었습니다. 최신 버전을 확인해주세요.");
+        }
         return current;
     }
-    private ResponseStatusException conflict(String message) { return new ResponseStatusException(HttpStatus.CONFLICT, message); }
+
+    private ResponseStatusException conflict(String message) {
+        return new ResponseStatusException(HttpStatus.CONFLICT, message);
+    }
 
     @Transactional
     public Version draft(Long roomId, Long userId, Long baseId, ContractTerms terms) {
-        var deal = participant(roomId, userId, true);
+        FixDeal deal = participant(roomId, userId, true);
         if (deal.getRequesterId().equals(deal.getRepairerId()))
             throw conflict("서로 다른 두 당사자만 계약할 수 있습니다.");
         if (deal.getStatus() != FixDealStatus.MATCHED) throw conflict("진행 중인 거래는 계약을 새로 작성할 수 없습니다.");
         if (terms.endDate().isBefore(terms.startDate())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "완료일은 시작일 이후여야 합니다.");
-        var previous = contracts.findFirstByChatRoomIdOrderByRevisionDesc(roomId).orElse(null);
+        RepairContract previous = contracts.findFirstByChatRoomIdOrderByRevisionDesc(roomId).orElse(null);
         if (previous == null ? baseId != null : !previous.getId().equals(baseId)) throw conflict("최신 계약을 다시 불러와주세요.");
         if (previous != null && previous.getStatus().equals("SIGNED")) throw conflict("체결된 계약은 수정할 수 없습니다.");
         int revision = previous == null ? 1 : previous.getRevision() + 1;
@@ -132,32 +139,33 @@ public class ContractService {
     }
     @Transactional
     public Version request(Long roomId, Long userId, Long id) {
-        var deal = participant(roomId, userId, true);
+
+        FixDeal deal = participant(roomId, userId, true);
         if (deal.getStatus() != FixDealStatus.MATCHED) throw conflict("계약 요청이 가능한 거래 상태가 아닙니다.");
-        var contract = latest(roomId, id);
+        RepairContract contract = latest(roomId, id);
         if (!contract.getStatus().equals("DRAFT")) throw conflict("초안만 서명 요청할 수 있습니다.");
         contract.requestSignatures(); return view(contract);
     }
     @Transactional
     public Version sign(Long roomId, Long userId, Long id, String hash, String name, boolean consent) {
-        var deal = participant(roomId, userId, true);
+        FixDeal deal = participant(roomId, userId, true);
         if (deal.getStatus() != FixDealStatus.MATCHED) throw conflict("서명 가능한 거래 상태가 아닙니다.");
-        var contract = latest(roomId, id);
+        RepairContract contract = latest(roomId, id);
         if (!consent || name == null || name.isBlank() || name.length() > 80)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "성명과 서명 동의가 필요합니다.");
         if (!contract.getDocumentHash().equals(hash)) throw conflict("서명 대상 내용이 변경되었습니다.");
         if (!contract.getStatus().equals("SIGNING") && !contract.getStatus().equals("SIGNED")) throw conflict("서명 요청된 계약만 서명할 수 있습니다.");
-        var existing = signatures.findByContractIdOrderBySignedAtAsc(id);
+        List<ContractSignature> existing = signatures.findByContractIdOrderBySignedAtAsc(id);
         if (existing.stream().anyMatch(s -> s.getSignerId().equals(userId))) return view(contract);
         if (contract.getStatus().equals("SIGNED")) throw conflict("이미 체결된 계약입니다.");
         signatures.saveAndFlush(new ContractSignature(id, userId, name.trim(), hash, CONSENT));
-        var signers = signatures.findByContractIdOrderBySignedAtAsc(id).stream().map(ContractSignature::getSignerId).toList();
+        List<Long> signers = signatures.findByContractIdOrderBySignedAtAsc(id).stream().map(ContractSignature::getSignerId).toList();
         if (signers.contains(deal.getRequesterId()) && signers.contains(deal.getRepairerId())) contract.complete();
         return view(contract);
     }
     @Transactional
     public void advance(Long roomId, Long userId, Long id, String action) {
-        var deal = participant(roomId, userId, true);
+        FixDeal deal = participant(roomId, userId, true);
         if (!latest(roomId, id).getStatus().equals("SIGNED")) throw conflict("양측 서명 완료 후 진행할 수 있습니다.");
         boolean requester = action.equals("accept");
         if (!userId.equals(requester ? deal.getRequesterId() : deal.getRepairerId())) throw new ResponseStatusException(HttpStatus.FORBIDDEN);

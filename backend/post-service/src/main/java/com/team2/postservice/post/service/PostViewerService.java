@@ -4,6 +4,7 @@ import com.team2.common.security.LoginUser;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.RegionResponse;
 import com.team2.common.exception.CustomException;
+import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.common.exception.ErrorCode;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
@@ -25,22 +26,30 @@ public class PostViewerService {
         }
     }
 
-    public RegionResponse requireRegion(String email) {
+    public RegionResponse requireRegion(Long userId) {
         try {
-            var region = userClient.getRegionByEmail(email);
-            if (region == null || region.regionCode() == null || region.regionCode().isBlank())
+            RegionResponse region = userClient.getRegionByUserId(userId);
+
+            if (region == null
+                    || region.regionCode() == null
+                    || region.regionCode().isBlank()) {
                 throw new CustomException(ErrorCode.ACTIVITY_REGION_REQUIRED);
+            }
             return region;
         } catch (FeignException ex) {
-            throw new CustomException(ex.status() == 404 ? ErrorCode.ACTIVITY_REGION_REQUIRED : ErrorCode.USER_SERVICE_UNAVAILABLE);
+            throw new CustomException(
+                    ex.status() == 404
+                            ? ErrorCode.ACTIVITY_REGION_REQUIRED
+                            : ErrorCode.USER_SERVICE_UNAVAILABLE
+            );
         }
     }
 
     /** requireRegion과 달리 활동 지역이 없어도 예외를 던지지 않고 null을 반환한다.
      *  RegionScope.ALL(필터 미적용) 조회에서, 필터링에는 안 쓰더라도 칩에 표시할 지역명을 best-effort로 가져올 때 사용. */
-    public RegionResponse tryRegion(String email) {
+    public RegionResponse tryRegion(Long userId) {
         try {
-            return requireRegion(email);
+            return requireRegion(userId);
         } catch (CustomException ex) {
             return null;
         }
@@ -48,9 +57,9 @@ public class PostViewerService {
 
     // 게시글 목록/상세에 작성자 이메일 대신 닉네임을 보여주기 위한 best-effort 조회.
     // user-service 장애나 탈퇴 등으로 조회에 실패해도 게시글 자체는 보여야 하므로 예외를 삼키고 null 반환.
-    public String tryNickname(String email) {
+    public String tryNickname(Long userId) {
         try {
-            var user = userClient.getUserByEmail(email);
+            UserClientResponse user = userClient.getUserById(userId);
             return user == null ? null : user.nickname();
         } catch (Exception ex) {
             return null;
