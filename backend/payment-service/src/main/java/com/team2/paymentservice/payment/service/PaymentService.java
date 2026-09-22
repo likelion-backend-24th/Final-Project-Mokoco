@@ -43,27 +43,23 @@ public class PaymentService {
 
     // 결제창을 열기 전에 서버가 postId만 보고 금액·수신자를 조회해 주문을 미리 만든다. 이미 만들어진
     // 주문이 있으면(같은 postId로 재시도 등) 그대로 재사용 — 이때도 견적이 바뀌지 않았는지 재검증한다.
+    // 이전 결제가 취소로 끝난 경우에는 재결제를 위해 새 주문(새 PortOne paymentId)을 만든다.
     @Transactional
     public PaymentOrder prepare(Long postId, String payerEmail) {
         if (postId == null || postId <= 0) throw new CustomException(ErrorCode.INVALID_INPUT);
         PaymentContext context = postServiceClient.getPaymentContext(postId);
         if (!payerEmail.equals(context.payerEmail())) throw new CustomException(ErrorCode.UNAUTHORIZED_PAYMENT_CREATE);
         if (!isPayable(context.status())) throw new CustomException(ErrorCode.INVALID_PAYMENT_STATUS);
-        if (paymentRepository.existsByPostId(postId)) throw new CustomException(ErrorCode.DUPLICATE_PAYMENT);
+        if (paymentRepository.existsByPostIdAndStatus(postId, PaymentStatus.COMPLETED))
+            throw new CustomException(ErrorCode.DUPLICATE_PAYMENT);
 
-        PaymentOrder existing = paymentOrderRepository.findByPostId(postId).orElse(null);
-        if (existing != null) {
+        PaymentOrder existing = paymentOrderRepository.findFirstByPostIdOrderByCreatedAtDesc(postId).orElse(null);
+        // 아직 결제 확정도 취소도 안 된 주문이면(같은 시도의 재시도) 그대로 재사용한다.
+        if (existing != null && !paymentRepository.existsByPortonePaymentId(existing.getPaymentId())) {
             verifyContext(existing, context);
             return existing;
         }
-        try {
-            return paymentOrderRepository.saveAndFlush(new PaymentOrder(context));
-        } catch (DataIntegrityViolationException conflict) {
-            // 동시에 두 번 prepare가 들어온 경우 — 먼저 이긴 쪽 주문을 그대로 재사용한다.
-            PaymentOrder winner = paymentOrderRepository.findByPostId(postId).orElseThrow(() -> conflict);
-            verifyContext(winner, context);
-            return winner;
-        }
+        return paymentOrderRepository.save(new PaymentOrder(context));
     }
 
     @Transactional
@@ -83,7 +79,6 @@ public class PaymentService {
 
     @Transactional
     public void handleWebhookPayment(String paymentId) {
-        if (paymentRepository.existsByPortonePaymentId(paymentId)) return;
         PaymentOrder order = paymentOrderRepository.findById(paymentId).orElse(null);
         // 다른 상점 결제나 서버 주문이 없는 결제는 신뢰할 수 있는 baseAmount/수신자 출처가 없어서
         // 자동 반영하지 않는다 — customData는 클라이언트가 조작할 수 있으므로 더 이상 믿지 않는다.
@@ -92,7 +87,18 @@ public class PaymentService {
             return;
         }
         PortOnePaymentResponse remote = portOnePaymentClient.getPayment(paymentId);
-        if (remote != null && "PAID".equals(remote.status())) confirm(order, remote);
+        if (remote == null) return;
+
+        // 취소는 웹훅 이벤트 종류를 믿지 않고 PortOne 서버 상태를 직접 재조회해 판단한다(confirm과 같은 철학).
+        // 이미 완료 처리된 결제만 취소로 전이시키고, 재결제로 새로 만들어진 최신 결제까지 잘못 취소하지 않는다.
+        if ("CANCELLED".equals(remote.status())) {
+            paymentRepository.findByPortonePaymentId(paymentId)
+                    .filter(payment -> payment.getStatus() == PaymentStatus.COMPLETED)
+                    .ifPresent(Payment::cancel);
+            return;
+        }
+        if (paymentRepository.existsByPortonePaymentId(paymentId)) return;
+        if ("PAID".equals(remote.status())) confirm(order, remote);
     }
 
     private Payment confirm(PaymentOrder order, PortOnePaymentResponse remote) {
@@ -148,7 +154,7 @@ public class PaymentService {
     }
 
     public PaymentResponseDto getPaymentByPostId(Long postId, String requesterEmail) {
-        Payment payment = paymentRepository.findByPostId(postId)
+        Payment payment = paymentRepository.findFirstByPostIdOrderByCreatedAtDesc(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
 
         if (!payment.getPayerEmail().equals(requesterEmail) && !payment.getPayeeEmail().equals(requesterEmail)) {
@@ -161,7 +167,7 @@ public class PaymentService {
     // post-service가 작업 시작 게이팅/화면 표시용으로 호출 — 참가자 여부는 post-service가 이미
     // 확인했으므로(FixDeal 조회) 여기선 이메일 검증 없이 postId만으로 조회한다.
     public PaymentResponseDto internalPayment(Long postId) {
-        return PaymentResponseDto.from(paymentRepository.findByPostId(postId)
+        return PaymentResponseDto.from(paymentRepository.findFirstByPostIdOrderByCreatedAtDesc(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND)));
     }
 
@@ -179,7 +185,7 @@ public class PaymentService {
 
     @Transactional
     public void settlePayment(Long postId) {
-        Payment payment = paymentRepository.findByPostId(postId)
+        Payment payment = paymentRepository.findFirstByPostIdOrderByCreatedAtDesc(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));
 
         if (payment.getStatus() != PaymentStatus.COMPLETED) {

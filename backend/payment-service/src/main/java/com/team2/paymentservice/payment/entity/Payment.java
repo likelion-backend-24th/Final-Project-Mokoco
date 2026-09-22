@@ -22,7 +22,8 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    // 취소 후 재결제를 허용하므로 한 글에 여러 행(취소된 것 + 새로 결제된 것)이 있을 수 있어 더 이상 unique가 아니다.
+    @Column(nullable = false)
     private Long postId;
 
     // PortOne이 채번한 결제 건 식별자. 프론트가 결제창 호출 시 생성한 값과 동일하다.
@@ -77,6 +78,13 @@ public class Payment {
 
     public void settle() {
         if (settledAt == null) settledAt = LocalDateTime.now();
+    }
+
+    // PortOne에서 결제가 취소/환불된 것을 웹훅으로 확인했을 때 호출한다. 이미 정산 확정된(settledAt이
+    // 찍힌) 결제를 취소하는 흐름은 이번 범위 밖이라 별도로 막지 않는다 — 정산 이후 취소는 운영에서
+    // 수동으로 처리한다.
+    public void cancel() {
+        this.status = PaymentStatus.CANCELLED;
     }
 
     // 플랫폼 수수료 = 견적 금액의 10% (수리자에게 정산될 때 이 금액만큼 차감된다)
