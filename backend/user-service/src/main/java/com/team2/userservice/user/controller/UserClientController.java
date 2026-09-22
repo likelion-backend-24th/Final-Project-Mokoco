@@ -1,7 +1,6 @@
 package com.team2.userservice.user.controller;
 
 import com.team2.userservice.config.JwtTokenProvider;
-import com.team2.userservice.region.dto.RegionResponse;
 import com.team2.userservice.region.service.RegionService;
 import com.team2.userservice.user.dto.UserResponse;
 import com.team2.userservice.user.entity.AccountStatus;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserClientController {
     private final UserService userService;
-    private final RegionService regionService;
     public record UserNicknameResponse(Long id, String nickname) {}
 
     @GetMapping("/by-id/{userId}")
