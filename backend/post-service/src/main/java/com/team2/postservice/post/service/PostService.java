@@ -5,6 +5,7 @@ import com.team2.common.exception.CustomException;
 import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.post.dto.PostRequestDto;
 import com.team2.postservice.post.dto.NearbyRepairRequest;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import com.team2.postservice.post.dto.PostResponseDto;
 import com.team2.postservice.post.entity.Post;
@@ -16,11 +17,13 @@ import com.team2.postservice.proposal.repository.ProposalRepository;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -40,10 +43,12 @@ public class PostService {
     public Long createPost(PostRequestDto.Create request, List<MultipartFile> images, String authorEmail) {
         // 💡 User-Service에서 이메일로 최신 지역 정보를 Feign을 통해 조회
         RegionResponse response = postViewerService.requireRegion(authorEmail);
+        String content = PostContent.sanitize(request.content(), request.contentFormat());
 
         Post post = Post.builder()
                 .title(request.title())
                 .content(request.content())
+                .contentFormat(request.contentFormat())
                 .category(request.category())
                 .authorEmail(authorEmail)
                 .regionName(response.regionName())
@@ -61,16 +66,16 @@ public class PostService {
             throw new CustomException(ErrorCode.INVALID_INPUT);
         // ALL(기본값)은 활동 지역 설정 여부와 무관하게 필터링 없이 전체를 보여준다.
         // 다만 칩에 표시할 지역명은 있으면 보여주도록 best-effort로만 조회(없어도 에러 아님).
-        var region = email == null ? null
+        RegionResponse region = email == null ? null
                 : regionScope == RegionScope.ALL ? postViewerService.tryRegion(email)
                 : postViewerService.requireRegion(email);
         String regionPattern = regionScope == RegionScope.ALL ? null : regionScope.queryPattern(region.regionCode());
-        var pageable = PageRequest.of(page, size,
+        Pageable pageable = PageRequest.of(page, size,
                 Sort.by(Sort.Direction.DESC, "createdAt", "id"));
-        var posts = postRepository.findNearby(regionPattern, category == PostCategory.ALL ? null : category, pageable);
+        Page<NearbyRepairRequest> posts = postRepository.findNearby(regionPattern, category == PostCategory.ALL ? null : category, pageable);
         // 같은 페이지 안에서 작성자가 겹칠 수 있어(같은 사람의 여러 글), 이메일당 한 번만 조회하도록
         // 이 요청 범위에서만 쓰는 로컬 캐시를 사용한다(인스턴스 필드로 두면 요청 간에 공유되어 버그가 된다).
-        var nicknameCache = new java.util.HashMap<String, String>();
+        HashMap<String, String> nicknameCache = new java.util.HashMap<String, String>();
         posts = posts.map(item -> item.withAuthorNickname(
                 nicknameCache.computeIfAbsent(item.authorEmail(), postViewerService::tryNickname)));
         return NearbyRepairRequest.Result.from(posts, regionScope, region);
@@ -94,7 +99,7 @@ public class PostService {
         Post post = getPostOrThrow(id);
         validateAuthor(post, userEmail, ErrorCode.UNAUTHORIZED_POST_UPDATE);
 
-        post.update(request.title(), request.content(), request.category());
+        post.update(request.title(), PostContent.sanitize(request.content(), request.contentFormat()), request.contentFormat(), request.category());
     }
 
     @Transactional
