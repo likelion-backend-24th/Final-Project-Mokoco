@@ -1,3 +1,4 @@
+// components/SiteHeader.jsx
 "use client";
 
 import Link from "next/link";
@@ -6,13 +7,25 @@ import { UserCircle } from "@phosphor-icons/react/dist/ssr";
 import BrandLogo from "@/components/brand-logo";
 import NotificationBell from "@/components/notification-bell";
 import { useAuthStore } from "@/store/authStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function SiteHeader({ userEmail: serverUserEmail }) {
   const pathname = usePathname();
   const { userEmail: storeEmail, initAuth, setLogout } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [nickname, setNickname] = useState(null);
+
   useEffect(() => {
+    setMounted(true);
     initAuth();
+    // 닉네임은 아래 effect에서 /api/users/me로 매번 새로 조회하는데, 그 응답이 오기 전까지
+    // userEmail이 폴백으로 보여서 화면 전환마다 이메일이 잠깐 스쳐 지나간다. 직전에 받아둔
+    // 닉네임을 캐시해뒀다가 먼저 보여주면(네트워크 왕복 없이 즉시) 그 틈을 없앨 수 있다.
+    try {
+      const cached = localStorage.getItem("nickname");
+      if (cached) setNickname(cached);
+    } catch { /* 무시 */ }
   }, [initAuth]);
 
   const cookieEmail = typeof document !== "undefined"
@@ -20,6 +33,31 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
     : null;
 
   const userEmail = serverUserEmail || storeEmail || cookieEmail;
+
+  // 관리자 메뉴 노출 여부 및 닉네임 표시 — 페이지마다 넘겨받을 필요 없이 헤더가 직접 확인한다.
+  useEffect(() => {
+    if (!userEmail) {
+      setIsAdmin(false);
+      setNickname(null);
+      try { localStorage.removeItem("nickname"); } catch { /* 무시 */ }
+      return;
+    }
+    let active = true;
+    fetch("/api/users/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((me) => {
+        if (!active) return;
+        setIsAdmin(me?.role === "ADMIN");
+        const fetchedNickname = me?.nickname ?? null;
+        setNickname(fetchedNickname);
+        try {
+          if (fetchedNickname) localStorage.setItem("nickname", fetchedNickname);
+          else localStorage.removeItem("nickname");
+        } catch { /* 무시 */ }
+      })
+      .catch(() => { if (active) { setIsAdmin(false); setNickname(null); } });
+    return () => { active = false; };
+  }, [userEmail]);
 
   const handleLogout = async (e) => {
     e.preventDefault();
@@ -43,14 +81,20 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
       <nav className="desktop-nav" aria-label="주요 메뉴">
         <Link href="/" className={`nav-link ${pathname === "/" ? "nav-link-active" : ""}`}>홈</Link>
         <Link href="/posts" className={`nav-link ${pathname.startsWith("/posts") ? "nav-link-active" : ""}`}>수리 요청</Link>
+        {userEmail && (
+          <Link href="/profile" className={`nav-link ${pathname.startsWith("/profile") ? "nav-link-active" : ""}`}>내 프로필</Link>
+        )}
+        {isAdmin && (
+          <Link href="/admin" className={`nav-link ${pathname.startsWith("/admin") ? "nav-link-active" : ""}`}>관리자</Link>
+        )}
       </nav>
       {userEmail ? (
         <div className="header-account">
           <NotificationBell />
-          <Link href="/profile" aria-label="내 프로필" className="header-profile-icon">
+          <Link href="/profile" aria-label="내 프로필로 이동">
             <UserCircle size={29} weight="duotone" className="text-blue-600" />
           </Link>
-          <span className="header-email">{userEmail}</span>
+          <span className="header-email">{nickname || userEmail}</span>
           <form onSubmit={handleLogout}>
             <button type="submit">로그아웃</button>
           </form>

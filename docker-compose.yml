@@ -82,8 +82,6 @@ services:
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - FLYWAY_BASELINE_ON_MIGRATE=${USER_FLYWAY_BASELINE_ON_MIGRATE:-false}
-      - FLYWAY_BASELINE_VERSION=2
       - TZ=Asia/Seoul
       - JAVA_TOOL_OPTIONS=-Xmx200m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
     depends_on:
@@ -103,8 +101,6 @@ services:
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - FLYWAY_BASELINE_ON_MIGRATE=${POST_FLYWAY_BASELINE_ON_MIGRATE:-false}
-      - FLYWAY_BASELINE_VERSION=5
       - TZ=Asia/Seoul
       - JAVA_TOOL_OPTIONS=-Xmx240m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
     volumes:
@@ -127,8 +123,6 @@ services:
     restart: always
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - FLYWAY_BASELINE_ON_MIGRATE=${PAYMENT_FLYWAY_BASELINE_ON_MIGRATE:-false}
-      - FLYWAY_BASELINE_VERSION=3
       - TZ=Asia/Seoul
       - JAVA_TOOL_OPTIONS=-Xmx192m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Xss512k -Duser.timezone=Asia/Seoul
     depends_on:

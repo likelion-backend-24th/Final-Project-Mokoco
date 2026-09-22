@@ -21,7 +21,7 @@ public class MeController {
 
     @GetMapping
     public ResponseEntity<UserResponse> me(@AuthenticationPrincipal LoginUser user) {
-        return ResponseEntity.ok(userService.findUserById(user.userId()));
+        return ResponseEntity.ok(userService.findUserByEmail(user.email()));
     }
 
     // 내 정보 수정 (이름·닉네임)
@@ -30,7 +30,7 @@ public class MeController {
             @AuthenticationPrincipal LoginUser user,
             @RequestBody @Valid UpdateProfileRequest request
     ) {
-        return ResponseEntity.ok(userService.updateMyProfile(user.userId(), request));
+        return ResponseEntity.ok(userService.updateMyProfile(user.email(), request));
     }
 
     // 비밀번호 변경
@@ -39,7 +39,7 @@ public class MeController {
             @AuthenticationPrincipal LoginUser user,
             @RequestBody @Valid ChangePasswordRequest request
     ) {
-        userService.changePassword(user.userId(), request);
+        userService.changePassword(user.email(), request);
         return ResponseEntity.ok().build();
     }
 }

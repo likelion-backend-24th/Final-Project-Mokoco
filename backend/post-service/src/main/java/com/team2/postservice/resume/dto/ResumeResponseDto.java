@@ -8,7 +8,7 @@ import java.util.List;
 
 public record ResumeResponseDto(
         Long id,
-        Long userId,
+        String userEmail,
         String headline,
         String introduction,
         List<String> skills,
@@ -25,7 +25,7 @@ public record ResumeResponseDto(
     public static ResumeResponseDto from(Resume resume) {
         return new ResumeResponseDto(
                 resume.getId(),
-                resume.getUserId(),
+                resume.getUserEmail(),
                 resume.getHeadline(),
                 resume.getIntroduction(),
                 resume.getSkills(),

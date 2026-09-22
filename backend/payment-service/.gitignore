@@ -39,8 +39,3 @@ out/
 # OS Files
 .DS_Store
 Thumbs.db
-
-.env
-
-# Secret 파일
-src/main/resources/application-secret.yaml

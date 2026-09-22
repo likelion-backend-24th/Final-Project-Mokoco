@@ -1,17 +1,14 @@
 package com.team2.chatservice.config;
 
-import com.team2.chatservice.chatMessage.service.ChatService;
+import com.team2.chatservice.chatMessage.ChatService;
 import com.team2.chatservice.client.UserClient;
 import com.team2.chatservice.client.dto.UserClientResponse;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.messaging.Message;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.stomp.*;
 import org.springframework.messaging.support.*;
 import java.util.HashMap;
-import java.util.Objects;
-
 import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.*;
 
@@ -20,44 +17,36 @@ class ChatWebSocketConfigTest {
     final ChatService chat = mock(ChatService.class);
 
     ChannelInterceptor interceptor() {
-        ChannelRegistration registration = mock(ChannelRegistration.class);
+        var registration = mock(ChannelRegistration.class);
         new ChatWebSocketConfig(users, chat).configureClientInboundChannel(registration);
-
-        ArgumentCaptor<ChannelInterceptor> capture = ArgumentCaptor.forClass(ChannelInterceptor.class);
+        var capture = ArgumentCaptor.forClass(ChannelInterceptor.class);
         verify(registration).interceptors(capture.capture());
-
         return capture.getValue();
     }
     @Test void connectRequiresVerifiedToken() {
-        ChannelInterceptor interceptor = interceptor();
-        StompHeaderAccessor headers = StompHeaderAccessor.create(StompCommand.CONNECT);
-
+        var interceptor = interceptor();
+        var headers = StompHeaderAccessor.create(StompCommand.CONNECT);
         headers.setSessionAttributes(new HashMap<>());
         headers.setLeaveMutable(true);
-
-        Message<byte[]> message = MessageBuilder.createMessage(new byte[0], headers.getMessageHeaders());
-
+        var message = MessageBuilder.createMessage(new byte[0], headers.getMessageHeaders());
         assertThatThrownBy(() -> interceptor.preSend(message, null)).hasMessageContaining("Authentication required");
-
         headers.setNativeHeader("Authorization", "Bearer token");
-        when(users.verifyToken("token")).thenReturn(new UserClientResponse(2L, "a@example.com", "a", "region", com.team2.common.security.Role.USER));
-
+        when(users.verifyToken("token")).thenReturn(new UserClientResponse(2L, "a@example.com", "a", "region", "USER"));
         interceptor.preSend(message, null);
-        assertThat(Objects.requireNonNull(headers.getUser()).getName()).isEqualTo("2");
+        assertThat(headers.getUser().getName()).isEqualTo("2");
     }
     @Test void cannotPublishDirectlyToBrokerTopic() {
-        StompHeaderAccessor headers = StompHeaderAccessor.create(StompCommand.SEND);
+        var headers = StompHeaderAccessor.create(StompCommand.SEND);
         headers.setUser(() -> "2");
         headers.setSessionAttributes(new HashMap<>());
         headers.setDestination("/topic/chat/1");
         headers.setLeaveMutable(true);
-
-        Message<byte[]> message = MessageBuilder.createMessage(new byte[0], headers.getMessageHeaders());
+        var message = MessageBuilder.createMessage(new byte[0], headers.getMessageHeaders());
         assertThatThrownBy(() -> interceptor().preSend(message, null)).hasMessageContaining("Destination not allowed");
         verifyNoInteractions(chat);
     }
     @Test void subscriptionChecksRoomMembership() {
-        StompHeaderAccessor headers = StompHeaderAccessor.create(StompCommand.SUBSCRIBE);
+        var headers = StompHeaderAccessor.create(StompCommand.SUBSCRIBE);
         headers.setUser(() -> "2");
         headers.setSessionAttributes(new HashMap<>());
         headers.setDestination("/topic/chat/1");

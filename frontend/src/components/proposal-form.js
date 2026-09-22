@@ -55,10 +55,12 @@ export default function ProposalForm({ postId }) {
         alert("수리 제안이 성공적으로 등록되었습니다.");
         setEstimatedPrice("");
         setContent("");
+        setAttachResume(false);
         setIsOpen(false);
         router.refresh();
       } else {
-        alert("수리 제안 등록에 실패했습니다.");
+        const payload = await response.json().catch(() => ({}));
+        alert(payload.error || "수리 제안 등록에 실패했습니다.");
       }
     } catch {
       alert("서버 연결에 실패했습니다.");
@@ -78,19 +80,21 @@ export default function ProposalForm({ postId }) {
       </button>
 
       {isOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm transition-opacity"
-          onClick={() => setIsOpen(false)}
+        <div 
+          className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm transition-opacity" 
+          onClick={() => setIsOpen(false)} 
         />
       )}
 
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 transform rounded-t-3xl bg-white p-6 shadow-2xl transition-transform duration-300 ease-out ${
-          isOpen ? "translate-y-0" : "translate-y-full"
+        className={`fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl transition-all duration-300 ease-out md:inset-0 md:m-auto md:h-fit md:w-full md:max-w-lg md:rounded-3xl ${
+          isOpen
+            ? "translate-y-0 md:translate-y-0 md:visible md:opacity-100"
+            : "translate-y-full md:translate-y-0 md:invisible md:opacity-0"
         }`}
       >
-        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-200" />
-
+        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-200 md:hidden" />
+        
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-extrabold text-slate-900">이웃에게 수리 제안 남기기</h3>
           <button onClick={() => setIsOpen(false)} className="rounded-full p-1 text-slate-400 hover:bg-slate-100">
@@ -106,6 +110,8 @@ export default function ProposalForm({ postId }) {
               value={estimatedPrice}
               onChange={(e) => setEstimatedPrice(e.target.value)}
               placeholder="예: 50000"
+              min={0}
+              max={999999999}
               className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
               required
             />

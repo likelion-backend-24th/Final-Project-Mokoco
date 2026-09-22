@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public enum ErrorCode implements ApiErrorCode {
+
+    // ===== Post =====
     AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED", "로그인이 필요합니다."),
     ACTIVITY_REGION_REQUIRED(HttpStatus.CONFLICT, "ACTIVITY_REGION_REQUIRED", "활동 지역을 먼저 설정해주세요."),
     USER_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "USER_SERVICE_UNAVAILABLE", "사용자 또는 지역 정보를 확인할 수 없습니다."),
@@ -14,28 +16,46 @@ public enum ErrorCode implements ApiErrorCode {
     UNAUTHORIZED_POST_UPDATE(HttpStatus.FORBIDDEN, "UNAUTHORIZED_POST_UPDATE", "작성자만 수정할 수 있습니다."),
     UNAUTHORIZED_POST_DELETE(HttpStatus.FORBIDDEN, "UNAUTHORIZED_POST_DELETE", "작성자만 삭제할 수 있습니다."),
     POST_HAS_ACTIVE_DEAL(HttpStatus.CONFLICT, "POST_HAS_ACTIVE_DEAL", "진행 중인 거래가 있는 글은 삭제할 수 없습니다."),
+
+    // ===== Post Image =====
     IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "IMAGE_NOT_FOUND", "이미지가 존재하지 않습니다."),
     INVALID_IMAGE_FILE(HttpStatus.BAD_REQUEST, "INVALID_IMAGE_FILE", "유효하지 않은 이미지 파일입니다."),
     IMAGE_FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "IMAGE_FILE_TOO_LARGE", "이미지 파일 용량은 10MB를 초과할 수 없습니다."),
     TOO_MANY_IMAGES(HttpStatus.BAD_REQUEST, "TOO_MANY_IMAGES", "게시글당 이미지는 최대 5장까지 등록할 수 있습니다."),
     IMAGE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "IMAGE_UPLOAD_FAILED", "이미지 업로드에 실패했습니다."),
+
+    // ===== Proposal =====
     POST_NOT_FOUND_FOR_PROPOSAL(HttpStatus.NOT_FOUND, "POST_NOT_FOUND_FOR_PROPOSAL", "해당 수리 요청글이 존재하지 않습니다."),
     PROPOSAL_NOT_FOUND(HttpStatus.NOT_FOUND, "PROPOSAL_NOT_FOUND", "해당 제안이 존재하지 않습니다."),
     UNAUTHORIZED_PROPOSAL_ADOPT(HttpStatus.FORBIDDEN, "UNAUTHORIZED_PROPOSAL_ADOPT", "수리 요청글 작성자만 제안을 채택할 수 있습니다."),
     UNAUTHORIZED_PROPOSAL_DELETE(HttpStatus.FORBIDDEN, "UNAUTHORIZED_PROPOSAL_DELETE", "작성자만 삭제할 수 있습니다."),
+    PROPOSAL_ADOPTION_ALREADY_PAID(HttpStatus.CONFLICT, "PROPOSAL_ADOPTION_ALREADY_PAID", "결제가 완료된 거래는 채택을 취소할 수 없습니다."),
+
+    // ===== FixDeal =====
     FIX_DEAL_NOT_FOUND(HttpStatus.NOT_FOUND, "FIX_DEAL_NOT_FOUND", "해당 수리거래 내역을 찾을 수 없습니다."),
     UNAUTHORIZED_FIX_DEAL_ACTION(HttpStatus.FORBIDDEN, "UNAUTHORIZED_FIX_DEAL_ACTION", "본인이 참여한 거래만 처리할 수 있습니다."),
     INVALID_FIX_DEAL_STATUS(HttpStatus.CONFLICT, "INVALID_FIX_DEAL_STATUS", "현재 거래 상태에서는 처리할 수 없습니다."),
     PAYMENT_NOT_COMPLETED(HttpStatus.CONFLICT, "PAYMENT_NOT_COMPLETED", "결제가 완료되지 않아 수리 완료를 수락할 수 없습니다."),
     PAYMENT_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "PAYMENT_SERVICE_UNAVAILABLE", "결제 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요."),
+
+    // ===== ChatRoom =====
     UNAUTHORIZED_CHAT_ROOM_CREATE(HttpStatus.FORBIDDEN, "UNAUTHORIZED_CHAT_ROOM_CREATE", "수리 요청글 작성자만 채팅방을 만들 수 있습니다."),
     CHAT_ROOM_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "CHAT_ROOM_NOT_AVAILABLE", "채택된 제안이 아닙니다."),
     UNAUTHORIZED_CHAT_ROOM_ACCESS(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED_CHAT_ROOM_ACCESS", "채팅방 접근 권한이 없습니다."),
+    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_ROOM_NOT_FOUND", "채팅방을 찾을 수 없습니다."),
+
+    // ===== Notification =====
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_NOT_FOUND", "알림이 존재하지 않습니다."),
     UNAUTHORIZED_NOTIFICATION_ACCESS(HttpStatus.FORBIDDEN, "UNAUTHORIZED_NOTIFICATION_ACCESS", "본인의 알림만 확인할 수 있습니다."),
+
+    // ===== Admin =====
     UNAUTHORIZED_ADMIN_ACTION(HttpStatus.FORBIDDEN, "UNAUTHORIZED_ADMIN_ACTION", "관리자만 접근할 수 있습니다."),
+
+    // ===== Report =====
     REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "REPORT_NOT_FOUND", "신고 내역이 존재하지 않습니다."),
     INVALID_REPORT_TARGET(HttpStatus.BAD_REQUEST, "INVALID_REPORT_TARGET", "신고 대상 정보가 올바르지 않습니다."),
+
+    // ===== Review =====
     FIX_DEAL_NOT_FOUND_FOR_REVIEW(HttpStatus.NOT_FOUND, "FIX_DEAL_NOT_FOUND_FOR_REVIEW", "후기를 작성할 거래를 찾을 수 없습니다."),
     UNAUTHORIZED_REVIEW_CREATE(HttpStatus.FORBIDDEN, "UNAUTHORIZED_REVIEW_CREATE", "의뢰자 본인만 후기를 작성할 수 있습니다."),
     TRANSACTION_NOT_COMPLETED(HttpStatus.CONFLICT, "TRANSACTION_NOT_COMPLETED", "완료된 거래에만 후기를 작성할 수 있습니다."),
@@ -44,8 +64,12 @@ public enum ErrorCode implements ApiErrorCode {
     TOO_MANY_REVIEW_IMAGES(HttpStatus.BAD_REQUEST, "TOO_MANY_REVIEW_IMAGES", "후기당 이미지는 최대 5장까지 등록할 수 있습니다."),
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW_NOT_FOUND", "후기를 찾을 수 없습니다."),
     INVALID_RATING(HttpStatus.BAD_REQUEST, "INVALID_RATING", "평점은 1~5 사이의 정수여야 합니다."),
+
+    // ===== Resume =====
     DUPLICATE_RESUME(HttpStatus.CONFLICT, "DUPLICATE_RESUME", "이미 작성된 이력서가 있습니다. 수정을 이용해주세요."),
     RESUME_NOT_FOUND(HttpStatus.NOT_FOUND, "RESUME_NOT_FOUND", "이력서를 찾을 수 없습니다."),
+
+    // ===== Common =====
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "유효하지 않은 입력값입니다.");
 
     private final HttpStatus httpStatus;

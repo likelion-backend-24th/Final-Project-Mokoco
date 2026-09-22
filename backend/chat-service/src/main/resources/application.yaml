@@ -13,8 +13,14 @@ spring:
       max-request-size: 51MB
 
   flyway:
-    # post_db의 마이그레이션은 post-service만 실행한다.
-    enabled: false
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 1
+    clean-disabled: true
+    # post_db를 post-service와 공유하므로, 이력 테이블 이름을 따로 둬서 두 서비스의 마이그레이션
+    # 기록이 섞이지 않게 한다(post-service는 기본값 flyway_schema_history를 그대로 씀).
+    table: flyway_schema_history_chat
 
   jpa:
     hibernate:
@@ -24,7 +30,8 @@ spring:
         format_sql: true
     show-sql: true
 
-  # post-service와 같은 DB를 공유하되 Hibernate는 채팅 엔티티와 스키마의 호환성만 검증한다.
+  # post-service와 같은 DB를 그대로 공유한다 (DB 분리는 이번 범위 밖 — chat_rooms/chat_messages
+  # 테이블은 옮기지 않고, 접속하는 서비스만 post-service에서 chat-service로 바뀐다).
   datasource:
     url: jdbc:mysql://mysql:3306/post_db?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
     username: root

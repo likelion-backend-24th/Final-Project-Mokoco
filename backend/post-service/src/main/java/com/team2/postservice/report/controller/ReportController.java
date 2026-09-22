@@ -21,7 +21,7 @@ public class ReportController {
             @RequestBody ReportCreateRequest request,
             @AuthenticationPrincipal LoginUser user
     ) {
-        Long id = reportService.createReport(request, user.userId());
+        Long id = reportService.createReport(request, user.email());
         return ResponseEntity.ok(id);
     }
 }

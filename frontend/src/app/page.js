@@ -1,38 +1,18 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import {
-  ArrowRight, ClipboardText, DoorOpen, Drop, Hammer,
-  Lightbulb, SquaresFour, Toolbox, UserCircle,
-  WashingMachine, Wrench,
-} from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, ClipboardText, UserCircle, Wrench } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
 import LocationPermissionPrompt from "@/components/location-permission-prompt";
 import HomeChatList from "@/components/home-chat-list";
+import { imageSrc } from "@/lib/backend";
 import { getNearbyPosts } from "@/lib/nearby-posts";
 import RegionScopeFilter from "@/components/region-scope-filter";
 import { normalizeRegionScope, regionListHref } from "@/lib/region-scope";
 
-import { backendUrl } from "@/lib/backend";
-
-const POLICY_LINKS = [
-  { label: "이용약관", path: "/policy/terms.html" },
-  { label: "개인정보처리방침", path: "/policy/privacy.html" },
-  { label: "운영정책", path: "/policy/operation.html" },
-  { label: "위치기반서비스 이용약관", path: "/policy/location.html" },
-  { label: "이용자보호 비전과 계획", path: "/policy/user-protection.html" },
-  { label: "청소년보호정책", path: "/policy/youth.html" },
-];
-
-
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "수리 완료" };
-const categories = [
-  [SquaresFour, "전체"], [Lightbulb, "전기·조명"], [Drop, "배관·설비"],
-  [Hammer, "가구·설치"], [WashingMachine, "가전제품"], [DoorOpen, "문·창문"], [Toolbox, "생활·기타"],
-];
-
+const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "거래 완료" };
 
 function formatRelativeDate(value) {
   if (!value) return "시간 정보 없음";
@@ -46,24 +26,12 @@ function formatRelativeDate(value) {
   }
 
   if (Number.isNaN(date.getTime())) return "시간 정보 없음";
-
+  
   const minutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
   if (minutes < 1) return "방금 전";
   if (minutes < 60) return `${minutes}분 전`;
   const hours = Math.floor(minutes / 60);
   return hours < 24 ? `${hours}시간 전` : `${Math.floor(hours / 24)}일 전`;
-}
-
-function CategoryRow({ compact = false }) {
-  return (
-    <div className={compact ? "category-filter-row" : "category-showcase"} aria-label="수리 분야">
-      {categories.map(([Icon, label], index) => (
-        <div key={label} className={`${compact ? "category-filter" : "category-tile"} ${index === 0 && compact ? "category-filter-active" : ""}`}>
-          <Icon size={compact ? 20 : 30} weight="duotone" /><span>{label}</span>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 function EmptyPosts({ error, postHref }) {
@@ -83,10 +51,16 @@ function PostList({ posts, error, postHref }) {
     <div className="post-list">
       {posts.slice(0, 5).map((post) => (
         <Link key={post.id} href={`/posts/${post.id}`} className="post-row">
-          <div className="post-icon" aria-hidden="true"><Wrench size={27} weight="duotone" /></div>
+          {post.thumbnailUrl ? (
+            <div className="post-icon overflow-hidden !p-0 border border-slate-200">
+              <img src={imageSrc(post.thumbnailUrl)} alt="수리 요청 썸네일" className="absolute inset-0 h-full w-full object-cover" />
+            </div>
+          ) : (
+            <div className="post-icon" aria-hidden="true"><Wrench size={27} weight="duotone" /></div>
+          )}
           <div className="min-w-0 flex-1">
             <div className="post-title-line"><h3>{post.title || "제목 없는 수리 요청"}</h3><time>{formatRelativeDate(post.createdAt)}</time></div>
-            <div className="post-meta"><span className={`status-badge status-${post.status?.toLowerCase()}`}>{statusLabel[post.status] ?? post.status ?? "상태 미정"}</span><span>{post.authorId || "작성자 정보 없음"}</span></div>
+            <div className="post-meta"><span className={`status-badge status-${post.status?.toLowerCase()}`}>{statusLabel[post.status] ?? post.status ?? "상태 미정"}</span><span>{post.authorNickname || post.authorEmail || "작성자 정보 없음"}</span></div>
             <p className="post-content">{post.content || "등록된 상세 내용이 없습니다."}</p>
           </div>
         </Link>
@@ -95,35 +69,11 @@ function PostList({ posts, error, postHref }) {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="site-footer">
-      <div className="page-shell footer-inner">
-        <div><strong>동네수리</strong><p>© 2026 동네수리. All rights reserved.</p></div>
-
-        <nav className="policy-links">
-          {POLICY_LINKS.map((item) => (
-            <a
-              key={item.path}
-              href={backendUrl(item.path)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-      </div>
-    </footer>
-  );
-}
-
 function UnifiedHome({ posts, error, userEmail, isAuthenticated, pagination, regionScope }) {
   return (
-    <><main className="page-shell auth-main">
+    <main className="page-shell auth-main">
       {isAuthenticated && <LocationPermissionPrompt userEmail={userEmail} />}
       {isAuthenticated && <RegionScopeFilter pathname="/" regionScope={regionScope} regionFilter={pagination?.regionFilter} />}
-      <CategoryRow compact />
       <div className="auth-dashboard-grid">
         <div className="dashboard-column">
           <section id="posts" className="reference-card post-card">
@@ -166,7 +116,7 @@ function UnifiedHome({ posts, error, userEmail, isAuthenticated, pagination, reg
           )}
         </aside>
       </div>
-    </main><Footer /></>
+    </main>
   );
 }
 
@@ -175,7 +125,7 @@ export default async function Home({ searchParams }) {
   const cookieStore = await cookies();
   const userEmail = cookieStore.get("user_email")?.value ?? null;
   const accessToken = cookieStore.get("access_token")?.value ?? null;
-
+  
   const isAuthenticated = Boolean(userEmail && accessToken);
 
   const { posts, error, pagination } = await getNearbyPosts(accessToken, "ALL", 0, 5, regionScope);

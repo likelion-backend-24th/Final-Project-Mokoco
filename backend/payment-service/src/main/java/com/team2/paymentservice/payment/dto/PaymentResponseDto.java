@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
 public record PaymentResponseDto(
         Long id,
         Long postId,
-        Long payerId,
-        Long payeeId,
+        String payerEmail,
+        String payeeEmail,
         Integer amount,
         Integer feeAmount,
         Integer netAmount,
@@ -22,8 +22,8 @@ public record PaymentResponseDto(
         return new PaymentResponseDto(
                 payment.getId(),
                 payment.getPostId(),
-                payment.getPayerId(),
-                payment.getPayeeId(),
+                payment.getPayerEmail(),
+                payment.getPayeeEmail(),
                 payment.getAmount(),
                 payment.getFeeAmount(),
                 payment.getNetAmount(),
