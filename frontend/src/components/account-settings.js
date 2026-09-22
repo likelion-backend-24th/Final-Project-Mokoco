@@ -171,7 +171,7 @@ export default function AccountSettings() {
               <p className="mt-1 text-sm text-slate-500">{me.email}</p>
               {me.regionName && <p className="mt-0.5 text-sm text-slate-400">{me.regionName}</p>}
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-2">
+            <div className="flex w-36 shrink-0 flex-col gap-2">
               {SOCIAL_PROVIDERS.map(({ id, label, icon, boxClass }) => {
                 const linked = linkedProviders?.includes(id.toUpperCase());
                 return (
@@ -180,7 +180,7 @@ export default function AccountSettings() {
                     type="button"
                     onClick={() => navigateToOAuth(id)}
                     disabled={linkedProviders === null || linked}
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors disabled:cursor-default disabled:opacity-90 ${boxClass}`}
+                    className={`inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors disabled:cursor-default disabled:opacity-90 ${boxClass}`}
                   >
                     {icon}
                     {label} {linked ? "연결됨" : "연결하기"}
