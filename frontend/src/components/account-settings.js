@@ -1,8 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PencilSimple, LockKey, FileText, X } from "@phosphor-icons/react";
+import { PencilSimple, LockKey, FileText, X, Link as LinkIcon } from "@phosphor-icons/react";
 import ResumeEditor from "./resume-editor";
+
+const SOCIAL_PROVIDERS = [
+  { id: "google", label: "구글" },
+  { id: "kakao", label: "카카오" },
+];
+
+// 로그인 페이지의 소셜 버튼과 같은 경로다 — 이미 로그인된 상태에서 타면 백엔드가
+// "새 로그인"이 아니라 "지금 계정에 연결"로 처리한다(CustomOAuth2UserService 참고).
+function navigateToOAuth(providerId) {
+  window.location.href = `/oauth2/authorization/${providerId}`;
+}
 
 export default function AccountSettings() {
   const [me, setMe] = useState(null);
@@ -19,6 +30,7 @@ export default function AccountSettings() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [refreshToken, setRefreshToken] = useState(0);
+  const [linkedProviders, setLinkedProviders] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -34,6 +46,15 @@ export default function AccountSettings() {
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
+    return () => controller.abort();
+  }, [refreshToken]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/users/me/social-accounts", { signal: controller.signal, cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((providers) => setLinkedProviders(Array.isArray(providers) ? providers : []))
+      .catch(() => {});
     return () => controller.abort();
   }, [refreshToken]);
 
@@ -158,6 +179,36 @@ export default function AccountSettings() {
               <FileText size={16} weight="bold" />
               내 이력서
             </button>
+          </div>
+
+          <div className="mt-6 border-t border-slate-100 pt-4">
+            <p className="text-sm font-bold text-slate-700">연결된 소셜 계정</p>
+            <p className="mt-1 text-xs text-slate-400">
+              두 계정 모두 본인 소유임을 증명해야 연결돼요. 이미 다른 계정에 연결된 소셜 계정은 연결할 수 없어요.
+            </p>
+            <div className="mt-3 flex flex-col gap-2">
+              {SOCIAL_PROVIDERS.map(({ id, label }) => {
+                const linked = linkedProviders?.includes(id.toUpperCase());
+                return (
+                  <div key={id} className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-2.5">
+                    <span className="text-sm font-medium text-slate-600">{label}</span>
+                    {linked ? (
+                      <span className="text-xs font-semibold text-emerald-600">연결됨</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => navigateToOAuth(id)}
+                        disabled={linkedProviders === null}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+                      >
+                        <LinkIcon size={14} weight="bold" />
+                        연결하기
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

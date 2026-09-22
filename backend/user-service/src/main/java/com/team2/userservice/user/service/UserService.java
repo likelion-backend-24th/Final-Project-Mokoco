@@ -15,11 +15,14 @@ import com.team2.userservice.user.entity.RefreshToken;
 import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
 import com.team2.userservice.user.repository.RefreshTokenRepository;
+import com.team2.userservice.user.repository.SocialAccountRepository;
 import com.team2.userservice.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,7 @@ public class UserService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final RegionRepository regionRepository;
+    private final SocialAccountRepository socialAccountRepository;
 
     @Transactional
     public Long signUp(UserSignUpRequest request) {
@@ -136,6 +140,15 @@ public class UserService {
         // 2. 엔티티를 UserResponse DTO로 변환해서 반환 (id·role·status·지역 포함 전체 매핑 —
         //    role/status는 다른 서비스가 verify-token 응답으로 권한 판단에 쓰므로 누락되면 안 됨)
         return new UserResponse(user);
+    }
+
+    // 설정 화면에 "구글 연결됨"/"카카오 연결하기"를 보여주기 위한 연결된 provider 목록.
+    public List<String> findLinkedProviders(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다: " + email));
+        return socialAccountRepository.findByUserId(user.getId()).stream()
+                .map(account -> account.getProvider().name())
+                .toList();
     }
 
     // ── 관리자 기능 ──────────────────────────────────────────────────

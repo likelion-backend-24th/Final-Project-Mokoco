@@ -95,7 +95,7 @@ class JwtUserIdTest {
         String refresh = tokens.createRefreshToken(42L);
         when(refreshTokens.findByEmail("user@example.com"))
                 .thenReturn(Optional.of(new RefreshToken("user@example.com", refresh)));
-        UserService service = new UserService(users, mock(PasswordEncoder.class), tokens, refreshTokens, mock(RegionRepository.class));
+        UserService service = new UserService(users, mock(PasswordEncoder.class), tokens, refreshTokens, mock(RegionRepository.class), mock(com.team2.userservice.user.repository.SocialAccountRepository.class));
         ObjectMapper mapper = new ObjectMapper();
         TokenReissueRequest request = mapper.readValue("{\"email\":\"user@example.com\",\"refreshToken\":\"" + refresh + "\"}", TokenReissueRequest.class);
         com.team2.userservice.user.dto.TokenResponse response = service.reissue(request);
