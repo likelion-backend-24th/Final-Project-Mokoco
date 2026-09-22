@@ -1,14 +1,12 @@
 package com.team2.postservice.contract.controller;
 
 import com.team2.common.security.LoginUser;
-import com.team2.postservice.contract.ContractService;
-import com.team2.postservice.contract.ContractTerms;
+import com.team2.postservice.contract.service.ContractService;
 import com.team2.postservice.contract.dto.ActionRequest;
 import com.team2.postservice.contract.dto.DraftRequest;
 import com.team2.postservice.post.dto.Overview;
 import com.team2.postservice.post.dto.Version;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

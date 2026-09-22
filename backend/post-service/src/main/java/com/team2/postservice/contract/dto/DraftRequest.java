@@ -1,6 +1,5 @@
 package com.team2.postservice.contract.dto;
 
-import com.team2.postservice.contract.ContractTerms;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
