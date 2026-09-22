@@ -2,6 +2,7 @@ package com.team2.chatservice.chatMessage;
 
 import com.team2.chatservice.client.UserClient;
 import com.team2.chatservice.chatMessage.dto.*;
+import com.team2.chatservice.client.dto.UserClientResponse;
 import com.team2.common.security.LoginUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,7 +27,7 @@ public class ChatController {
     // SecurityConfig가 이 경로도 Bearer 인증을 요구하므로, 여기선 그 토큰으로 풍부한 프로필
     // 정보(닉네임/지역/권한 등 LoginUser엔 없는 필드)까지 다시 조회해 내려준다.
     @GetMapping("/api/chat-rooms/session")
-    public com.team2.chatservice.client.dto.UserClientResponse session(@RequestHeader("Authorization") String authorization) {
+    public UserClientResponse session(@RequestHeader("Authorization") String authorization) {
         return users.verifyToken(authorization.substring(7));
     }
 
@@ -38,14 +39,14 @@ public class ChatController {
 
     @MessageMapping("/chat/{roomId}")
     public void send(@DestinationVariable Long roomId, ChatMessageRequest request, Principal principal) {
-        var saved = service.send(roomId, Long.valueOf(principal.getName()), request.content());
+        ChatMessageResponse saved = service.send(roomId, Long.valueOf(principal.getName()), request.content());
         broker.convertAndSend("/topic/chat/" + roomId, saved);
     }
 
     @DeleteMapping("/api/chat-rooms/{roomId}/messages/{messageId}")
     public ChatMessageResponse delete(@PathVariable Long roomId, @PathVariable Long messageId,
             @AuthenticationPrincipal LoginUser user) {
-        var deleted = service.delete(roomId, messageId, user.id());
+        ChatMessageResponse deleted = service.delete(roomId, messageId, user.id());
         broker.convertAndSend("/topic/chat/" + roomId, deleted);
         return deleted;
     }

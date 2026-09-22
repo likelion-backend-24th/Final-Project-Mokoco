@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -35,7 +36,7 @@ public class InternalServiceAuthenticationFilter extends OncePerRequestFilter {
             response.getWriter().write("{\"code\":\"UNAUTHORIZED_INTERNAL_SERVICE\",\"message\":\"Internal service authentication required\"}");
             return;
         }
-        var context = SecurityContextHolder.createEmptyContext();
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(new UsernamePasswordAuthenticationToken(
                 "post-service", null, List.of(new SimpleGrantedAuthority("INTERNAL_SERVICE"))));
         SecurityContextHolder.setContext(context);

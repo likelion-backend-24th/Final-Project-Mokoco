@@ -2,10 +2,12 @@ package com.team2.chatservice.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team2.chatservice.client.UserClient;
+import com.team2.chatservice.client.dto.UserClientResponse;
 import com.team2.common.security.LoginUser;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
@@ -29,13 +31,13 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         }
         LoginUser loginUser;
         try {
-            var user = users.verifyToken(auth.substring(7));
+            UserClientResponse user = users.verifyToken(auth.substring(7));
             if (user == null || user.id() == null || user.email() == null) { error(response, 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return; }
             loginUser = new LoginUser(user.id(), user.email());
         } catch (feign.FeignException e) {
             error(response, e.status() == 401 ? 401 : 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return;
         }
-        var context = SecurityContextHolder.createEmptyContext();
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(loginUser, null, List.of()));
         SecurityContextHolder.setContext(context);
         try { chain.doFilter(request, response); }

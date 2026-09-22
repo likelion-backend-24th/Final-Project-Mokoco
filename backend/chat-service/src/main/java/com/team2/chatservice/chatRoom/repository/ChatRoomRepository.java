@@ -2,6 +2,7 @@ package com.team2.chatservice.chatRoom.repository;
 
 import com.team2.chatservice.chatRoom.dto.ChatRoomListItem;
 import com.team2.chatservice.chatRoom.entity.ChatRoom;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
-    @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select room from ChatRoom room where room.id = :id")
     Optional<ChatRoom> lockById(@Param("id") Long id);
 
