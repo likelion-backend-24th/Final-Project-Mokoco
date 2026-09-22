@@ -9,7 +9,7 @@ const POLICY_LINKS = [
   { label: "이용약관", path: "/policy/terms-of-service.html" },
   { label: "개인정보처리방침", path: "/policy/privacy.html" },
   { label: "운영정책", path: "/policy/operation.html" },
-  { label: "분쟁조정센터 운영정책", path: "/policy/terms.html" },
+  { label: "분쟁조정센터", path: "/policy/terms.html" },
   { label: "위치기반서비스 이용약관", path: "/policy/location.html" },
   { label: "이용자보호 비전과 계획", path: "/policy/user-protection.html" },
   { label: "청소년보호정책", path: "/policy/youth.html" },

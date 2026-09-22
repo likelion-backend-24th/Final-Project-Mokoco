@@ -14,6 +14,7 @@ import com.team2.paymentservice.payment.dto.PaymentResponseDto;
 import com.team2.paymentservice.payment.entity.Payment;
 import com.team2.paymentservice.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -141,5 +142,13 @@ public class PaymentService {
         }
 
         return PaymentResponseDto.from(payment);
+    }
+
+    // 내 정산내역 목록: 의뢰자로 결제한 건 + 수리자로 정산받은 건을 모두 최신순으로 반환
+    public List<PaymentResponseDto> getMyPayments(String userEmail) {
+        return paymentRepository.findByPayerEmailOrPayeeEmailOrderByCreatedAtDesc(userEmail, userEmail)
+                .stream()
+                .map(PaymentResponseDto::from)
+                .toList();
     }
 }

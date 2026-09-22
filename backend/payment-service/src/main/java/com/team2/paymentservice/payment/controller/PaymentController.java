@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/payments")
 @RequiredArgsConstructor
@@ -34,5 +36,11 @@ public class PaymentController {
     public ResponseEntity<PaymentResponseDto> getPaymentByPostId(@PathVariable Long postId,
                                                                   @RequestHeader("X-User-Email") String userEmail) {
         return ResponseEntity.ok(paymentService.getPaymentByPostId(postId, userEmail));
+    }
+
+    // 내 정산내역 목록 조회 (의뢰자로 결제한 건 + 수리자로 정산받은 건, 최신순)
+    @GetMapping("/mine")
+    public ResponseEntity<List<PaymentResponseDto>> getMyPayments(@RequestHeader("X-User-Email") String userEmail) {
+        return ResponseEntity.ok(paymentService.getMyPayments(userEmail));
     }
 }

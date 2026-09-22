@@ -51,8 +51,10 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
       {userEmail ? (
         <div className="header-account">
           <NotificationBell />
-          <UserCircle size={29} weight="duotone" className="text-blue-600" />
-          <span className="header-email">{userEmail}</span>
+          <Link href="/mypage" className="header-profile-link" aria-label="내 프로필">
+            <UserCircle size={29} weight="duotone" className="text-blue-600" />
+            <span className="header-email">{userEmail}</span>
+          </Link>
           <form onSubmit={handleLogout}>
             <button type="submit">로그아웃</button>
           </form>
