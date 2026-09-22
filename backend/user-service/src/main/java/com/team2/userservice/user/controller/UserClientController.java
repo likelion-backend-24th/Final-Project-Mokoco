@@ -46,13 +46,4 @@ public class UserClientController {
     public ResponseEntity<UserResponse> getUserById(@RequestParam Long id) {
         return ResponseEntity.ok(userService.findUserById(id));
     }
-
-    @GetMapping("/by-id/{userId}/region")
-    public ResponseEntity<RegionResponse> getRegionByUserId(
-            @PathVariable Long userId
-    ) {
-        return ResponseEntity.ok(
-                regionService.getRegionInfoByUserId(userId)
-        );
-    }
 }
