@@ -3,16 +3,26 @@
 
 import { useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
+
+const ERROR_MESSAGES = {
+  social_account_linked_elsewhere: "이미 다른 계정에 연결된 소셜 계정이에요. 그 계정으로 로그인하려면 먼저 로그아웃해주세요.",
+  link_user_not_found: "연결할 계정을 찾지 못했어요. 다시 로그인한 뒤 시도해주세요.",
+  oauth_failed: "소셜 로그인 처리 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.",
+};
 
 function OAuth2RedirectContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const refreshToken = searchParams.get("refreshToken");
-  
+  const errorCode = searchParams.get("error");
+  const linkError = errorCode ? (ERROR_MESSAGES[errorCode] ?? "소셜 로그인 처리 중 문제가 발생했어요.") : "";
+
   const socialLogin = useAuthStore((state) => state.socialLogin);
 
   useEffect(() => {
+    if (errorCode) return;
     console.log("OAuth 리다이렉트 페이지 진입, 받은 토큰:", token);
 
     if (!token) {
@@ -42,7 +52,16 @@ function OAuth2RedirectContent() {
     })();
 
     return () => { cancelled = true; };
-  }, [token, refreshToken, socialLogin]);
+  }, [token, refreshToken, errorCode, socialLogin]);
+
+  if (linkError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-lg font-medium text-red-600">{linkError}</p>
+        <Link href="/" className="text-sm font-semibold text-blue-600 hover:underline">홈으로 돌아가기</Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center">
