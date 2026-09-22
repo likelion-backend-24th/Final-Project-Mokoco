@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Collection;
 import java.util.Optional;
 
 public interface FixDealRepository extends JpaRepository<FixDeal, Long> {
@@ -44,11 +43,4 @@ public interface FixDealRepository extends JpaRepository<FixDeal, Long> {
     Page<FixDeal> findByRequesterIdOrderByCreatedAtDesc(Long requesterId, Pageable pageable);
 
     Page<FixDeal> findByRepairerIdOrderByCreatedAtDesc(Long repairerId, Pageable pageable);
-
-    // 관리자 거래 현황판용
-    Page<FixDeal> findAllByOrderByCreatedAtDesc(Pageable pageable);
-
-    Page<FixDeal> findByStatusOrderByCreatedAtDesc(FixDealStatus status, Pageable pageable);
-
-    Page<FixDeal> findByStatusInOrderByCreatedAtDesc(Collection<FixDealStatus> statuses, Pageable pageable);
 }

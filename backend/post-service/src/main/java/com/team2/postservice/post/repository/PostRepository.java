@@ -16,17 +16,16 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query(value = """
         select new com.team2.postservice.post.dto.NearbyRepairRequest(
-            p.id, p.title, p.content, p.contentFormat, p.authorId, p.category, p.status, p.regionCode, p.regionName, p.createdAt,
+            p.id, p.title, p.content, p.authorEmail, p.category, p.status, p.regionCode, p.regionName, p.createdAt,
             (select i.imageUrl from PostImage i where i.post = p
-                and i.id = (select min(firstImage.id) from PostImage firstImage where firstImage.post = p)))
+                and i.id = (select min(firstImage.id) from PostImage firstImage where firstImage.post = p)),
+            null)
         from Post p
         where (:regionPattern is null or p.regionCode like :regionPattern) and p.publiclyVisible = true
-          and p.status = com.team2.postservice.post.entity.PostStatus.WAITING
           and (:category is null or p.category = :category)
         """, countQuery = """
         select count(p) from Post p
         where (:regionPattern is null or p.regionCode like :regionPattern) and p.publiclyVisible = true
-          and p.status = com.team2.postservice.post.entity.PostStatus.WAITING
           and (:category is null or p.category = :category)
         """)
     Page<NearbyRepairRequest> findNearby(
@@ -34,12 +33,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("category") PostCategory category,
             Pageable pageable);
 
-    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
-    @Query("select p from Post p where p.id = :id")
-    Optional<Post> lockById(@Param("id") Long id);
-
     @Override
     @EntityGraph(attributePaths = "images")
     Optional<Post> findById(Long id);
+
+    // 제안 채택 시 동시 요청(여러 견적 동시 채택 시도 등)을 막기 위한 비관적 락 조회
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Post p where p.id = :id")
+    Optional<Post> lockById(@Param("id") Long id);
 
 }

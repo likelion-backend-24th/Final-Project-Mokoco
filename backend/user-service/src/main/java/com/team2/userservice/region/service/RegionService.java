@@ -64,21 +64,10 @@ public class RegionService {
         // User 엔티티 내부에 연관된 Region이 바로 매핑되어 있다면
         // user.getRegion()을 곧바로 가져다 쓸 수 있어 리포지토리 조회를 줄일 수도 있습니다!
         Region region = user.getRegion();
-
         if (region == null) {
             throw new CustomException(ErrorCode.REGION_NOT_FOUND);
         }
 
         return RegionResponse.from(region);
-    }
-
-    public RegionResponse getRegionInfo(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        if (user.getRegion() == null)
-            throw new CustomException(ErrorCode.REGION_NOT_FOUND);
-
-        return RegionResponse.from(user.getRegion());
     }
 }

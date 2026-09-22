@@ -1,4 +1,4 @@
-package com.team2.postservice.contract.dto;
+package com.team2.postservice.contract;
 
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;

@@ -27,7 +27,4 @@ public interface UserClient {
 
     @GetMapping("/api/internal/users/{email}/region")
     RegionResponse getRegionByEmail(@PathVariable String email);
-
-    @GetMapping("/api/internal/users/by-id/{userId}/region")
-    RegionResponse getRegionByUserId(@PathVariable("userId") Long userId);
 }

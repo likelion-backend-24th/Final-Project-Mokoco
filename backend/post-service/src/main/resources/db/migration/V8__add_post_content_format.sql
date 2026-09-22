@@ -1,2 +1,0 @@
-ALTER TABLE posts
-    ADD COLUMN content_format VARCHAR(20) NOT NULL DEFAULT 'PLAIN_TEXT' AFTER content;

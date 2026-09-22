@@ -92,8 +92,8 @@ public class ChatRoomOrchestrationService {
     private record Participants(Long requesterId, Long repairerId) {}
 
     private Participants authorize(Proposal proposal, Long userId) {
-        UserClientResponse requester = userClient.getUserById(proposal.getPost().getAuthorId());
-        UserClientResponse repairer = userClient.getUserById(proposal.getRepairerId());
+        UserClientResponse requester = userClient.getUserByEmail(proposal.getPost().getAuthorEmail());
+        UserClientResponse repairer = userClient.getUserByEmail(proposal.getRepairerEmail());
         if (!userId.equals(requester.id()) && !userId.equals(repairer.id()))
             throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_ACCESS);
         if (requester.id().equals(repairer.id()))

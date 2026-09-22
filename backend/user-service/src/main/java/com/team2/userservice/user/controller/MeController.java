@@ -11,8 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 // 로그인한 본인 프로필 조회(role/status 포함, 관리자 메뉴 노출 여부 판단에도 사용)/수정.
 @RestController
 @RequestMapping("/api/users/me")
@@ -24,12 +22,6 @@ public class MeController {
     @GetMapping
     public ResponseEntity<UserResponse> me(@AuthenticationPrincipal LoginUser user) {
         return ResponseEntity.ok(userService.findUserByEmail(user.email()));
-    }
-
-    // 연결된 소셜 로그인 provider 목록 (예: ["GOOGLE"]) — 설정 화면의 연결 상태 표시용.
-    @GetMapping("/social-accounts")
-    public ResponseEntity<List<String>> mySocialAccounts(@AuthenticationPrincipal LoginUser user) {
-        return ResponseEntity.ok(userService.findLinkedProviders(user.email()));
     }
 
     // 내 정보 수정 (이름·닉네임)

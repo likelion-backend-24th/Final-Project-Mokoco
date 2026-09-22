@@ -4,7 +4,6 @@ import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.entity.PostCategory;
 import com.team2.postservice.post.entity.PostImage;
 import com.team2.postservice.post.entity.PostStatus;
-import com.team2.postservice.post.entity.ContentFormat;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -14,8 +13,8 @@ public class PostResponseDto {
             Long id,
             String title,
             String content,
-            ContentFormat contentFormat,
-            Long authorId,
+            String authorEmail,
+            String authorNickname,
             PostCategory category,
             PostStatus status,
             String regionName,
@@ -25,21 +24,18 @@ public class PostResponseDto {
             String regionCode,
             boolean publiclyVisible
     ) {
-        public static Detail from(Post post) {
+        public static Detail from(Post post, String authorNickname) {
             return new Detail(
                     post.getId(),
                     post.getTitle(),
                     post.getContent(),
-                    post.getContentFormat(),
-                    post.getAuthorId(),
+                    post.getAuthorEmail(),
+                    authorNickname,
                     post.getCategory(),
                     post.getStatus(),
                     post.getRegionName(),
                     post.getImages().stream()
-                            .map(image -> new ImageInfo(
-                                    image.getId(),
-                                    image.getImageUrl()
-                            ))
+                            .map(ImageInfo::from)
                             .toList(),
                     post.getCreatedAt() != null ? post.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,
                     post.getUpdatedAt() != null ? post.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,

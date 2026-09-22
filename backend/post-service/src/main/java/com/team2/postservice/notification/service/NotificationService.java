@@ -3,7 +3,6 @@ package com.team2.postservice.notification.service;
 import com.team2.postservice.client.RealtimeClient;
 import com.team2.postservice.client.UserClient;
 import com.team2.common.exception.CustomException;
-import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.notification.dto.NotificationResponseDto;
 import com.team2.postservice.notification.dto.NotificationSettingDto;
@@ -38,12 +37,10 @@ public class NotificationService {
     /** 내 게시글에 새 수리 제안이 도착했을 때 (게시글 작성자에게) */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void notifyProposalReceived(Post post, Proposal proposal) {
-        if (post.getAuthorId().equals(proposal.getRepairerId())) return;
+        if (post.getAuthorEmail().equals(proposal.getRepairerEmail())) return;
 
-        Long recipientId = safeResolveIdById(post.getAuthorId());
-        UserClientResponse user = userClient.getUserById(recipientId);
-
-        create(recipientId, user.email(), NotificationType.PROPOSAL_RECEIVED,
+        Long recipientId = safeResolveIdByEmail(post.getAuthorEmail());
+        create(recipientId, post.getAuthorEmail(), NotificationType.PROPOSAL_RECEIVED,
                 post.getId(), proposal.getId(), null,
                 "\"" + post.getTitle() + "\" 게시글에 새로운 수리 제안이 도착했습니다.");
     }
@@ -51,12 +48,10 @@ public class NotificationService {
     /** 내가 보낸 제안이 채택됐을 때 (수리공에게) */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void notifyProposalAdopted(Post post, Proposal proposal) {
-        if (post.getAuthorId().equals(proposal.getRepairerId())) return;
+        if (post.getAuthorEmail().equals(proposal.getRepairerEmail())) return;
 
-        Long recipientId = safeResolveIdById(proposal.getRepairerId());
-        UserClientResponse user = userClient.getUserById(recipientId);
-
-        create(recipientId, user.email(), NotificationType.PROPOSAL_ADOPTED,
+        Long recipientId = safeResolveIdByEmail(proposal.getRepairerEmail());
+        create(recipientId, proposal.getRepairerEmail(), NotificationType.PROPOSAL_ADOPTED,
                 post.getId(), proposal.getId(), null,
                 "\"" + post.getTitle() + "\" 게시글에 보낸 수리 제안이 채택되었습니다.");
     }
@@ -81,11 +76,11 @@ public class NotificationService {
                 postId, null, chatRoomId, "새 채팅 메시지: " + preview);
     }
 
-    private Long safeResolveIdById(Long userId) {
+    private Long safeResolveIdByEmail(String email) {
         try {
-            return userClient.getUserById(userId).id();
+            return userClient.getUserByEmail(email).id();
         } catch (Exception e) {
-            log.warn("알림 수신자 id 조회 실패 id={}", userId, e);
+            log.warn("알림 수신자 id 조회 실패 email={}", email, e);
             return null;
         }
     }

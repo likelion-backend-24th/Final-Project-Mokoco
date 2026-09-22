@@ -142,7 +142,7 @@ class ProfileServiceTest {
         return Post.builder()
                 .title("선풍기 고쳐주세요")
                 .content("전원이 안 켜져요")
-                .authorId(1L)
+                .authorEmail("requester@test.com")
                 .regionName("서울 강남구")
                 .category(PostCategory.HOME_APPLIANCE)
                 .build();

@@ -37,17 +37,15 @@ public class PostService {
     private final FixDealRepository fixDealRepository;
 
     @Transactional
-    public Long createPost(PostRequestDto.Create request, List<MultipartFile> images, Long authorId) {
-        // 사용자 ID로 최신 지역 정보를 조회한다.
-        RegionResponse response = postViewerService.requireRegion(authorId);
-        String content = PostContent.sanitize(request.content(), request.contentFormat());
+    public Long createPost(PostRequestDto.Create request, List<MultipartFile> images, String authorEmail) {
+        // 💡 User-Service에서 이메일로 최신 지역 정보를 Feign을 통해 조회
+        RegionResponse response = postViewerService.requireRegion(authorEmail);
 
         Post post = Post.builder()
                 .title(request.title())
-                .content(content)
-                .contentFormat(request.contentFormat())
+                .content(request.content())
                 .category(request.category())
-                .authorId(authorId)
+                .authorEmail(authorEmail)
                 .regionName(response.regionName())
                 .regionCode(response.regionCode())
                 .build();
@@ -58,43 +56,51 @@ public class PostService {
     }
 
     public NearbyRepairRequest.Result getNearbyPosts(
-            Long viewerId, PostCategory category, int page, int size, RegionScope regionScope) {
+            String email, PostCategory category, int page, int size, RegionScope regionScope) {
         if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE)
             throw new CustomException(ErrorCode.INVALID_INPUT);
-        RegionResponse region = viewerId == null ? null : postViewerService.requireRegion(viewerId);
-        PageRequest pageable = PageRequest.of(page, size,
+        // ALL(기본값)은 활동 지역 설정 여부와 무관하게 필터링 없이 전체를 보여준다.
+        // 다만 칩에 표시할 지역명은 있으면 보여주도록 best-effort로만 조회(없어도 에러 아님).
+        var region = email == null ? null
+                : regionScope == RegionScope.ALL ? postViewerService.tryRegion(email)
+                : postViewerService.requireRegion(email);
+        String regionPattern = regionScope == RegionScope.ALL ? null : regionScope.queryPattern(region.regionCode());
+        var pageable = PageRequest.of(page, size,
                 Sort.by(Sort.Direction.DESC, "createdAt", "id"));
-        return NearbyRepairRequest.Result.from(
-                postRepository.findNearby(region == null ? null : regionScope.queryPattern(region.regionCode()),
-                        category == PostCategory.ALL ? null : category, pageable), regionScope, region);
+        var posts = postRepository.findNearby(regionPattern, category == PostCategory.ALL ? null : category, pageable);
+        // 같은 페이지 안에서 작성자가 겹칠 수 있어(같은 사람의 여러 글), 이메일당 한 번만 조회하도록
+        // 이 요청 범위에서만 쓰는 로컬 캐시를 사용한다(인스턴스 필드로 두면 요청 간에 공유되어 버그가 된다).
+        var nicknameCache = new java.util.HashMap<String, String>();
+        posts = posts.map(item -> item.withAuthorNickname(
+                nicknameCache.computeIfAbsent(item.authorEmail(), postViewerService::tryNickname)));
+        return NearbyRepairRequest.Result.from(posts, regionScope, region);
     }
 
     public PostResponseDto.Detail getPost(Long id) {
         Post post = getPostOrThrow(id);
         if (!post.isPubliclyVisible()) throw new CustomException(ErrorCode.POST_NOT_FOUND);
-        return PostResponseDto.Detail.from(post);
+        return PostResponseDto.Detail.from(post, postViewerService.tryNickname(post.getAuthorEmail()));
     }
 
     @Transactional
-    public void changeVisibility(Long id, boolean publiclyVisible, Long viewerId) {
+    public void changeVisibility(Long id, boolean publiclyVisible, String email) {
         Post post = getPostOrThrow(id);
-        validateAuthor(post, viewerId, ErrorCode.UNAUTHORIZED_POST_UPDATE);
+        validateAuthor(post, email, ErrorCode.UNAUTHORIZED_POST_UPDATE);
         post.changeVisibility(publiclyVisible);
     }
 
     @Transactional
-    public void updatePost(Long id, PostRequestDto.Update request, Long userId) {
+    public void updatePost(Long id, PostRequestDto.Update request, String userEmail) {
         Post post = getPostOrThrow(id);
-        validateAuthor(post, userId, ErrorCode.UNAUTHORIZED_POST_UPDATE);
+        validateAuthor(post, userEmail, ErrorCode.UNAUTHORIZED_POST_UPDATE);
 
-        post.update(request.title(), PostContent.sanitize(request.content(), request.contentFormat()),
-                request.contentFormat(), request.category());
+        post.update(request.title(), request.content(), request.category());
     }
 
     @Transactional
-    public void deletePost(Long id, Long userId) {
+    public void deletePost(Long id, String userEmail) {
         Post post = getPostOrThrow(id);
-        validateAuthor(post, userId, ErrorCode.UNAUTHORIZED_POST_DELETE);
+        validateAuthor(post, userEmail, ErrorCode.UNAUTHORIZED_POST_DELETE);
         guardNoActiveDeal(post.getId());
         deletePostInternal(post);
     }
@@ -135,19 +141,19 @@ public class PostService {
     }
 
     @Transactional
-    public PostResponseDto.Detail addImages(Long postId, List<MultipartFile> images, Long userId) {
+    public PostResponseDto.Detail addImages(Long postId, List<MultipartFile> images, String userEmail) {
         Post post = getPostOrThrow(postId);
-        validateAuthor(post, userId, ErrorCode.UNAUTHORIZED_POST_UPDATE);
+        validateAuthor(post, userEmail, ErrorCode.UNAUTHORIZED_POST_UPDATE);
 
         attachImages(post, images);
 
-        return PostResponseDto.Detail.from(post);
+        return PostResponseDto.Detail.from(post, postViewerService.tryNickname(post.getAuthorEmail()));
     }
 
     @Transactional
-    public void deleteImage(Long postId, Long imageId, Long userId) {
+    public void deleteImage(Long postId, Long imageId, String userEmail) {
         Post post = getPostOrThrow(postId);
-        validateAuthor(post, userId, ErrorCode.UNAUTHORIZED_POST_UPDATE);
+        validateAuthor(post, userEmail, ErrorCode.UNAUTHORIZED_POST_UPDATE);
 
         PostImage image = post.getImages().stream()
                 .filter(postImage -> postImage.getId().equals(imageId))
@@ -180,8 +186,8 @@ public class PostService {
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
     }
 
-    private void validateAuthor(Post post, Long userId, ErrorCode errorCode) {
-        if (!post.getAuthorId().equals(userId)) {
+    private void validateAuthor(Post post, String userEmail, ErrorCode errorCode) {
+        if (!post.getAuthorEmail().equals(userEmail)) {
             throw new CustomException(errorCode);
         }
     }

@@ -16,6 +16,7 @@ public class FixDeal {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
     @Column(nullable = false)
     private Long postId;
 
@@ -25,14 +26,8 @@ public class FixDeal {
     @Column(nullable = false)
     private Long requesterId;
 
-    @Column
-    private String requesterEmail;
-
     @Column(nullable = false)
     private Long repairerId;
-
-    @Column
-    private String repairerEmail;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

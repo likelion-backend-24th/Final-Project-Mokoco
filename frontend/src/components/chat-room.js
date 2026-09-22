@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Client } from "@stomp/stompjs";
 import ChatAttachment from "@/components/chat-attachment";
-import { Trash, ArrowLeft, ArrowRight, ArrowUp, ChatCircleDots, ShieldCheck, User, Wrench } from "@phosphor-icons/react";
+import { Trash, ArrowLeft, ArrowUp, ChatCircleDots, ShieldCheck, User, Wrench } from "@phosphor-icons/react";
 import "./chat-room.css";
 import { chatThemes, useChatTheme } from "@/components/chat-theme";
 
@@ -187,12 +187,8 @@ export default function ChatRoom({ roomId }) {
       })}<div ref={bottom} />
     </div>
     {detail?.roomId === roomId && (detail.fixDealId
-      ? <Link href={`/chat-rooms/${roomId}/contract`} className="deal-banner deal-banner-action">
-          <ShieldCheck size={20} weight="fill" />
-          <span>{dealBannerLabel[detail.dealStatus] || "수리 계약서 작성하기"}</span>
-          <ArrowRight size={18} weight="bold" />
-        </Link>
-      : <p className="deal-banner">견적 상담 중입니다. 이 견적이 채택되면 계약서를 작성할 수 있습니다.</p>)}
+      ? <Link href={`/chat-rooms/${roomId}/contract`} className="conversation-banner" style={{ fontWeight: 600 }}>{dealBannerLabel[detail.dealStatus] || "수리 계약서 작성 · 서명 · 작업 진행 →"}</Link>
+      : <p className="conversation-banner">견적 상담 중입니다. 이 견적이 채택되면 계약서를 작성할 수 있습니다.</p>)}
 
     <footer className="conversation-footer">
       <div className="conversation-composer">

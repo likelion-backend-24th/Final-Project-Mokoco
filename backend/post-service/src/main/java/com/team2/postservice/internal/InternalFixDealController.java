@@ -1,9 +1,7 @@
 package com.team2.postservice.internal;
 
-import com.team2.postservice.fixDeal.dto.FixDealInfo;
 import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
-import com.team2.postservice.proposal.dto.ProposalInfo;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +19,12 @@ public class InternalFixDealController {
     private final FixDealRepository fixDealRepository;
     private final ProposalRepository proposalRepository;
 
+    public record FixDealInfo(Long id, String status, Long requesterId, Long repairerId, Long postId, Long proposalId) {
+        static FixDealInfo from(FixDeal deal) {
+            return new FixDealInfo(deal.getId(), deal.getStatus().name(), deal.getRequesterId(),
+                    deal.getRepairerId(), deal.getPostId(), deal.getProposalId());
+        }
+    }
 
     @GetMapping("/fix-deals/{id}")
     public FixDealInfo getFixDeal(@PathVariable Long id) {
@@ -29,12 +33,13 @@ public class InternalFixDealController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
+    public record ProposalInfo(Long id, Long postId, String requesterEmail, String repairerEmail) {}
 
     @GetMapping("/proposals/{id}")
     public ProposalInfo getProposal(@PathVariable Long id) {
         Proposal proposal = proposalRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         return new ProposalInfo(proposal.getId(), proposal.getPost().getId(),
-                proposal.getPost().getAuthorId(), proposal.getRepairerId());
+                proposal.getPost().getAuthorEmail(), proposal.getRepairerEmail());
     }
 }

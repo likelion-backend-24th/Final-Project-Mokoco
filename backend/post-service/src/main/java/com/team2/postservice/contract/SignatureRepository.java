@@ -1,6 +1,5 @@
-package com.team2.postservice.contract.repository;
+package com.team2.postservice.contract;
 
-import com.team2.postservice.contract.entity.ContractSignature;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
