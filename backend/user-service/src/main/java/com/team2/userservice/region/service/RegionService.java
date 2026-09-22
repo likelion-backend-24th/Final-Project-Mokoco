@@ -81,22 +81,4 @@ public class RegionService {
 
         return RegionResponse.from(user.getRegion());
     }
-
-    public RegionResponse getRegionInfoByUserId(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new CustomException(ErrorCode.USER_NOT_FOUND)
-                );
-
-        if (user.getRegion() == null) {
-            throw new CustomException(ErrorCode.REGION_NOT_FOUND);
-        }
-
-        Region region = regionRepository.findById(user.getRegion().getId())
-                .orElseThrow(() ->
-                        new CustomException(ErrorCode.REGION_NOT_FOUND)
-                );
-
-        return RegionResponse.from(region);
-    }
 }
