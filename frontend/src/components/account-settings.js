@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PencilSimple, LockKey, FileText, X } from "@phosphor-icons/react";
+import { PencilSimple, LockKey, FileText, X, CheckCircle } from "@phosphor-icons/react";
 import ResumeEditor from "./resume-editor";
 
 // 로그인 페이지 소셜 버튼과 같은 아이콘 — 여기서도 같은 브랜드 그림으로 어떤 provider인지 바로 알아보게 한다.
@@ -19,9 +19,10 @@ const KAKAO_ICON = (
   </svg>
 );
 
+// 로그인 페이지 소셜 버튼과 같은 브랜드 배경색 — 구글은 흰 바탕에 테두리, 카카오는 카카오 옐로우.
 const SOCIAL_PROVIDERS = [
-  { id: "google", label: "구글", icon: GOOGLE_ICON },
-  { id: "kakao", label: "카카오", icon: KAKAO_ICON },
+  { id: "google", label: "구글", icon: GOOGLE_ICON, boxClass: "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" },
+  { id: "kakao", label: "카카오", icon: KAKAO_ICON, boxClass: "bg-[#FEE500] text-[#191919] hover:bg-[#FDD835]" },
 ];
 
 // 로그인 페이지의 소셜 버튼과 같은 경로다 — 이미 로그인된 상태에서 타면 백엔드가
@@ -170,22 +171,20 @@ export default function AccountSettings() {
               <p className="mt-1 text-sm text-slate-500">{me.email}</p>
               {me.regionName && <p className="mt-0.5 text-sm text-slate-400">{me.regionName}</p>}
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-1.5">
-              {SOCIAL_PROVIDERS.map(({ id, label, icon }) => {
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              {SOCIAL_PROVIDERS.map(({ id, label, icon, boxClass }) => {
                 const linked = linkedProviders?.includes(id.toUpperCase());
-                return linked ? (
-                  <span key={id} className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-                    {icon} {label} 연결됨
-                  </span>
-                ) : (
+                return (
                   <button
                     key={id}
                     type="button"
                     onClick={() => navigateToOAuth(id)}
-                    disabled={linkedProviders === null}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600 disabled:opacity-50"
+                    disabled={linkedProviders === null || linked}
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors disabled:cursor-default disabled:opacity-90 ${boxClass}`}
                   >
-                    {icon} {label} 연결하기
+                    {icon}
+                    {label} {linked ? "연결됨" : "연결하기"}
+                    {linked && <CheckCircle size={14} weight="fill" className="text-emerald-600" />}
                   </button>
                 );
               })}
