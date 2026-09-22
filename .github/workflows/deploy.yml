@@ -2,157 +2,211 @@ name: CI/CD to AWS EC2
 
 on:
   push:
-    branches: [ release ]
+    branches:
+      - release
+
+  # GitHub Actions 화면에서 수동 재배포도 가능하게
+  workflow_dispatch:
+
+concurrency:
+  group: mokoco-production-deploy
+  cancel-in-progress: false
 
 jobs:
   deploy:
+    name: Build and Deploy
     runs-on: ubuntu-latest
-    outputs:
-      api-gateway: ${{ steps.filter.outputs.api-gateway }}
-      user-service: ${{ steps.filter.outputs.user-service }}
-      post-service: ${{ steps.filter.outputs.post-service }}
-      payment-service: ${{ steps.filter.outputs.payment-service }}
-      chat-service: ${{ steps.filter.outputs.chat-service }}
-      frontend: ${{ steps.filter.outputs.frontend }}
+    timeout-minutes: 30
+
     steps:
+      # =========================================================
+      # 1. Checkout
+      # =========================================================
+
       - name: Checkout source code
         uses: actions/checkout@v4
-
-      - name: Check file changes
-        uses: dorny/paths-filter@v3
-        id: filter
         with:
-          filters: |
-            api-gateway:
-              - 'backend/api-gateway/**'
-            user-service:
-              - 'backend/user-service/**'
-            post-service:
-              - 'backend/post-service/**'
-            payment-service:
-              - 'backend/payment-service/**'
-            chat-service:
-              - 'backend/chat-service/**'
-            # user/post/payment/chat-service가 공통으로 의존하는 서브프로젝트(:common) — 얘만 바뀌어도
-            # 네 서비스 다 새로 빌드해야 반영되므로, 아래에서 각 서비스 조건에 OR로 같이 건다.
-            common:
-              - 'backend/common/**'
-            frontend:
-              - 'frontend/**'
-            compose:
-              - 'docker-compose.yml'
-              - 'infra/**'
-              - 'init.sql'
+          fetch-depth: 1
 
-      # 백엔드 5개 서비스 중 하나라도(혹은 공통 모듈이) 바뀌었을 때만 JDK/gradle 캐시를 셋업한다.
+      - name: Show deploy commit
+        run: |
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          git log -1 --oneline
+
+
+      # =========================================================
+      # 2. Java / Node 환경
+      # =========================================================
+
       - name: Set up Java 21
-        if: steps.filter.outputs.api-gateway == 'true' || steps.filter.outputs.user-service == 'true' || steps.filter.outputs.post-service == 'true' || steps.filter.outputs.payment-service == 'true' || steps.filter.outputs.chat-service == 'true' || steps.filter.outputs.common == 'true'
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: 'gradle'
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
 
       - name: Set up Node.js
-        if: steps.filter.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      # Next.js 공식 권장 캐싱 방식: 웹팩 빌드 캐시(.next/cache)를 러너 간에 재사용해
-      # 소스가 바뀐 부분만 증분 컴파일하도록 한다 (매번 전체 재빌드 방지).
-      # key가 안 맞아도 restore-keys로 직전 캐시를 복원해 최소한 의존성 캐시는 재사용한다.
       - name: Cache Next.js build cache
-        if: steps.filter.outputs.frontend == 'true'
         uses: actions/cache@v4
         with:
           path: frontend/.next/cache
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('frontend/package-lock.json') }}-${{ hashFiles('frontend/src/**/*.js', 'frontend/src/**/*.jsx') }}
+          key: >-
+            ${{ runner.os }}-nextjs-
+            ${{ hashFiles('frontend/package-lock.json') }}-
+            ${{ hashFiles('frontend/src/**/*.js', 'frontend/src/**/*.jsx') }}
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('frontend/package-lock.json') }}-
 
+
+      # =========================================================
+      # 3. Secret 파일 생성
+      # =========================================================
+
       - name: Create User Service secret file
-        if: steps.filter.outputs.user-service == 'true' || steps.filter.outputs.common == 'true'
+        shell: bash
         run: |
+          set -e
           mkdir -p backend/user-service/src/main/resources
-          echo "${{ secrets.USER_SERVICE_SECRET_YML }}" > backend/user-service/src/main/resources/application-secret.yml
+          printf '%s' "${{ secrets.USER_SERVICE_SECRET_YML }}" \
+            > backend/user-service/src/main/resources/application-secret.yml
 
       - name: Create Post Service secret file
-        if: steps.filter.outputs.post-service == 'true' || steps.filter.outputs.common == 'true'
+        shell: bash
         run: |
+          set -e
           mkdir -p backend/post-service/src/main/resources
-          echo "${{ secrets.POST_SERVICE_SECRET_YML }}" > backend/post-service/src/main/resources/application-secret.yml
+          printf '%s' "${{ secrets.POST_SERVICE_SECRET_YML }}" \
+            > backend/post-service/src/main/resources/application-secret.yml
 
       - name: Create Payment Service secret file
-        if: steps.filter.outputs.payment-service == 'true' || steps.filter.outputs.common == 'true'
+        shell: bash
         run: |
+          set -e
           mkdir -p backend/payment-service/src/main/resources
-          echo "${{ secrets.PAYMENT_SERVICE_SECRET_YML }}" > backend/payment-service/src/main/resources/application-secret.yaml
+          printf '%s' "${{ secrets.PAYMENT_SERVICE_SECRET_YML }}" \
+            > backend/payment-service/src/main/resources/application-secret.yaml
 
       - name: Create Chat Service secret file
-        if: steps.filter.outputs.chat-service == 'true' || steps.filter.outputs.common == 'true'
+        shell: bash
         run: |
+          set -e
           mkdir -p backend/chat-service/src/main/resources
-          echo "${{ secrets.CHAT_SERVICE_SECRET_YML }}" > backend/chat-service/src/main/resources/application-secret.yml
+          printf '%s' "${{ secrets.CHAT_SERVICE_SECRET_YML }}" \
+            > backend/chat-service/src/main/resources/application-secret.yml
+
+
+      # =========================================================
+      # 4. Backend 전체 Build
+      # =========================================================
 
       - name: Build API Gateway
-        if: steps.filter.outputs.api-gateway == 'true'
-        run: cd backend/api-gateway && chmod +x gradlew && ./gradlew bootJar -x test
+        working-directory: backend/api-gateway
+        run: |
+          chmod +x gradlew
+          ./gradlew clean bootJar -x test --no-daemon
 
       - name: Build User Service
-        if: steps.filter.outputs.user-service == 'true' || steps.filter.outputs.common == 'true'
-        run: cd backend/user-service && chmod +x gradlew && ./gradlew bootJar -x test
+        working-directory: backend/user-service
+        run: |
+          chmod +x gradlew
+          ./gradlew clean bootJar -x test --no-daemon
 
       - name: Build Post Service
-        if: steps.filter.outputs.post-service == 'true' || steps.filter.outputs.common == 'true'
-        run: cd backend/post-service && chmod +x gradlew && ./gradlew bootJar -x test
+        working-directory: backend/post-service
+        run: |
+          chmod +x gradlew
+          ./gradlew clean bootJar -x test --no-daemon
 
       - name: Build Payment Service
-        if: steps.filter.outputs.payment-service == 'true' || steps.filter.outputs.common == 'true'
-        run: cd backend/payment-service && chmod +x gradlew && ./gradlew bootJar -x test
+        working-directory: backend/payment-service
+        run: |
+          chmod +x gradlew
+          ./gradlew clean bootJar -x test --no-daemon
 
       - name: Build Chat Service
-        if: steps.filter.outputs.chat-service == 'true' || steps.filter.outputs.common == 'true'
-        run: cd backend/chat-service && chmod +x gradlew && ./gradlew bootJar -x test
+        working-directory: backend/chat-service
+        run: |
+          chmod +x gradlew
+          ./gradlew clean bootJar -x test --no-daemon
+
+
+      # =========================================================
+      # 5. Frontend 전체 Build
+      # =========================================================
 
       - name: Build Frontend
-        if: steps.filter.outputs.frontend == 'true'
+        working-directory: frontend
         env:
           NEXT_PUBLIC_BACKEND_API_URL: ""
           NEXT_PUBLIC_PORTONE_STORE_ID: ${{ secrets.NEXT_PUBLIC_PORTONE_STORE_ID }}
           NEXT_PUBLIC_PORTONE_CHANNEL_KEY: ${{ secrets.NEXT_PUBLIC_PORTONE_CHANNEL_KEY }}
         run: |
-          cd frontend
           npm ci
           npm run build
 
-      - name: Determine services to redeploy
-        id: services
+
+      # =========================================================
+      # 6. 빌드 결과 확인
+      # =========================================================
+
+      - name: Verify build outputs
+        shell: bash
         run: |
-          SERVICES=""
-          if [ "${{ steps.filter.outputs.api-gateway }}" = "true" ]; then SERVICES="$SERVICES api-gateway"; fi
-          if [ "${{ steps.filter.outputs.user-service }}" = "true" ] || [ "${{ steps.filter.outputs.common }}" = "true" ]; then SERVICES="$SERVICES user-service"; fi
-          if [ "${{ steps.filter.outputs.post-service }}" = "true" ] || [ "${{ steps.filter.outputs.common }}" = "true" ]; then SERVICES="$SERVICES post-service"; fi
-          if [ "${{ steps.filter.outputs.payment-service }}" = "true" ] || [ "${{ steps.filter.outputs.common }}" = "true" ]; then SERVICES="$SERVICES payment-service"; fi
-          if [ "${{ steps.filter.outputs.chat-service }}" = "true" ] || [ "${{ steps.filter.outputs.common }}" = "true" ]; then SERVICES="$SERVICES chat-service"; fi
-          if [ "${{ steps.filter.outputs.frontend }}" = "true" ]; then SERVICES="$SERVICES frontend"; fi
-          echo "list=$SERVICES" >> "$GITHUB_OUTPUT"
-          echo "changed services:${SERVICES:- (없음)}"
+          set -e
 
-          # 서비스도 compose/infra 파일도 안 바뀌었으면(예: .github/workflows, README, docs만 수정)
-          # EC2에 새로 보낼 것도, 재배포할 것도 없으므로 뒤 scp/compose 스텝들을 통째로 건너뛴다.
-          if [ -z "$SERVICES" ] && [ "${{ steps.filter.outputs.compose }}" != "true" ]; then
-            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
-            echo "→ 배포 대상 없음 (워크플로/문서 등 무관 파일만 변경) — scp/compose 스텝 스킵"
-          else
-            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
-          fi
+          echo "=== API Gateway ==="
+          ls -lh backend/api-gateway/build/libs/
 
-      # docker-compose.yml / infra(Caddyfile) / init.sql 는 용량이 작고 자주 안 바뀌므로 매번 같이 보낸다.
+          echo "=== User Service ==="
+          ls -lh backend/user-service/build/libs/
+
+          echo "=== Post Service ==="
+          ls -lh backend/post-service/build/libs/
+
+          echo "=== Payment Service ==="
+          ls -lh backend/payment-service/build/libs/
+
+          echo "=== Chat Service ==="
+          ls -lh backend/chat-service/build/libs/
+
+          echo "=== Frontend ==="
+          test -d frontend/.next/standalone
+          test -d frontend/.next/static
+
+          echo "All build outputs exist."
+
+
+      # =========================================================
+      # 7. EC2 디렉터리 준비
+      # =========================================================
+
+      - name: Prepare EC2 directory
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            mkdir -p /home/ubuntu/mokoco
+            mkdir -p /home/ubuntu/mokoco/backend
+            mkdir -p /home/ubuntu/mokoco/frontend
+            mkdir -p /home/ubuntu/mokoco/infra
+
+
+      # =========================================================
+      # 8. 공통 설정 파일 전송
+      # =========================================================
+
       - name: Copy shared config files to EC2
-        if: steps.services.outputs.should_deploy == 'true'
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -161,21 +215,12 @@ jobs:
           source: "docker-compose.yml,infra,init.sql"
           target: "/home/ubuntu/mokoco"
 
-      # Dockerfile이 실제로 COPY하는 건 public/ , .next/standalone , .next/static 뿐이다.
-      # (output:'standalone' 빌드는 실사용 의존성을 standalone 안에 자체 포함하므로 node_modules는 불필요)
-      # frontend 폴더 전체를 보내면 node_modules(500MB+)까지 같이 실려가서 배포가 크게 느려진다.
-      - name: Copy frontend build output to EC2
-        if: steps.filter.outputs.frontend == 'true'
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "frontend/Dockerfile,frontend/public,frontend/.next/standalone,frontend/.next/static"
-          target: "/home/ubuntu/mokoco"
+
+      # =========================================================
+      # 9. Backend 서비스 전송
+      # =========================================================
 
       - name: Copy API Gateway to EC2
-        if: steps.filter.outputs.api-gateway == 'true'
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -185,7 +230,6 @@ jobs:
           target: "/home/ubuntu/mokoco"
 
       - name: Copy User Service to EC2
-        if: steps.filter.outputs.user-service == 'true' || steps.filter.outputs.common == 'true'
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -195,7 +239,6 @@ jobs:
           target: "/home/ubuntu/mokoco"
 
       - name: Copy Post Service to EC2
-        if: steps.filter.outputs.post-service == 'true' || steps.filter.outputs.common == 'true'
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -205,7 +248,6 @@ jobs:
           target: "/home/ubuntu/mokoco"
 
       - name: Copy Payment Service to EC2
-        if: steps.filter.outputs.payment-service == 'true' || steps.filter.outputs.common == 'true'
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -215,7 +257,6 @@ jobs:
           target: "/home/ubuntu/mokoco"
 
       - name: Copy Chat Service to EC2
-        if: steps.filter.outputs.chat-service == 'true' || steps.filter.outputs.common == 'true'
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -224,18 +265,177 @@ jobs:
           source: "backend/chat-service"
           target: "/home/ubuntu/mokoco"
 
-      - name: Run docker compose on EC2
-        if: steps.services.outputs.should_deploy == 'true'
+
+      # =========================================================
+      # 10. Frontend 빌드 결과 전송
+      # =========================================================
+
+      - name: Copy Frontend build output to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: >-
+            frontend/Dockerfile,
+            frontend/public,
+            frontend/.next/standalone,
+            frontend/.next/static
+          target: "/home/ubuntu/mokoco"
+
+
+      # =========================================================
+      # 11. EC2 Docker Compose 재배포
+      # =========================================================
+
+      - name: Deploy Docker Compose on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -e
+
+            cd /home/ubuntu/mokoco
+
+            echo "========================================="
+            echo " Deploy commit"
+            echo " ${{ github.sha }}"
+            echo "========================================="
+
+            echo "=== Current containers ==="
+            docker compose ps -a || true
+
+            echo "=== Build Docker images ==="
+            docker compose build
+
+            echo "=== Start containers ==="
+            docker compose up -d --remove-orphans
+
+            echo "=== Restart Caddy ==="
+            docker compose restart caddy
+
+            echo "=== Initial container state ==="
+            docker compose ps -a
+
+
+      # =========================================================
+      # 12. 실제 EC2에서 서비스 검증
+      # =========================================================
+
+      - name: Verify services on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 5m
+          script: |
+            set -e
+
+            cd /home/ubuntu/mokoco
+
+            echo "=== Waiting for application startup ==="
+            sleep 20
+
+            echo "=== docker compose ps -a ==="
+            docker compose ps -a
+
+            echo ""
+            echo "=== Running services ==="
+            docker compose ps --status running
+
+            echo ""
+            echo "=== Checking exited/dead containers ==="
+
+            FAILED_CONTAINERS="$(docker compose ps \
+              --status exited \
+              --status dead \
+              --services 2>/dev/null || true)"
+
+            if [ -n "$FAILED_CONTAINERS" ]; then
+              echo "ERROR: exited/dead containers detected:"
+              echo "$FAILED_CONTAINERS"
+
+              echo ""
+              echo "=== Recent Docker logs ==="
+              docker compose logs --tail=200
+
+              exit 1
+            fi
+
+            echo ""
+            echo "=== Expected service checks ==="
+
+            EXPECTED_SERVICES="
+            api-gateway
+            user-service
+            post-service
+            payment-service
+            chat-service
+            frontend
+            caddy
+            "
+
+            RUNNING_SERVICES="$(docker compose ps --status running --services)"
+
+            for service in $EXPECTED_SERVICES; do
+              if ! echo "$RUNNING_SERVICES" | grep -qx "$service"; then
+                echo ""
+                echo "ERROR: $service is not running"
+
+                echo ""
+                echo "=== $service logs ==="
+                docker compose logs --tail=200 "$service" || true
+
+                exit 1
+              fi
+
+              echo "OK: $service"
+            done
+
+            echo ""
+            echo "=== Post Service recent logs ==="
+            docker compose logs --tail=50 post-service
+
+            echo ""
+            echo "=== API Gateway recent logs ==="
+            docker compose logs --tail=50 api-gateway
+
+            echo ""
+            echo "========================================="
+            echo " Deployment verification succeeded"
+            echo "========================================="
+
+
+      # =========================================================
+      # 13. 실패 시 EC2 로그 확보
+      # =========================================================
+
+      - name: Print EC2 logs on failure
+        if: failure()
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /home/ubuntu/mokoco
-            # paths-filter가 감지한 서비스만 빌드/재생성한다. 목록이 비어있으면(=compose/infra 파일만 바뀜)
-            # 인자 없이 up 을 호출해 전체를 대상으로 재점검하되, 실제로 이미지가 안 바뀐 서비스는 재생성되지 않는다.
-            docker compose up -d --build --remove-orphans ${{ steps.services.outputs.list }}
-            # Caddyfile(바인드 마운트)이 바뀌어도 컨테이너는 재생성되지 않으므로 설정을 다시 읽도록 재시작
-            docker compose restart caddy
-            docker compose ps
+            cd /home/ubuntu/mokoco || exit 0
+
+            echo "========================================="
+            echo " Deployment failed - diagnostics"
+            echo "========================================="
+
+            echo ""
+            echo "=== docker compose ps -a ==="
+            docker compose ps -a || true
+
+            echo ""
+            echo "=== Last 200 compose logs ==="
+            docker compose logs --tail=200 || true
+
+            echo ""
+            echo "=== Docker disk usage ==="
+            docker system df || true
