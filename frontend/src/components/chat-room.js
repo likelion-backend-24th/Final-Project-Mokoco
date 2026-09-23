@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Client } from "@stomp/stompjs";
 import ChatAttachment from "@/components/chat-attachment";
@@ -29,6 +30,7 @@ const dealBannerLabel = {
 };
 
 export default function ChatRoom({ roomId }) {
+  const router = useRouter();
   const [theme, selectTheme] = useChatTheme();
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
@@ -142,7 +144,7 @@ export default function ChatRoom({ roomId }) {
 
   return <main className="conversation-shell" data-theme={theme}>
     <header className="conversation-header">
-      <Link href="/#my-chats" className="chat-icon-button" aria-label="내 채팅 목록으로"><ArrowLeft size={22} /></Link>
+      <button type="button" onClick={() => router.back()} className="chat-icon-button" aria-label="뒤로가기"><ArrowLeft size={22} /></button>
       <div className="conversation-mark"><Wrench size={24} weight="duotone" /></div>
       <div className="conversation-heading"><span>동네수리 · 1:1 대화</span><h1>{nickname || "수리 상담"} <small>#{roomId}</small></h1></div>
       <span role="status" className={`connection-status ${status === "연결됨" ? "is-connected" : ""}`}>{status}</span>
