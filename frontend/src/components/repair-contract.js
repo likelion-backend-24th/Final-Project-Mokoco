@@ -47,7 +47,7 @@ function SignatureForm({ version, consentText, busy, onSign }) {
   </form>;
 }
 
-export default function RepairContract({ roomId }) {
+export default function RepairContract({ roomId, embedded = false }) {
   const [overview, setOverview] = useState(null);
   const [userId, setUserId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
@@ -169,8 +169,8 @@ export default function RepairContract({ roomId }) {
     const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
     anchor.href = url; anchor.download = `repair-contract-${roomId}-v${selected.revision}.json`; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  return <main className="contract-page">
-    <header className="contract-controls"><Link href={`/chat-rooms/${roomId}`}>← 채팅으로 돌아가기</Link><h1>수리 계약서</h1>
+  return <main className={embedded ? "contract-page contract-page-embedded" : "contract-page"}>
+    <header className="contract-controls">{!embedded && <Link href={`/chat-rooms/${roomId}`}>← 채팅으로 돌아가기</Link>}<h1>수리 계약서</h1>
       <p>작업 범위와 조건을 확인하고 같은 계약에 양측이 서명하세요.</p></header>
     {error && <div role="alert" className="contract-error contract-controls">{error}<button type="button" onClick={() => load().then(() => setError("")).catch(e => setError(e.message))}>다시 불러오기</button></div>}
     {notice && <p role="status" className="contract-controls">{notice}</p>}
