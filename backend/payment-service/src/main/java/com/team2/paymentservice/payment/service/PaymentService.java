@@ -161,6 +161,15 @@ public class PaymentService {
             throw new CustomException(ErrorCode.PAYMENT_VERIFICATION_FAILED);
     }
 
+    // 관리자 거래 현황판 요약 카드용 — 인증/권한은 호출부(post-service AdminDealController)가
+    // 이미 확인했으므로(internal 서비스 간 호출) 여기선 집계만 한다.
+    public com.team2.paymentservice.payment.dto.AdminPaymentSummaryDto getAdminSummary() {
+        return new com.team2.paymentservice.payment.dto.AdminPaymentSummaryDto(
+                paymentRepository.sumCompletedAmount(),
+                paymentRepository.sumSettledAmountAll()
+        );
+    }
+
     public PaymentResponseDto getPayment(Long paymentId, String requesterEmail) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));

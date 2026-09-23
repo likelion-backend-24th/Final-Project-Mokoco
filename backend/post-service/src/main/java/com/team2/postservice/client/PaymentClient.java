@@ -1,5 +1,6 @@
 package com.team2.postservice.client;
 
+import com.team2.postservice.client.dto.AdminPaymentSummaryResponse;
 import com.team2.postservice.client.dto.PaymentClientResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,4 +19,7 @@ public interface PaymentClient {
 
     @PostMapping("/internal/payments/post/{postId}/settle")
     void settle(@PathVariable Long postId);
+
+    @GetMapping("/internal/payments/admin/summary")
+    AdminPaymentSummaryResponse getAdminSummary();
 }

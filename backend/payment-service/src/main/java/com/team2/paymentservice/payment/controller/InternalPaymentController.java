@@ -1,5 +1,6 @@
 package com.team2.paymentservice.payment.controller;
 
+import com.team2.paymentservice.payment.dto.AdminPaymentSummaryDto;
 import com.team2.paymentservice.payment.dto.PaymentResponseDto;
 import com.team2.paymentservice.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,12 @@ public class InternalPaymentController {
     @GetMapping("/post/{postId}")
     public ResponseEntity<PaymentResponseDto> getPaymentByPostId(@PathVariable Long postId) {
         return ResponseEntity.ok(paymentService.internalPayment(postId));
+    }
+
+    // 관리자 거래 현황판 요약 카드(거래 완료 금액/정산된 금액)용.
+    @GetMapping("/admin/summary")
+    public ResponseEntity<AdminPaymentSummaryDto> getAdminSummary() {
+        return ResponseEntity.ok(paymentService.getAdminSummary());
     }
 
     // 거래 완료(COMPLETED) 시 post-service가 호출하는 정산 확정.

@@ -1,6 +1,7 @@
 package com.team2.postservice.admin.controller;
 
 import com.team2.common.security.LoginUser;
+import com.team2.postservice.client.dto.AdminPaymentSummaryResponse;
 import com.team2.postservice.fixDeal.dto.AdminDealResponse;
 import com.team2.postservice.fixDeal.service.FixDealService;
 import lombok.RequiredArgsConstructor;
@@ -31,5 +32,10 @@ public class AdminDealController {
     ) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE));
         return ResponseEntity.ok(fixDealService.listDealsForAdmin(user, status, pageable));
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<AdminPaymentSummaryResponse> getSummary(@AuthenticationPrincipal LoginUser user) {
+        return ResponseEntity.ok(fixDealService.getAdminSummary(user));
     }
 }

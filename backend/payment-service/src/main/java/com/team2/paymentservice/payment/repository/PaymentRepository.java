@@ -24,4 +24,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     @Query("SELECT COALESCE(SUM(p.netAmount), 0) FROM Payment p WHERE p.payeeEmail = :payeeEmail AND p.settledAt IS NULL")
     int sumPendingNetAmount(@Param("payeeEmail") String payeeEmail);
+
+    // 관리자 거래 현황판 요약용 — 전체 결제자/수리자를 통틀어 집계한다.
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.status = 'COMPLETED'")
+    long sumCompletedAmount();
+
+    @Query("SELECT COALESCE(SUM(p.netAmount), 0) FROM Payment p WHERE p.settledAt IS NOT NULL")
+    long sumSettledAmountAll();
 }

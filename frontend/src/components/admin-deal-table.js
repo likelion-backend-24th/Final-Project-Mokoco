@@ -5,14 +5,18 @@ import Link from "next/link";
 import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 
 const STATUS_OPTIONS = [
-  { value: "", label: "진행 중" },
   { value: "ALL", label: "전체" },
+  { value: "", label: "진행 중" },
   { value: "MATCHED", label: "작업 전" },
   { value: "REPAIRING", label: "수리 진행 중" },
   { value: "REPAIR_DONE", label: "완료 확인 대기" },
   { value: "COMPLETED", label: "거래 완료" },
   { value: "CANCELED", label: "거래 취소" },
 ];
+
+function won(amount) {
+  return `${(amount ?? 0).toLocaleString("ko-KR")}원`;
+}
 
 const STATUS_LABEL = {
   MATCHED: "작업 전",
@@ -32,11 +36,12 @@ const STATUS_STYLE = {
 };
 
 export default function AdminDealTable({ initialPage }) {
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState("ALL");
   const [pageData, setPageData] = useState(initialPage);
   const [page, setPage] = useState(initialPage?.number ?? 0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [summary, setSummary] = useState(null);
   // 최초 마운트 시 서버가 이미 내려준 initialPage(진행중/0페이지)를 그대로 쓰고,
   // 필터나 페이지가 바뀔 때만 다시 불러온다.
   const isFirstRun = useRef(true);
@@ -66,6 +71,15 @@ export default function AdminDealTable({ initialPage }) {
     return () => controller.abort();
   }, [status, page]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/admin/deals/summary", { signal: controller.signal, cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => { if (json) setSummary(json); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+
   function changeStatus(value) {
     setStatus(value);
     setPage(0);
@@ -84,6 +98,19 @@ export default function AdminDealTable({ initialPage }) {
 
   return (
     <div className="dashboard-card">
+      {summary && (
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <p className="text-xs font-semibold text-emerald-700">거래 완료 금액</p>
+            <p className="mt-1 text-lg font-extrabold text-emerald-700">{won(summary.totalCompletedAmount)}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-xs font-semibold text-slate-500">정산된 금액</p>
+            <p className="mt-1 text-lg font-extrabold text-slate-700">{won(summary.totalSettledAmount)}</p>
+          </div>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <select
           value={status}
@@ -126,8 +153,8 @@ export default function AdminDealTable({ initialPage }) {
                       {deal.postTitle ?? `글 #${deal.postId}`}
                     </Link>
                   </td>
-                  <td className="py-2.5 pr-3">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${STATUS_STYLE[deal.status] ?? "bg-slate-100 text-slate-500"}`}>
+                  <td className="whitespace-nowrap py-2.5 pr-3">
+                    <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold ${STATUS_STYLE[deal.status] ?? "bg-slate-100 text-slate-500"}`}>
                       {STATUS_LABEL[deal.status] ?? deal.status}
                     </span>
                   </td>

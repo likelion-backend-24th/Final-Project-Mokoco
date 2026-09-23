@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 async function getAdminDeals(token) {
   if (!token) return { data: null, error: "로그인이 필요합니다." };
   try {
-    const response = await fetch(backendUrl("/api/admin/deals?page=0&size=20"), {
+    const response = await fetch(backendUrl("/api/admin/deals?status=ALL&page=0&size=20"), {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
       signal: AbortSignal.timeout(10000),

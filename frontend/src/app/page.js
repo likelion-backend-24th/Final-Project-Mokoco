@@ -1,16 +1,33 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { ArrowRight, ClipboardText, UserCircle, Wrench } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
 import LocationPermissionPrompt from "@/components/location-permission-prompt";
 import HomeChatList from "@/components/home-chat-list";
-import { imageSrc } from "@/lib/backend";
+import { backendUrl, imageSrc, readBackendPayload } from "@/lib/backend";
 import { getNearbyPosts } from "@/lib/nearby-posts";
 import RegionScopeFilter from "@/components/region-scope-filter";
 import { normalizeRegionScope, regionListHref } from "@/lib/region-scope";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+// 관리자는 홈 화면 대신 관리자 탭(거래 현황)으로 바로 보낸다.
+async function isAdminUser(accessToken) {
+  try {
+    const response = await fetch(backendUrl("/api/users/me"), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) return false;
+    const me = await readBackendPayload(response);
+    return me?.role === "ADMIN";
+  } catch {
+    return false;
+  }
+}
 
 const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "거래 완료" };
 
@@ -127,6 +144,10 @@ export default async function Home({ searchParams }) {
   const accessToken = cookieStore.get("access_token")?.value ?? null;
   
   const isAuthenticated = Boolean(userEmail && accessToken);
+
+  if (isAuthenticated && (await isAdminUser(accessToken))) {
+    redirect("/admin/deals");
+  }
 
   const { posts, error, pagination } = await getNearbyPosts(accessToken, "ALL", 0, 5, regionScope);
   return (

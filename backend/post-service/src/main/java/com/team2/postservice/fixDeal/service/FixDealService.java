@@ -1,7 +1,9 @@
 package com.team2.postservice.fixDeal.service;
 
 import com.team2.common.security.LoginUser;
+import com.team2.postservice.client.PaymentClient;
 import com.team2.postservice.client.UserClient;
+import com.team2.postservice.client.dto.AdminPaymentSummaryResponse;
 import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.common.exception.CustomException;
 import com.team2.postservice.common.exception.ErrorCode;
@@ -39,6 +41,7 @@ public class FixDealService {
     private final PostRepository postRepository;
     private final PostViewerService postViewerService;
     private final UserClient userClient;
+    private final PaymentClient paymentClient;
 
     // 거래 진행 상태 전이는 전부 ContractService.advance()(계약서 페이지)가 담당한다.
     // 여기는 읽기 전용 조회만 제공한다.
@@ -81,6 +84,12 @@ public class FixDealService {
             deals = fixDealRepository.findByStatusOrderByCreatedAtDesc(parseStatus(statusFilter), pageable);
         }
         return deals.map(this::toAdminDealResponse);
+    }
+
+    // 관리자 현황판 요약 카드(거래 완료 금액/정산된 금액) — payment-service 집계를 그대로 전달한다.
+    public AdminPaymentSummaryResponse getAdminSummary(LoginUser admin) {
+        postViewerService.requireAdmin(admin);
+        return paymentClient.getAdminSummary();
     }
 
     private FixDealStatus parseStatus(String statusFilter) {
