@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Client } from "@stomp/stompjs";
 import ChatAttachment from "@/components/chat-attachment";
+import ContractModal from "@/components/contract-modal";
 import { Trash, ArrowLeft, ArrowRight, ArrowUp, ChatCircleDots, ShieldCheck, User, Wrench } from "@phosphor-icons/react";
 import "./chat-room.css";
 import { chatThemes, useChatTheme } from "@/components/chat-theme";
@@ -28,12 +30,14 @@ const dealBannerLabel = {
 };
 
 export default function ChatRoom({ roomId }) {
+  const router = useRouter();
   const [theme, selectTheme] = useChatTheme();
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [status, setStatus] = useState("연결 중");
   const [error, setError] = useState("");
   const [userId, setUserId] = useState(null);
+  const [contractOpen, setContractOpen] = useState(false);
   const [counterpart, setCounterpart] = useState(null);
   const [detail, setDetail] = useState(null);
   const nickname = counterpart?.roomId === roomId ? counterpart.nickname : "";
@@ -140,7 +144,7 @@ export default function ChatRoom({ roomId }) {
 
   return <main className="conversation-shell" data-theme={theme}>
     <header className="conversation-header">
-      <Link href="/#my-chats" className="chat-icon-button" aria-label="내 채팅 목록으로"><ArrowLeft size={22} /></Link>
+      <button type="button" onClick={() => router.back()} className="chat-icon-button" aria-label="뒤로가기"><ArrowLeft size={22} /></button>
       <div className="conversation-mark"><Wrench size={24} weight="duotone" /></div>
       <div className="conversation-heading"><span>동네수리 · 1:1 대화</span><h1>{nickname || "수리 상담"} <small>#{roomId}</small></h1></div>
       <span role="status" className={`connection-status ${status === "연결됨" ? "is-connected" : ""}`}>{status}</span>
@@ -187,12 +191,16 @@ export default function ChatRoom({ roomId }) {
       })}<div ref={bottom} />
     </div>
     {detail?.roomId === roomId && (detail.fixDealId
-      ? <Link href={`/chat-rooms/${roomId}/contract`} className="deal-banner deal-banner-action">
+      ? <button type="button" onClick={() => setContractOpen(true)} className="deal-banner deal-banner-action">
           <ShieldCheck size={20} weight="fill" />
           <span>{dealBannerLabel[detail.dealStatus] || "수리 계약서 작성하기"}</span>
           <ArrowRight size={18} weight="bold" />
-        </Link>
+        </button>
       : <p className="deal-banner">견적 상담 중입니다. 이 견적이 채택되면 계약서를 작성할 수 있습니다.</p>)}
+
+    {contractOpen && detail?.fixDealId && (
+      <ContractModal roomId={roomId} onClose={() => setContractOpen(false)} />
+    )}
 
     <footer className="conversation-footer">
       <div className="conversation-composer">
