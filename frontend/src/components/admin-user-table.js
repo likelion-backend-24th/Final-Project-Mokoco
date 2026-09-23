@@ -3,8 +3,15 @@
 import { useState } from "react";
 import { ShieldCheck, ArrowsLeftRight, ProhibitInset, ArrowCounterClockwise } from "@phosphor-icons/react";
 
+const STATUS_FILTERS = [
+  { value: "ALL", label: "전체" },
+  { value: "ACTIVE", label: "활성" },
+  { value: "SUSPENDED", label: "정지" },
+];
+
 export default function AdminUserTable({ initialUsers, currentUserEmail }) {
   const [users, setUsers] = useState(initialUsers);
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [loadingId, setLoadingId] = useState(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -56,10 +63,29 @@ export default function AdminUserTable({ initialUsers, currentUserEmail }) {
     }
   }
 
+  const visibleUsers = statusFilter === "ALL" ? users : users.filter((user) => user.status === statusFilter);
+
   return (
     <div className="dashboard-card">
+      <div className="mb-4 flex items-center gap-3">
+        <select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 outline-none focus:border-blue-400"
+        >
+          {STATUS_FILTERS.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
+        <span className="text-xs text-slate-400">총 {visibleUsers.length.toLocaleString("ko-KR")}명</span>
+      </div>
+
       {notice && <p role="status" className="mb-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{notice}</p>}
       {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
+
+      {visibleUsers.length === 0 ? (
+        <p className="py-10 text-center text-sm text-slate-400">해당하는 회원이 없어요.</p>
+      ) : (
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
@@ -73,7 +99,7 @@ export default function AdminUserTable({ initialUsers, currentUserEmail }) {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => {
+            {visibleUsers.map((user) => {
               const isSelf = currentUserEmail && user.email === currentUserEmail;
               const isAdmin = user.role === "ADMIN";
               return (
@@ -134,6 +160,7 @@ export default function AdminUserTable({ initialUsers, currentUserEmail }) {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }
