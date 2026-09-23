@@ -191,7 +191,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 640px) {
   .page-shell { width: min(100% - 24px,1180px); }
   .header-inner { height: 62px; }
-  .header-account .header-icon, .header-account > svg, .header-email { display: none; }
+  .header-account .header-icon, .header-account > svg { display: none; }
   .hero-grid { min-height: 390px; padding-block: 45px; }
   .hero-grid h1 { font-size: 32px; }
   .hero-actions { flex-direction: column; }
