@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FileText, Star } from "@phosphor-icons/react";
+import { FileText, Star, CaretDown } from "@phosphor-icons/react";
 import ContractActionCard from "./contract-action-card";
+import RepairContract from "./repair-contract";
 
 const STATUS_LABEL = {
   MATCHED: "매칭 완료",
@@ -37,6 +38,8 @@ function StarRow({ rating }) {
 }
 
 function TransactionCard({ item }) {
+  const [contractOpen, setContractOpen] = useState(false);
+
   return (
     <li className="rounded-xl border border-slate-200 bg-white p-5">
       <div className="flex items-center justify-between">
@@ -49,13 +52,21 @@ function TransactionCard({ item }) {
       </div>
       <p className="mt-1.5 text-sm text-slate-500">상대방: {item.counterpartEmail}</p>
       {item.chatRoomId && (
-        <Link
-          href={`/chat-rooms/${item.chatRoomId}/contract`}
+        <button
+          type="button"
+          onClick={() => setContractOpen((open) => !open)}
+          aria-expanded={contractOpen}
           className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-600 hover:bg-blue-100"
         >
           <FileText size={15} weight="duotone" />
           계약서 보기
-        </Link>
+          <CaretDown size={13} weight="bold" className={contractOpen ? "rotate-180 transition-transform" : "transition-transform"} />
+        </button>
+      )}
+      {item.chatRoomId && contractOpen && (
+        <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+          <RepairContract roomId={item.chatRoomId} embedded />
+        </div>
       )}
       {item.chatRoomId && <ContractActionCard roomId={item.chatRoomId} />}
       {item.review && (

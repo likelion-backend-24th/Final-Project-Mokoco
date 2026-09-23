@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Client } from "@stomp/stompjs";
 import ChatAttachment from "@/components/chat-attachment";
+import ContractModal from "@/components/contract-modal";
 import { Trash, ArrowLeft, ArrowRight, ArrowUp, ChatCircleDots, ShieldCheck, User, Wrench } from "@phosphor-icons/react";
 import "./chat-room.css";
 import { chatThemes, useChatTheme } from "@/components/chat-theme";
@@ -34,6 +35,7 @@ export default function ChatRoom({ roomId }) {
   const [status, setStatus] = useState("연결 중");
   const [error, setError] = useState("");
   const [userId, setUserId] = useState(null);
+  const [contractOpen, setContractOpen] = useState(false);
   const [counterpart, setCounterpart] = useState(null);
   const [detail, setDetail] = useState(null);
   const nickname = counterpart?.roomId === roomId ? counterpart.nickname : "";
@@ -187,12 +189,16 @@ export default function ChatRoom({ roomId }) {
       })}<div ref={bottom} />
     </div>
     {detail?.roomId === roomId && (detail.fixDealId
-      ? <Link href={`/chat-rooms/${roomId}/contract`} className="deal-banner deal-banner-action">
+      ? <button type="button" onClick={() => setContractOpen(true)} className="deal-banner deal-banner-action">
           <ShieldCheck size={20} weight="fill" />
           <span>{dealBannerLabel[detail.dealStatus] || "수리 계약서 작성하기"}</span>
           <ArrowRight size={18} weight="bold" />
-        </Link>
+        </button>
       : <p className="deal-banner">견적 상담 중입니다. 이 견적이 채택되면 계약서를 작성할 수 있습니다.</p>)}
+
+    {contractOpen && detail?.fixDealId && (
+      <ContractModal roomId={roomId} onClose={() => setContractOpen(false)} />
+    )}
 
     <footer className="conversation-footer">
       <div className="conversation-composer">
