@@ -224,4 +224,12 @@ public class UserService {
         }
         return new UserResponse(target);
     }
+
+    // 신고 접수함에서 대상 유저 id 없이 이메일만 갖고 있을 때(USER 신고) 바로 정지시키기 위한 경로.
+    @Transactional
+    public UserResponse changeUserStatusByEmail(String requesterEmail, String targetEmail, AccountStatus newStatus) {
+        User target = userRepository.findByEmail(targetEmail)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        return changeUserStatus(requesterEmail, target.getId(), newStatus);
+    }
 }

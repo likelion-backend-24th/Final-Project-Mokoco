@@ -2,6 +2,7 @@ package com.team2.userservice.admin.controller;
 
 import com.team2.common.security.LoginUser;
 import com.team2.userservice.admin.dto.RoleChangeRequest;
+import com.team2.userservice.admin.dto.StatusChangeByEmailRequest;
 import com.team2.userservice.admin.dto.StatusChangeRequest;
 import com.team2.userservice.user.dto.UserResponse;
 import com.team2.userservice.user.service.UserService;
@@ -42,5 +43,14 @@ public class AdminUserController {
             @RequestBody StatusChangeRequest request
     ) {
         return ResponseEntity.ok(userService.changeUserStatus(user.email(), id, request.status()));
+    }
+
+    // 신고 접수함(USER 신고)에서 대상 유저 id 없이 이메일만 갖고 있을 때 바로 정지시키는 경로.
+    @PatchMapping("/by-email/status")
+    public ResponseEntity<UserResponse> changeStatusByEmail(
+            @AuthenticationPrincipal LoginUser user,
+            @RequestBody StatusChangeByEmailRequest request
+    ) {
+        return ResponseEntity.ok(userService.changeUserStatusByEmail(user.email(), request.email(), request.status()));
     }
 }
