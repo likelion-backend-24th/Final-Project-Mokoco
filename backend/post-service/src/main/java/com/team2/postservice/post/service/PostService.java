@@ -1,14 +1,19 @@
 package com.team2.postservice.post.service;
 
+import com.team2.common.security.LoginUser;
 import com.team2.postservice.client.dto.RegionResponse;
 import com.team2.common.exception.CustomException;
 import com.team2.postservice.common.exception.ErrorCode;
+import com.team2.postservice.post.dto.AdminPostResponse;
 import com.team2.postservice.post.dto.PostRequestDto;
 import com.team2.postservice.post.dto.NearbyRepairRequest;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import com.team2.postservice.post.dto.PostResponseDto;
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.entity.PostCategory;
+import com.team2.postservice.post.entity.PostStatus;
 import com.team2.postservice.post.entity.RegionScope;
 import com.team2.postservice.post.entity.PostImage;
 import com.team2.postservice.post.repository.PostRepository;
@@ -108,11 +113,28 @@ public class PostService {
     // 관리자는 작성자가 아니어도 삭제 가능 — 관리자 권한은 requireAdmin에서 매 요청 다시 검증한다.
     // 단, 진행 중인 거래가 있으면 관리자도 삭제 불가(문제 있는 유저는 글 삭제 대신 계정 정지로 처리).
     @Transactional
-    public void deletePostAsAdmin(Long id, com.team2.common.security.LoginUser admin) {
+    public void deletePostAsAdmin(Long id, LoginUser admin) {
         postViewerService.requireAdmin(admin);
         Post post = getPostOrThrow(id);
         guardNoActiveDeal(post.getId());
         deletePostInternal(post);
+    }
+
+    // 관리자 글 관리 목록. keyword는 제목 부분 검색, status는 선택적 필터(없으면 전체 — 비공개 글도 포함).
+    public Page<AdminPostResponse> listPostsForAdmin(LoginUser admin, String keyword, PostStatus status, Pageable pageable) {
+        postViewerService.requireAdmin(admin);
+        String normalizedKeyword = keyword == null || keyword.isBlank() ? null : keyword.trim();
+        return postRepository.searchForAdmin(normalizedKeyword, status, pageable)
+                .map(post -> new AdminPostResponse(
+                        post.getId(),
+                        post.getTitle(),
+                        post.getAuthorEmail(),
+                        postViewerService.tryNickname(post.getAuthorEmail()),
+                        post.getCategory(),
+                        post.getStatus(),
+                        post.isPubliclyVisible(),
+                        post.getCreatedAt()
+                ));
     }
 
     // 매칭~완료대기 사이(진행 중)인 거래가 있으면 삭제를 막는다. 완료/취소된 거래는 이미 끝난 일이라 허용.

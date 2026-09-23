@@ -2,6 +2,7 @@ package com.team2.postservice.post.repository;
 
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.entity.PostCategory;
+import com.team2.postservice.post.entity.PostStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -42,4 +43,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("select p from Post p where p.id = :id")
     Optional<Post> lockById(@Param("id") Long id);
 
+    // 관리자 글 관리 목록 — publiclyVisible 여부와 무관하게 전부 보여주고, 제목 검색/상태 필터를 지원한다.
+    @Query("""
+        select p from Post p
+        where (:keyword is null or lower(p.title) like lower(concat('%', :keyword, '%')))
+          and (:status is null or p.status = :status)
+        """)
+    Page<Post> searchForAdmin(@Param("keyword") String keyword, @Param("status") PostStatus status, Pageable pageable);
 }
