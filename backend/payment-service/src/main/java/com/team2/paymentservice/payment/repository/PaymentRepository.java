@@ -19,6 +19,10 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Page<Payment> findByPayeeEmailOrderByCreatedAtDesc(String payeeEmail, Pageable pageable);
 
+    // 관리자 결제/정산 상세 내역용
+    Page<Payment> findAllByOrderByCreatedAtDesc(Pageable pageable);
+    Page<Payment> findByStatusOrderByCreatedAtDesc(PaymentStatus status, Pageable pageable);
+
     @Query("SELECT COALESCE(SUM(p.netAmount), 0) FROM Payment p WHERE p.payeeEmail = :payeeEmail AND p.settledAt IS NOT NULL")
     int sumSettledNetAmount(@Param("payeeEmail") String payeeEmail);
 

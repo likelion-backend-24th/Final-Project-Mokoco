@@ -170,6 +170,23 @@ public class PaymentService {
         );
     }
 
+    // 관리자 결제/정산 상세 내역용 — 인증/권한은 마찬가지로 호출부가 이미 확인했다.
+    // status가 없거나 ALL이면 전체, 그 외엔 해당 상태만 필터링한다.
+    public Page<PaymentResponseDto> getAdminPayments(String statusFilter, Pageable pageable) {
+        Page<Payment> payments = (statusFilter == null || statusFilter.isBlank() || "ALL".equalsIgnoreCase(statusFilter))
+                ? paymentRepository.findAllByOrderByCreatedAtDesc(pageable)
+                : paymentRepository.findByStatusOrderByCreatedAtDesc(parseStatus(statusFilter), pageable);
+        return payments.map(PaymentResponseDto::from);
+    }
+
+    private PaymentStatus parseStatus(String statusFilter) {
+        try {
+            return PaymentStatus.valueOf(statusFilter);
+        } catch (IllegalArgumentException e) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+    }
+
     public PaymentResponseDto getPayment(Long paymentId, String requesterEmail) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND));

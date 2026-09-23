@@ -1,8 +1,12 @@
 package com.team2.postservice.fixDeal.service;
 
 import com.team2.common.security.LoginUser;
+import com.team2.postservice.admin.dto.AdminPaymentListResponse;
+import com.team2.postservice.admin.dto.AdminPaymentResponse;
 import com.team2.postservice.client.PaymentClient;
 import com.team2.postservice.client.UserClient;
+import com.team2.postservice.client.dto.AdminPaymentClientResponse;
+import com.team2.postservice.client.dto.AdminPaymentPageResponse;
 import com.team2.postservice.client.dto.AdminPaymentSummaryResponse;
 import com.team2.postservice.client.dto.AdminUserStatsResponse;
 import com.team2.postservice.client.dto.UserClientResponse;
@@ -29,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -104,6 +109,36 @@ public class FixDealService {
         long activeDeals = fixDealRepository.countByStatusIn(IN_PROGRESS_STATUSES);
         long pendingReports = reportRepository.countByStatus(ReportStatus.PENDING);
         return new AdminOverviewResponse(userStats.totalUsers(), userStats.newUsersToday(), activeDeals, pendingReports);
+    }
+
+    // 관리자 결제/정산 상세 내역 — payment-service 페이지 응답에 닉네임을 채워서 전달한다.
+    public AdminPaymentListResponse listPaymentsForAdmin(LoginUser admin, String statusFilter, int page, int size) {
+        postViewerService.requireAdmin(admin);
+        String normalizedStatus = (statusFilter == null || statusFilter.isBlank()) ? "ALL" : statusFilter;
+        AdminPaymentPageResponse remote = paymentClient.getAdminPayments(normalizedStatus, page, size);
+
+        List<AdminPaymentResponse> content = remote.content().stream()
+                .map(this::toAdminPaymentResponse)
+                .toList();
+        return new AdminPaymentListResponse(content, remote.totalElements(), remote.totalPages(), remote.number());
+    }
+
+    private AdminPaymentResponse toAdminPaymentResponse(AdminPaymentClientResponse payment) {
+        return new AdminPaymentResponse(
+                payment.id(),
+                payment.postId(),
+                payment.payerEmail(),
+                payment.payerEmail() != null ? postViewerService.tryNickname(payment.payerEmail()) : null,
+                payment.payeeEmail(),
+                payment.payeeEmail() != null ? postViewerService.tryNickname(payment.payeeEmail()) : null,
+                payment.amount(),
+                payment.feeAmount(),
+                payment.netAmount(),
+                payment.status(),
+                payment.createdAt(),
+                payment.paidAt(),
+                payment.settledAt()
+        );
     }
 
     private FixDealStatus parseStatus(String statusFilter) {

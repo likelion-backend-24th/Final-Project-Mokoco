@@ -4,6 +4,10 @@ import com.team2.paymentservice.payment.dto.AdminPaymentSummaryDto;
 import com.team2.paymentservice.payment.dto.PaymentResponseDto;
 import com.team2.paymentservice.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/internal/payments")
 @RequiredArgsConstructor
 public class InternalPaymentController {
+
+    private static final int MAX_PAGE_SIZE = 50;
 
     private final PaymentService paymentService;
 
@@ -26,6 +32,18 @@ public class InternalPaymentController {
     @GetMapping("/admin/summary")
     public ResponseEntity<AdminPaymentSummaryDto> getAdminSummary() {
         return ResponseEntity.ok(paymentService.getAdminSummary());
+    }
+
+    // 관리자 결제/정산 상세 내역용.
+    @GetMapping("/admin/list")
+    public ResponseEntity<Page<PaymentResponseDto>> getAdminPayments(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), MAX_PAGE_SIZE),
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+        return ResponseEntity.ok(paymentService.getAdminPayments(status, pageable));
     }
 
     // 거래 완료(COMPLETED) 시 post-service가 호출하는 정산 확정.

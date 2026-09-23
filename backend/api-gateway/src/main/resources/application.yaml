@@ -75,7 +75,7 @@ spring:
         - id: post-service-admin
           uri: http://mokoco-post-service:8082
           predicates:
-            - Path=/api/admin/posts/**, /api/admin/reports/**, /api/admin/deals/**, /api/admin/overview/**
+            - Path=/api/admin/posts/**, /api/admin/reports/**, /api/admin/deals/**, /api/admin/overview/**, /api/admin/payments/**
 
         # 신고 접수 — 컨트롤러가 이미 /api/reports 매핑이라 접두어 유지
         - id: post-service-reports
