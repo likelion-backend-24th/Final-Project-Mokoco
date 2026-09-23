@@ -103,19 +103,35 @@ public class FixDealService {
     private AdminDealResponse toAdminDealResponse(FixDeal deal) {
         Post post = postRepository.findById(deal.getPostId()).orElse(null);
         Proposal proposal = proposalRepository.findById(deal.getProposalId()).orElse(null);
+        String requesterEmail = post != null ? post.getAuthorEmail() : null;
+        String repairerEmail = proposal != null ? proposal.getRepairerEmail() : null;
+
+        // 제안이 지워진 옛 거래는 견적가를 못 읽어서 표에 "—"로 뜨는데, 실제 결제 금액은 남아있어
+        // 요약 카드 합계와 안 맞아 보인다 — 그런 경우엔 실제 결제 금액으로 대체한다.
+        Integer estimatedPrice = proposal != null ? proposal.getEstimatedPrice() : fallbackPaidAmount(deal.getPostId());
 
         return new AdminDealResponse(
                 deal.getId(),
                 deal.getPostId(),
                 post != null ? post.getTitle() : null,
                 deal.getRequesterId(),
-                post != null ? post.getAuthorEmail() : null,
+                requesterEmail,
+                requesterEmail != null ? postViewerService.tryNickname(requesterEmail) : null,
                 deal.getRepairerId(),
-                proposal != null ? proposal.getRepairerEmail() : null,
-                proposal != null ? proposal.getEstimatedPrice() : null,
+                repairerEmail,
+                repairerEmail != null ? postViewerService.tryNickname(repairerEmail) : null,
+                estimatedPrice,
                 deal.getStatus(),
                 deal.getCreatedAt(),
                 deal.getCompletedAt()
         );
+    }
+
+    private Integer fallbackPaidAmount(Long postId) {
+        try {
+            return paymentClient.getPaymentByPostId(postId).amount();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

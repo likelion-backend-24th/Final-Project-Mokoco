@@ -161,8 +161,8 @@ export default function AdminDealTable({ initialPage }) {
                   <td className="py-2.5 pr-3 text-slate-600">
                     {deal.estimatedPrice != null ? `${deal.estimatedPrice.toLocaleString("ko-KR")}원` : "—"}
                   </td>
-                  <td className="py-2.5 pr-3 text-slate-500">{deal.requesterEmail ?? `#${deal.requesterId}`}</td>
-                  <td className="py-2.5 pr-3 text-slate-500">{deal.repairerEmail ?? `#${deal.repairerId}`}</td>
+                  <td className="py-2.5 pr-3 text-slate-500">{deal.requesterNickname ?? deal.requesterEmail ?? `#${deal.requesterId}`}</td>
+                  <td className="py-2.5 pr-3 text-slate-500">{deal.repairerNickname ?? deal.repairerEmail ?? `#${deal.repairerId}`}</td>
                   <td className="py-2.5 pr-3 text-xs text-slate-400">
                     {deal.createdAt ? new Date(deal.createdAt).toLocaleString("ko-KR") : "—"}
                   </td>
