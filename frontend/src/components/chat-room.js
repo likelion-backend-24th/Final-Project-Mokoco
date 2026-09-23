@@ -118,7 +118,7 @@ export default function ChatRoom({ roomId }) {
     return () => { active = false; clientRef.current = null; void client.deactivate(); };
   }, [roomId]);
 
-  useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth" }); }, [messages.length]);
+  useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, [messages.length]);
 
   useEffect(() => {
     let active = true;
