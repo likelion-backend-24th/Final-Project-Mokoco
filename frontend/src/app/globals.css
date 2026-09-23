@@ -25,7 +25,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .section-heading h2 { margin-top: 5px; font-size: 24px; font-weight: 750; letter-spacing: -0.025em; color: #0f172a; }
 .section-kicker { font-size: 12px; font-weight: 800; letter-spacing: 0.14em; color: var(--brand); }
 .empty-state { display: flex; min-height: 230px; align-items: center; justify-content: center; gap: 18px; border-radius: 15px; border: 1px dashed #cbd5e1; background: #f8fafc; padding: 28px; }
-.status-badge { display: inline-flex; border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 750; background: #eef2ff; color: #4f46e5; }
+.status-badge { display: inline-flex; white-space: nowrap; border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 750; background: #eef2ff; color: #4f46e5; }
 .status-waiting { background: #eff6ff; color: #2563eb; }
 .status-matched { background: #ecfdf5; color: #059669; }
 .status-completed { background: #f1f5f9; color: #475569; }

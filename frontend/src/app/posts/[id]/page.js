@@ -99,14 +99,14 @@ export default async function PostDetailPage({ params }) {
         ) : (
           <div className="space-y-6">
             <div className="dashboard-card">
-              <div className="flex items-start justify-between gap-4">
-                <div>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`status-badge status-${post.status?.toLowerCase()}`}>
                       {statusLabel[post.status] ?? post.status ?? "상태 미정"}
                     </span>
                     {(post.regionName || post.regionCode) && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 rounded-full">
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap px-2.5 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 rounded-full">
                         <MapPin size={12} weight="duotone" />
                         {post.regionName || post.regionCode}
                       </span>
