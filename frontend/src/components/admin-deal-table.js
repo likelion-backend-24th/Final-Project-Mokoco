@@ -134,7 +134,15 @@ export default function AdminDealTable({ initialPage }) {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full table-fixed text-left text-sm">
+            <colgroup>
+              <col className="w-[18%]" />
+              <col className="w-[13%]" />
+              <col className="w-[13%]" />
+              <col className="w-[19%]" />
+              <col className="w-[19%]" />
+              <col className="w-[18%]" />
+            </colgroup>
             <thead>
               <tr className="border-b border-slate-200 text-xs text-slate-400">
                 <th className="py-2 pr-3 font-semibold">글</th>
@@ -149,7 +157,11 @@ export default function AdminDealTable({ initialPage }) {
               {deals.map((deal) => (
                 <tr key={deal.id} className="border-b border-slate-100 last:border-0">
                   <td className="py-2.5 pr-3">
-                    <Link href={`/posts/${deal.postId}`} className="font-semibold text-blue-600 hover:underline">
+                    <Link
+                      href={`/posts/${deal.postId}`}
+                      title={deal.postTitle ?? `글 #${deal.postId}`}
+                      className="block truncate font-semibold text-blue-600 hover:underline"
+                    >
                       {deal.postTitle ?? `글 #${deal.postId}`}
                     </Link>
                   </td>
@@ -161,8 +173,12 @@ export default function AdminDealTable({ initialPage }) {
                   <td className="py-2.5 pr-3 text-slate-600">
                     {deal.estimatedPrice != null ? `${deal.estimatedPrice.toLocaleString("ko-KR")}원` : "—"}
                   </td>
-                  <td className="py-2.5 pr-3 text-slate-500">{deal.requesterNickname ?? deal.requesterEmail ?? `#${deal.requesterId}`}</td>
-                  <td className="py-2.5 pr-3 text-slate-500">{deal.repairerNickname ?? deal.repairerEmail ?? `#${deal.repairerId}`}</td>
+                  <td className="truncate py-2.5 pr-3 text-slate-500" title={deal.requesterNickname ?? deal.requesterEmail ?? undefined}>
+                    {deal.requesterNickname ?? deal.requesterEmail ?? `#${deal.requesterId}`}
+                  </td>
+                  <td className="truncate py-2.5 pr-3 text-slate-500" title={deal.repairerNickname ?? deal.repairerEmail ?? undefined}>
+                    {deal.repairerNickname ?? deal.repairerEmail ?? `#${deal.repairerId}`}
+                  </td>
                   <td className="py-2.5 pr-3 text-xs text-slate-400">
                     {deal.createdAt ? new Date(deal.createdAt).toLocaleString("ko-KR") : "—"}
                   </td>
