@@ -4,10 +4,12 @@ import com.team2.common.security.LoginUser;
 import com.team2.postservice.client.PaymentClient;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.AdminPaymentSummaryResponse;
+import com.team2.postservice.client.dto.AdminUserStatsResponse;
 import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.common.exception.CustomException;
 import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.fixDeal.dto.AdminDealResponse;
+import com.team2.postservice.fixDeal.dto.AdminOverviewResponse;
 import com.team2.postservice.fixDeal.dto.FixDealDetailResponse;
 import com.team2.postservice.fixDeal.dto.FixDealStatusResponse;
 import com.team2.postservice.fixDeal.entity.FixDeal;
@@ -18,6 +20,8 @@ import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.post.service.PostViewerService;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
+import com.team2.postservice.report.entity.ReportStatus;
+import com.team2.postservice.report.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +43,7 @@ public class FixDealService {
     private final FixDealRepository fixDealRepository;
     private final ProposalRepository proposalRepository;
     private final PostRepository postRepository;
+    private final ReportRepository reportRepository;
     private final PostViewerService postViewerService;
     private final UserClient userClient;
     private final PaymentClient paymentClient;
@@ -90,6 +95,15 @@ public class FixDealService {
     public AdminPaymentSummaryResponse getAdminSummary(LoginUser admin) {
         postViewerService.requireAdmin(admin);
         return paymentClient.getAdminSummary();
+    }
+
+    // 관리자 대시보드 개요(회원/거래/신고를 한 화면에) — user-service 집계 + post-service 자체 집계를 합친다.
+    public AdminOverviewResponse getOverview(LoginUser admin) {
+        postViewerService.requireAdmin(admin);
+        AdminUserStatsResponse userStats = userClient.getAdminStats();
+        long activeDeals = fixDealRepository.countByStatusIn(IN_PROGRESS_STATUSES);
+        long pendingReports = reportRepository.countByStatus(ReportStatus.PENDING);
+        return new AdminOverviewResponse(userStats.totalUsers(), userStats.newUsersToday(), activeDeals, pendingReports);
     }
 
     private FixDealStatus parseStatus(String statusFilter) {

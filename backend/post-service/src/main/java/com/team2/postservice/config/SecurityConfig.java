@@ -44,7 +44,7 @@ public class SecurityConfig {
                         m(HttpMethod.PATCH, "/posts/*"), m(HttpMethod.DELETE, "/posts/*"),
                         m("/posts/*/images"), m("/posts/*/images/*"),
                         m(HttpMethod.POST, "/reviews"),
-                        m("/api/admin/posts/**"), m("/api/admin/reports/**"), m("/api/admin/deals/**"),
+                        m("/api/admin/posts/**"), m("/api/admin/reports/**"), m("/api/admin/deals/**"), m("/api/admin/overview/**"),
                         m("/fix-deals/*"),
                         m("/notifications/**"),
                         m("/profile/transactions"), m("/profile/reviews"),

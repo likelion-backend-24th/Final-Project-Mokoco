@@ -146,7 +146,7 @@ export default async function Home({ searchParams }) {
   const isAuthenticated = Boolean(userEmail && accessToken);
 
   if (isAuthenticated && (await isAdminUser(accessToken))) {
-    redirect("/admin/deals");
+    redirect("/admin/overview");
   }
 
   const { posts, error, pagination } = await getNearbyPosts(accessToken, "ALL", 0, 5, regionScope);

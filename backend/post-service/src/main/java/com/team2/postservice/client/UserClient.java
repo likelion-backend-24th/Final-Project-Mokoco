@@ -1,5 +1,6 @@
 package com.team2.postservice.client;
 
+import com.team2.postservice.client.dto.AdminUserStatsResponse;
 import com.team2.postservice.client.dto.RegionResponse;
 import com.team2.postservice.client.dto.UserClientResponse;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -27,4 +28,7 @@ public interface UserClient {
 
     @GetMapping("/api/internal/users/{email}/region")
     RegionResponse getRegionByEmail(@PathVariable String email);
+
+    @GetMapping("/api/internal/users/admin-stats")
+    AdminUserStatsResponse getAdminStats();
 }

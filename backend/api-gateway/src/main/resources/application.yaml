@@ -71,11 +71,11 @@ spring:
           predicates:
             - Path=/posts/**, /fix-deals/**, /images/**, /notifications/**, /reviews/**, /profile/**, /resumes/**
 
-        # 관리자용 글 삭제/신고 처리/거래 현황판 — 컨트롤러가 이미 /api/admin/* 매핑이라 접두어 유지
+        # 관리자용 글 삭제/신고 처리/거래 현황판/대시보드 개요 — 컨트롤러가 이미 /api/admin/* 매핑이라 접두어 유지
         - id: post-service-admin
           uri: http://mokoco-post-service:8082
           predicates:
-            - Path=/api/admin/posts/**, /api/admin/reports/**, /api/admin/deals/**
+            - Path=/api/admin/posts/**, /api/admin/reports/**, /api/admin/deals/**, /api/admin/overview/**
 
         # 신고 접수 — 컨트롤러가 이미 /api/reports 매핑이라 접두어 유지
         - id: post-service-reports

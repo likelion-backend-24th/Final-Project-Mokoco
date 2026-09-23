@@ -51,4 +51,7 @@ public interface FixDealRepository extends JpaRepository<FixDeal, Long> {
     Page<FixDeal> findByStatusOrderByCreatedAtDesc(FixDealStatus status, Pageable pageable);
 
     Page<FixDeal> findByStatusInOrderByCreatedAtDesc(Collection<FixDealStatus> statuses, Pageable pageable);
+
+    // 관리자 대시보드 개요용
+    long countByStatusIn(Collection<FixDealStatus> statuses);
 }

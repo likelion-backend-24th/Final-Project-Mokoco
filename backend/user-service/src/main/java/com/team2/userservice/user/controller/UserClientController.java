@@ -1,5 +1,6 @@
 package com.team2.userservice.user.controller;
 
+import com.team2.userservice.user.dto.AdminUserStatsResponse;
 import com.team2.userservice.user.dto.UserResponse;
 import com.team2.userservice.user.entity.AccountStatus;
 import com.team2.userservice.user.service.UserService;
@@ -41,5 +42,11 @@ public class UserClientController {
     @GetMapping("/by-id")
     public ResponseEntity<UserResponse> getUserById(@RequestParam Long id) {
         return ResponseEntity.ok(userService.findUserById(id));
+    }
+
+    // 관리자 대시보드 개요용 — post-service의 AdminOverviewService가 호출한다.
+    @GetMapping("/admin-stats")
+    public ResponseEntity<AdminUserStatsResponse> getAdminStats() {
+        return ResponseEntity.ok(userService.getAdminStats());
     }
 }

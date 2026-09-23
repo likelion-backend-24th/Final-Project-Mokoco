@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Receipt, Users, Flag } from "@phosphor-icons/react";
+import { Gauge, Receipt, Users, Flag } from "@phosphor-icons/react";
 
 const ITEMS = [
+  { href: "/admin/overview", label: "대시보드", icon: Gauge },
   { href: "/admin/deals", label: "거래 현황", icon: Receipt },
   { href: "/admin/users", label: "회원 관리", icon: Users },
   { href: "/admin/reports", label: "신고 접수함", icon: Flag },
