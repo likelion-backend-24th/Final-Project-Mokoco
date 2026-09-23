@@ -42,13 +42,16 @@ function OAuth2RedirectContent() {
         }
 
         // 홈으로 넘어가기 전에 이메일 조회까지 기다려서, 헤더가 곧바로 정상 상태로 뜨게 한다.
-        await socialLogin(token, refreshToken);
+        // 같은 조회 결과로 관리자 계정이면 로그인 직후 한 번만 대시보드로 보낸다 — 이후
+        // "홈" 클릭은 일반 홈으로 간다.
+        const me = await socialLogin(token, refreshToken);
         console.log("쿠키 및 스토어 저장 완료, 리다이렉트 대기 중...");
+        if (!cancelled) window.location.href = me?.role === "ADMIN" ? "/admin/overview" : "/";
+        return;
       } catch (e) {
         console.error("소셜 토큰 처리 실패:", e);
         return;
       }
-      if (!cancelled) window.location.href = "/";
     })();
 
     return () => { cancelled = true; };

@@ -24,8 +24,11 @@ export default function LoginForm({ registered = false }) {
       // 서버 API 라우트(/api/auth/signin)를 통해 백엔드 통신 및 HttpOnly 쿠키 세팅 수행
       await loginUser(email, password);
 
+      // 관리자 계정은 로그인 직후 한 번만 대시보드로 보낸다 — 이후 "홈" 클릭은 일반 홈으로 간다.
+      const me = await fetch("/api/users/me", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+
       // 클라이언트 라우터 캐시 우회를 위해 강제 새로고침 이동 적용
-      window.location.href = "/";
+      window.location.href = me?.role === "ADMIN" ? "/admin/overview" : "/";
     } catch (err) {
       setMessage(err.message || "이메일 또는 비밀번호가 올바르지 않습니다.");
     } finally {

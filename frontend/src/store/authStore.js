@@ -34,11 +34,12 @@ export const useAuthStore = create((set) => ({
       return fetch("/api/users/me", { cache: "no-store" })
         .then((res) => (res.ok ? res.json() : null))
         .then((me) => {
-          if (!me?.email) return;
+          if (!me?.email) return me;
           document.cookie = `user_email=${encodeURIComponent(me.email)}; path=/; max-age=604800; SameSite=Lax`;
           set({ userEmail: me.email });
+          return me;
         })
-        .catch((e) => console.error("소셜 로그인 이메일 조회 실패", e));
+        .catch((e) => { console.error("소셜 로그인 이메일 조회 실패", e); return null; });
     }
     set({ accessToken: token });
   },
