@@ -1,5 +1,5 @@
-.conversation-overlay{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:#1c1530b3;padding:20px}
-.conversation-shell{width:100%;max-width:860px;height:min(720px,88vh);display:flex;flex-direction:column;background:#fff;color:#282838;font-family:inherit;border:1px solid #ebe8f1;border-radius:26px;overflow:hidden;box-shadow:0 20px 60px #170f2833}
+.conversation-overlay{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:20px}
+.conversation-shell{width:100%;max-width:420px;height:min(720px,85vh);display:flex;flex-direction:column;background:#fff;color:#282838;font-family:inherit;border:1px solid #ebe8f1;border-radius:26px;overflow:hidden;box-shadow:0 20px 60px #170f2840}
 .conversation-header{display:flex;align-items:center;gap:14px;padding:24px 30px;background:#fff;border-bottom:1px solid #f0eff5;flex-shrink:0}
 .chat-icon-button{display:grid;place-items:center;width:36px;height:40px;border-radius:12px;color:#686678}.chat-icon-button:hover{background:#f5f3fa}
 .conversation-mark{display:grid;place-items:center;width:46px;height:46px;border-radius:17px;background:#eeebf8;color:#72609d}
