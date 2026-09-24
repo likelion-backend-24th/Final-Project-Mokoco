@@ -21,6 +21,10 @@ spring:
     # post_db를 chat-service와 공유하므로, 각 서비스가 자기 이력만 추적하도록 테이블을 따로 둔다
     # (chat-service는 flyway_schema_history_chat 사용 — 그쪽 application.yaml 참고).
     table: flyway_schema_history
+    # 과거 다른 브랜치 배포로 3~6번 마이그레이션이 이미 적용 기록만 남아있고 파일은 release
+    # 저장소에 없다 — release는 그 이력을 새로 만들어 관리하지 않으므로, 로컬에 없는 적용
+    # 이력(missing)은 검증에서 제외한다(future는 Boot 기본값이라 같이 명시).
+    ignore-migration-patterns: "*:missing,*:future"
 
   jpa:
     hibernate:
