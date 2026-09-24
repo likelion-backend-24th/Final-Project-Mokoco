@@ -44,6 +44,7 @@ public class PostService {
         Post post = Post.builder()
                 .title(request.title())
                 .content(request.content())
+                .contentFormat(request.contentFormat())
                 .category(request.category())
                 .authorEmail(authorEmail)
                 .regionName(response.regionName())
