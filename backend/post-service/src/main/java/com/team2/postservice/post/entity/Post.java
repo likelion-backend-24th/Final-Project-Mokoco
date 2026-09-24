@@ -31,6 +31,9 @@ public class Post {
     private String content;
 
     @Column(nullable = false)
+    private ContentFormat contentFormat;
+
+    @Column(nullable = false)
     private String authorEmail;
 
     @Column(nullable = false, length = 100)

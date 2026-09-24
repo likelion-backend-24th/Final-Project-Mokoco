@@ -1,9 +1,6 @@
 package com.team2.postservice.post.dto;
 
-import com.team2.postservice.post.entity.Post;
-import com.team2.postservice.post.entity.PostCategory;
-import com.team2.postservice.post.entity.PostImage;
-import com.team2.postservice.post.entity.PostStatus;
+import com.team2.postservice.post.entity.*;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -13,6 +10,7 @@ public class PostResponseDto {
             Long id,
             String title,
             String content,
+            ContentFormat contentFormat,
             String authorEmail,
             String authorNickname,
             PostCategory category,
@@ -29,6 +27,7 @@ public class PostResponseDto {
                     post.getId(),
                     post.getTitle(),
                     post.getContent(),
+                    post.getContentFormat(),
                     post.getAuthorEmail(),
                     authorNickname,
                     post.getCategory(),

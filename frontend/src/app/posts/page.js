@@ -10,6 +10,7 @@ import { imageSrc } from "@/lib/backend";
 import { getNearbyPosts } from "@/lib/nearby-posts";
 import RegionScopeFilter from "@/components/region-scope-filter";
 import { normalizeRegionScope, regionListHref } from "@/lib/region-scope";
+import htmlToText from "@/lib/html-to-text";
 
 const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "거래 완료" };
 
@@ -135,7 +136,7 @@ export default async function PostsPage({ searchParams }) {
                         <span>{post.authorNickname || post.authorEmail || "작성자 정보 없음"}</span>
                       </div>
                     </div>
-                    <p className="post-content">{post.content || "등록된 상세 내용이 없습니다."}</p>
+                    <p className="post-content">{ htmlToText(post.content) || "등록된 상세 내용이 없습니다."}</p>
                   </div>
                 </Link>
               );
