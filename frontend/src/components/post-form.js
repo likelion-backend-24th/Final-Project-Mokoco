@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Wrench, Upload, X } from "@phosphor-icons/react";
 import Link from "next/link";
 import { backendUrl, imageSrc } from "@/lib/backend";
+import { plainTextToHtml } from "@/lib/plain-text-to-html";
 import PostAiAssist from "./post-ai-assist";
+import RichTextEditor from "./rich-text-editor";
 
 const categories = [
   { value: "ELECTRIC_LIGHT", label: "전기·조명" },
@@ -22,7 +24,13 @@ export default function PostForm({ postId, initialValue, accessToken }) {
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [title, setTitle] = useState(initialValue?.title || "");
-  const [content, setContent] = useState(initialValue?.content || "");
+  // 리치텍스트 에디터로 전환하기 전(PLAIN_TEXT)에 쓴 글을 고칠 땐, 원래 줄바꿈이 보이도록
+  // HTML로 변환해서 불러온다. 이후 저장하는 순간부터는 항상 HTML로 저장된다.
+  const [content, setContent] = useState(
+    !initialValue?.content ? ""
+      : initialValue.contentFormat === "HTML" ? initialValue.content
+      : plainTextToHtml(initialValue.content)
+  );
 
   const [existingImages, setExistingImages] = useState(initialValue?.images || []);
   const [removingImageId, setRemovingImageId] = useState(null);
@@ -74,10 +82,16 @@ export default function PostForm({ postId, initialValue, accessToken }) {
 
   async function submitPost(event) {
     event.preventDefault();
+    // 에디터는 <textarea required>가 아니라서 브라우저가 빈 내용을 막아주지 않는다 —
+    // 태그만 있고 글자가 없는 경우(예: "<p></p>")까지 직접 걸러야 한다.
+    if (content.replace(/<[^>]*>/g, "").trim().length === 0) {
+      setMessage("내용을 입력해주세요.");
+      return;
+    }
     setSubmitting(true);
     setMessage("");
 
-    const postDto = { title, content, category: selectedCategory };
+    const postDto = { title, content, category: selectedCategory, contentFormat: "HTML" };
 
     try {
       let response;
@@ -179,15 +193,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
         {/* 내용 입력 */}
         <label className="form-field">
           <span>내용</span>
-          <textarea
-            name="content"
-            rows={6}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="어떤 도움이 필요한지 자세히 적어주세요"
-            required
-            className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
-          />
+          <RichTextEditor value={content} onChange={setContent} placeholder="어떤 도움이 필요한지 자세히 적어주세요" />
         </label>
 
         {/* 파일 첨부 영역 */}

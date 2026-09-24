@@ -180,6 +180,14 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .neighborhood-summary strong { color: #1765f5; font-size: 20px; }
 .neighborhood-summary span { color: #8490a3; font-size: 12px; }
 
+.post-rich-content p { margin: 0 0 .9em; }
+.post-rich-content p:last-child { margin-bottom: 0; }
+.post-rich-content h2 { font-size: 20px; font-weight: 750; margin: 1em 0 .4em; }
+.post-rich-content h3 { font-size: 17px; font-weight: 700; margin: .9em 0 .35em; }
+.post-rich-content ul, .post-rich-content ol { padding-left: 1.4em; margin: 0 0 .9em; }
+.post-rich-content li { margin: .2em 0; }
+.post-rich-content blockquote { margin: 0 0 .9em; padding: 2px 0 2px 14px; border-left: 3px solid #cbd5e1; color: #64748b; }
+
 @media (max-width: 680px) {
   .desktop-nav { display: none; }
   .hero-grid { grid-template-columns: 1fr; }

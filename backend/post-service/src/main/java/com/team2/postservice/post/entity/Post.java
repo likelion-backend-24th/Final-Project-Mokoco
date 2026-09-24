@@ -50,6 +50,12 @@ public class Post {
     @Column(nullable = false)
     private PostStatus status;
 
+    // 글쓰기 폼이 리치텍스트 에디터를 쓰기 전(과거 글)에는 다 PLAIN_TEXT였어서 기본값을 둔다 —
+    // 빌더에 파라미터로 안 넣은 이유도 기존 호출부(테스트 포함)가 그대로 컴파일되게 하기 위함.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ContentFormat contentFormat = ContentFormat.PLAIN_TEXT;
+
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
     private List<PostImage> images = new ArrayList<>();
@@ -71,10 +77,15 @@ public class Post {
         this.status = PostStatus.WAITING;
     }
 
-    public void update(String title, String content, PostCategory category) {
+    public void update(String title, String content, PostCategory category, ContentFormat contentFormat) {
         this.title = title;
         this.content = content;
         this.category = category;
+        if (contentFormat != null) this.contentFormat = contentFormat;
+    }
+
+    public void changeContentFormat(ContentFormat contentFormat) {
+        if (contentFormat != null) this.contentFormat = contentFormat;
     }
 
     public void updateStatusToMatched() {

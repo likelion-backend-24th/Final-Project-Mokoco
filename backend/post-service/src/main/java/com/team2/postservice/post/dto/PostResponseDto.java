@@ -1,5 +1,6 @@
 package com.team2.postservice.post.dto;
 
+import com.team2.postservice.post.entity.ContentFormat;
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.entity.PostCategory;
 import com.team2.postservice.post.entity.PostImage;
@@ -22,7 +23,8 @@ public class PostResponseDto {
             String createdAt,
             String updatedAt,
             String regionCode,
-            boolean publiclyVisible
+            boolean publiclyVisible,
+            ContentFormat contentFormat
     ) {
         public static Detail from(Post post, String authorNickname) {
             return new Detail(
@@ -40,7 +42,8 @@ public class PostResponseDto {
                     post.getCreatedAt() != null ? post.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,
                     post.getUpdatedAt() != null ? post.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null,
                     post.getRegionCode(),
-                    post.isPubliclyVisible()
+                    post.isPubliclyVisible(),
+                    post.getContentFormat()
             );
         }
     }

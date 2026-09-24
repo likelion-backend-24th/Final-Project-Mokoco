@@ -124,7 +124,13 @@ export default async function PostDetailPage({ params }) {
                 <span>{formatDate(post.createdAt)}</span>
               </div>
 
-              <p className="mt-6 whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{post.content}</p>
+              {post.contentFormat === "HTML" ? (
+                // 서버(PostService)가 저장 시 이미 허용 태그만 남기고 정제한 뒤 저장하므로 여기서
+                // 그대로 렌더링해도 안전하다 — 백엔드를 거치지 않은 값을 여기 넣지 말 것.
+                <div className="post-rich-content mt-6 text-[15px] leading-relaxed text-slate-700" dangerouslySetInnerHTML={{ __html: post.content }} />
+              ) : (
+                <p className="mt-6 whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{post.content}</p>
+              )}
 
               {post.images && post.images.length > 0 && (
                 <div className={`mt-6 grid gap-3 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>

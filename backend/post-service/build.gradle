@@ -38,6 +38,7 @@ dependencies {
 	implementation 'org.flywaydb:flyway-mysql'
 
 	implementation 'com.twelvemonkeys.imageio:imageio-webp:3.11.0'
+	implementation 'org.jsoup:jsoup:1.18.1'
 
 	implementation 'org.apache.tika:tika-core:3.2.3'
 	// Spring Boot & Cloud Starters

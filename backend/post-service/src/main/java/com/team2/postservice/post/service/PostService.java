@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import com.team2.postservice.post.dto.PostResponseDto;
+import com.team2.postservice.post.entity.ContentFormat;
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.entity.PostCategory;
 import com.team2.postservice.post.entity.PostStatus;
@@ -40,24 +41,37 @@ public class PostService {
     private final PostViewerService postViewerService;
     private final ProposalRepository proposalRepository;
     private final FixDealRepository fixDealRepository;
+    private final HtmlSanitizer htmlSanitizer;
 
     @Transactional
     public Long createPost(PostRequestDto.Create request, List<MultipartFile> images, String authorEmail) {
         // 💡 User-Service에서 이메일로 최신 지역 정보를 Feign을 통해 조회
         RegionResponse response = postViewerService.requireRegion(authorEmail);
 
+        ContentFormat contentFormat = resolveContentFormat(request.contentFormat());
         Post post = Post.builder()
                 .title(request.title())
-                .content(request.content())
+                .content(prepareContent(request.content(), contentFormat))
                 .category(request.category())
                 .authorEmail(authorEmail)
                 .regionName(response.regionName())
                 .regionCode(response.regionCode())
                 .build();
+        post.changeContentFormat(contentFormat);
 
         attachImages(post, images);
 
         return postRepository.save(post).getId();
+    }
+
+    // contentFormat을 안 보내는 클라이언트(구버전 등)는 예전처럼 순수 텍스트로 취급한다.
+    private ContentFormat resolveContentFormat(ContentFormat requested) {
+        return requested == null ? ContentFormat.PLAIN_TEXT : requested;
+    }
+
+    // HTML일 때만 화이트리스트로 정제한다 — PLAIN_TEXT는 프론트에서 escape해서 그대로 보여주므로 손댈 필요 없다.
+    private String prepareContent(String content, ContentFormat contentFormat) {
+        return contentFormat == ContentFormat.HTML ? htmlSanitizer.sanitize(content) : content;
     }
 
     public NearbyRepairRequest.Result getNearbyPosts(
@@ -99,7 +113,8 @@ public class PostService {
         Post post = getPostOrThrow(id);
         validateAuthor(post, userEmail, ErrorCode.UNAUTHORIZED_POST_UPDATE);
 
-        post.update(request.title(), request.content(), request.category());
+        ContentFormat contentFormat = resolveContentFormat(request.contentFormat());
+        post.update(request.title(), prepareContent(request.content(), contentFormat), request.category(), contentFormat);
     }
 
     @Transactional
