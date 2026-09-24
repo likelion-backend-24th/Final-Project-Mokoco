@@ -191,7 +191,7 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
     </header>
 
     {error && <p role="alert" className="conversation-error">{error}</p>}
-    <div className={`conversation-messages${hasDealFab ? " has-deal-fab" : ""}`} role="log" aria-label="채팅 메시지" aria-live="polite">
+    <div className="conversation-messages" role="log" aria-label="채팅 메시지" aria-live="polite">
       {more && <button className="history-button" disabled={loading} onClick={async () => {
         setLoading(true); try { await history(messages[0]?.messageId); } catch (failure) { setError(failure.message); } finally { setLoading(false); }
       }}>{loading ? "불러오는 중…" : "이전 대화 보기"}</button>}
@@ -234,16 +234,18 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
       })}<div ref={bottom} />
     </div>
     {hasDealFab && (
-      <button
-        type="button"
-        onClick={() => setContractOpen(true)}
-        className="deal-fab"
-        title={dealBannerLabel[detail.dealStatus] || "수리 계약서 작성하기"}
-        aria-label={dealBannerLabel[detail.dealStatus] || "수리 계약서 작성하기"}
-      >
-        <ShieldCheck size={15} weight="fill" />
-        <span>{dealPillLabel[detail.dealStatus] || "계약서"}</span>
-      </button>
+      <div className="deal-banner-wrap">
+        <button
+          type="button"
+          onClick={() => setContractOpen(true)}
+          className="deal-fab"
+          title={dealBannerLabel[detail.dealStatus] || "수리 계약서 작성하기"}
+          aria-label={dealBannerLabel[detail.dealStatus] || "수리 계약서 작성하기"}
+        >
+          <ShieldCheck size={15} weight="fill" />
+          <span>{dealPillLabel[detail.dealStatus] || "계약서"}</span>
+        </button>
+      </div>
     )}
 
     {contractOpen && detail?.fixDealId && (

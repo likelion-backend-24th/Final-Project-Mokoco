@@ -1,5 +1,5 @@
 .conversation-overlay{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:20px}
-.conversation-shell{position:relative;width:100%;max-width:420px;height:min(720px,85vh);display:flex;flex-direction:column;background:#fff;color:#282838;font-family:inherit;border:1px solid #ebe8f1;border-radius:26px;overflow:hidden;box-shadow:0 20px 60px #170f2840;animation:chat-shell-pop .2s cubic-bezier(.2,.8,.3,1)}
+.conversation-shell{width:100%;max-width:420px;height:min(720px,85vh);display:flex;flex-direction:column;background:#fff;color:#282838;font-family:inherit;border:1px solid #ebe8f1;border-radius:26px;overflow:hidden;box-shadow:0 20px 60px #170f2840;animation:chat-shell-pop .2s cubic-bezier(.2,.8,.3,1)}
 @keyframes chat-shell-pop{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
 .conversation-header{display:flex;align-items:center;gap:14px;padding:24px 30px;background:linear-gradient(135deg,var(--chat-accent),var(--chat-hover));border-bottom:0;flex-shrink:0}
 .chat-icon-button{display:grid;place-items:center;width:36px;height:40px;border-radius:12px;color:#fff}.chat-icon-button:hover{background:#ffffff26}
@@ -11,11 +11,11 @@
 .theme-menu-popover{position:absolute;top:46px;right:0;z-index:6;width:130px;background:#fff;border-radius:12px;padding:9px;box-shadow:0 14px 34px #170f2833;color:#282838}
 .theme-menu-popover label{display:block;font-size:10px;font-weight:700;color:#8a849c;margin-bottom:4px}
 .theme-menu-popover select{width:100%;border:1px solid var(--chat-border);border-radius:7px;padding:4px 6px;background:#fff;color:var(--chat-ink);font-size:12.5px;font-family:inherit;cursor:pointer}
-.deal-fab{position:absolute;right:18px;bottom:70px;z-index:5;display:inline-flex;align-items:center;gap:6px;border:0;border-radius:20px;padding:9px 15px;font-size:12.5px;font-weight:700;color:#fff;background:var(--chat-accent,#65438a);box-shadow:0 10px 24px #17202b33;transition:background .15s,transform .15s;cursor:pointer}
-.deal-fab:hover{background:var(--chat-hover,#50336f);transform:translateY(-1px)}
+.deal-banner-wrap{display:flex;justify-content:center;padding:7px 20px;flex-shrink:0;background:#fff;border-top:1px solid #f5f3f8}
+.deal-fab{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:20px;padding:8px 16px;font-size:12.5px;font-weight:700;color:#fff;background:linear-gradient(135deg,#f0a02e,#dd7f0e);box-shadow:0 6px 16px #dd7f0e40;transition:background .15s,transform .15s;cursor:pointer}
+.deal-fab:hover{background:linear-gradient(135deg,#e3901f,#c67209);transform:translateY(-1px)}
 .conversation-error{padding:10px 24px;font-size:12px;color:#ac495a;background:#fff3f4}
 .conversation-messages{flex:1;min-height:0;overflow-y:auto;padding:8px 36px 28px;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#e5e1ee transparent}
-.conversation-messages.has-deal-fab{padding-bottom:112px}
 .conversation-date{display:flex;justify-content:center;margin:25px 0 30px}.conversation-date span{font-size:11px;font-weight:500;color:#aaa5b5;background:#faf9fc;padding:6px 14px;border-radius:20px}
 .conversation-row{display:flex;align-items:flex-start;gap:11px;margin-bottom:3px}.conversation-row.is-group-start{margin-top:14px}.conversation-row.is-mine{justify-content:flex-end}
 .conversation-avatar-slot{width:36px;flex-shrink:0}
