@@ -162,6 +162,8 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
     } catch { setError("전송하지 못했습니다. 다시 시도해주세요."); }
   }
 
+  const hasDealFab = detail?.roomId === roomId && Boolean(detail.fixDealId);
+
   const shell = <main className="conversation-shell" data-theme={theme} onClick={event => event.stopPropagation()}>
     <header className="conversation-header">
       <button type="button" onClick={goBack} className="chat-icon-button" aria-label="뒤로가기"><ArrowLeft size={22} /></button>
@@ -181,14 +183,13 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
             <select id="chat-theme" value={theme} onChange={event => selectTheme(event.target.value)}>
               {chatThemes.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
             </select>
-            <p>내 화면에만 적용</p>
           </div>
         )}
       </div>
     </header>
 
     {error && <p role="alert" className="conversation-error">{error}</p>}
-    <div className="conversation-messages" role="log" aria-label="채팅 메시지" aria-live="polite">
+    <div className={`conversation-messages${hasDealFab ? " has-deal-fab" : ""}`} role="log" aria-label="채팅 메시지" aria-live="polite">
       {more && <button className="history-button" disabled={loading} onClick={async () => {
         setLoading(true); try { await history(messages[0]?.messageId); } catch (failure) { setError(failure.message); } finally { setLoading(false); }
       }}>{loading ? "불러오는 중…" : "이전 대화 보기"}</button>}
@@ -230,7 +231,7 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
         </div>;
       })}<div ref={bottom} />
     </div>
-    {detail?.roomId === roomId && detail.fixDealId && (
+    {hasDealFab && (
       <button
         type="button"
         onClick={() => setContractOpen(true)}
