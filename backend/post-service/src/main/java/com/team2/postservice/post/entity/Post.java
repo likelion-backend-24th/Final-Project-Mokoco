@@ -30,6 +30,10 @@ public class Post {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ContentFormat contentFormat;
+
     @Column(nullable = false)
     private String authorEmail;
 
@@ -61,9 +65,10 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Post(String title, String content, String authorEmail, String regionName, String regionCode, PostCategory category) {
+    public Post(String title, String content, ContentFormat contentFormat, String authorEmail, String regionName, String regionCode, PostCategory category) {
         this.title = title;
         this.content = content;
+        this.contentFormat = contentFormat;
         this.authorEmail = authorEmail;
         this.regionName = regionName; // 빌더에 지역 이름 추가
         this.regionCode = regionCode;

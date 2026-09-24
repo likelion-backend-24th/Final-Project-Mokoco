@@ -9,7 +9,7 @@ import ReportButton from "@/components/report-button";
 import RepairProposalForm from "@/components/proposal-form";
 import ProposalList from "@/components/proposal-list";
 import { backendUrl, imageSrc } from "@/lib/backend";
-
+import "./page.css";
 const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 연결됨", COMPLETED: "거래 완료" };
 
 async function getPost(id) {
@@ -124,7 +124,14 @@ export default async function PostDetailPage({ params }) {
                 <span>{formatDate(post.createdAt)}</span>
               </div>
 
-              <p className="mt-6 whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{post.content}</p>
+              {/* <p className="mt-6 whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{post.content}</p> */}
+
+              <div
+                className="post-detail-content"
+                dangerouslySetInnerHTML={{
+                  __html: post.content,
+                }}
+              />
 
               {post.images && post.images.length > 0 && (
                 <div className={`mt-6 grid gap-3 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>

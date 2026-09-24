@@ -1,6 +1,7 @@
 package com.team2.postservice.ai.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.team2.postservice.ai.dto.PostRevisionRequest;
 import com.team2.postservice.ai.service.AiDraftService;
 import com.team2.postservice.ai.dto.ContractDraftRequest;
 import com.team2.common.security.LoginUser;
@@ -27,5 +28,12 @@ public class AiController {
     public JsonNode contract(@PathVariable Long roomId, @AuthenticationPrincipal LoginUser user,
             @Valid @RequestBody ContractDraftRequest input) {
         return service.contract(user.id(), roomId, input.baseId(), input.currentTerms(), input.instructions());
+    }
+
+    @PostMapping("/api/ai/post-revise")
+    public JsonNode revise(
+            @AuthenticationPrincipal LoginUser user,
+            @Valid @RequestBody PostRevisionRequest request) {
+        return service.revise(user.id(), request);
     }
 }

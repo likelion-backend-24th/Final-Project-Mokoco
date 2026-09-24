@@ -163,6 +163,16 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .post-meta { display: flex; align-items: center; gap: 9px; margin-top: 8px; color: #8490a3; font-size: 11px; }
 .post-meta .status-badge { padding: 3px 7px; font-size: 10px; }
 .post-content { display: -webkit-box; margin-top: 7px; overflow: hidden; color: #667085; font-size: 12px; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+.post-row .post-content {
+  display: -webkit-box;
+  margin-top: 7px;
+  overflow: hidden;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
 .activity-card dl { display: grid; gap: 16px; margin-block: 21px; }
 .activity-card dl div { display: flex; align-items: center; justify-content: space-between; }
 .activity-card dt { display: flex; align-items: center; gap: 9px; color: #4b576a; font-size: 13px; }
