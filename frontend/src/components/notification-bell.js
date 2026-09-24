@@ -19,7 +19,6 @@ function relativeTime(value) {
 }
 
 function targetHref(n) {
-  if (n.type === "CHAT_MESSAGE" && n.chatRoomId) return `/chat-rooms/${n.chatRoomId}`;
   if (n.postId) return `/posts/${n.postId}`;
   return null;
 }
@@ -28,7 +27,10 @@ export default function NotificationBell() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
-  const { items, unreadCount, markRead, markAllRead } = useNotificationStore();
+  const { items: allItems, markRead } = useNotificationStore();
+  // 채팅 메시지 알림은 별도 채팅 버튼에서 보여주므로 여기서는 그 외 알림만 다룬다.
+  const items = allItems.filter((n) => n.type !== "CHAT_MESSAGE");
+  const unreadCount = items.filter((n) => !n.isRead).length;
 
   useEffect(() => {
     if (!open) return;
@@ -50,8 +52,11 @@ export default function NotificationBell() {
   }
 
   async function handleReadAll() {
-    markAllRead();
-    fetch("/api/notifications/read-all", { method: "PATCH" }).catch(() => {});
+    // 채팅 알림은 건드리지 않아야 해서 전체 읽음 API 대신 이 목록의 안 읽은 것만 하나씩 처리한다.
+    items.filter((n) => !n.isRead).forEach((n) => {
+      markRead(n.id);
+      fetch(`/api/notifications/${n.id}/read`, { method: "PATCH" }).catch(() => {});
+    });
   }
 
   return (

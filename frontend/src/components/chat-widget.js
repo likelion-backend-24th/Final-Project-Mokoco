@@ -5,6 +5,7 @@ import { ChatCircleDots, ArrowRight, X, Wrench } from "@phosphor-icons/react";
 import ChatRoom from "@/components/chat-room";
 import { useChatWidgetStore } from "@/store/chatWidgetStore";
 import { useAuthStore } from "@/store/authStore";
+import { useNotificationStore } from "@/store/notificationStore";
 import "./chat-widget.css";
 
 function formatTime(value) {
@@ -24,9 +25,25 @@ export default function ChatWidget() {
   const backToListAction = useChatWidgetStore(state => state.backToList);
   const closeAction = useChatWidgetStore(state => state.close);
   const openRoom = useChatWidgetStore(state => state.openRoom);
+  const unreadChatCount = useNotificationStore(
+    state => state.items.filter(n => n.type === "CHAT_MESSAGE" && !n.isRead).length
+  );
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // 채팅방을 열면(목록에서 선택하든, 다른 화면의 버튼으로 바로 들어오든) 그 방에 대한
+  // 미읽음 채팅 알림은 새로 읽은 것으로 처리한다 — 별도 라우트로 안 흩어지게 이 한 곳에서만 정리.
+  useEffect(() => {
+    if (!activeRoomId) return;
+    const { items, markRead } = useNotificationStore.getState();
+    items
+      .filter(n => n.type === "CHAT_MESSAGE" && n.chatRoomId === activeRoomId && !n.isRead)
+      .forEach(n => {
+        markRead(n.id);
+        fetch(`/api/notifications/${n.id}/read`, { method: "PATCH" }).catch(() => {});
+      });
+  }, [activeRoomId]);
 
   useEffect(() => {
     if (!open || activeRoomId || !isAuthenticated) return;
@@ -58,8 +75,16 @@ export default function ChatWidget() {
 
   return <>
     {!open && (
-      <button type="button" onClick={openWidget} className="chat-widget-fab" aria-label="채팅 열기">
+      <button
+        type="button"
+        onClick={openWidget}
+        className="chat-widget-fab"
+        aria-label={`채팅 열기${unreadChatCount ? ` (안 읽은 메시지 ${unreadChatCount}개)` : ""}`}
+      >
         <ChatCircleDots size={26} weight="fill" />
+        {unreadChatCount > 0 && (
+          <span className="chat-widget-fab-badge">{unreadChatCount > 99 ? "99+" : unreadChatCount}</span>
+        )}
       </button>
     )}
 
