@@ -872,8 +872,11 @@ export default function PostForm({
           onApply={handleAiDraftApply}
           onDraftCreated={({ draftId, remainingRevisions }) => {
             setAiDraftId(draftId);
-            setRemainingRevisions(remainingRevisions);
+            setRemainingRevisions(
+              Math.max(0, Math.min(MAX_AI_REVISIONS, remainingRevisions)),
+            );
           }}
+
 
         />
 
