@@ -206,7 +206,7 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
           <article className={`conversation-row ${mine ? "is-mine" : ""} ${isGroupStart ? "is-group-start" : ""}`}>
             {!mine && (
               <div className="conversation-avatar-slot">
-                {isGroupStart && <div className="conversation-avatar" aria-hidden="true"><User size={21} weight="duotone" /></div>}
+                {isGroupStart && <div className="conversation-avatar" aria-hidden="true"><User size={17} weight="duotone" /></div>}
               </div>
             )}
             <div className="conversation-message">
