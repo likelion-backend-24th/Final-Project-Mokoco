@@ -113,7 +113,7 @@ export default function ChatWidget() {
                       <button type="button" onClick={() => openRoom(room.chatRoomId)} className="chat-widget-room-row">
                         <div className="chat-widget-room-icon"><Wrench size={18} weight="duotone" /></div>
                         <div className="chat-widget-room-text">
-                          <h3>{room.postTitle || "수리 요청 채팅"}</h3>
+                          <h3>{room.counterpartNickname || room.postTitle || "이웃"}</h3>
                           <p>{room.lastMessage || "아직 메시지가 없습니다. 첫 인사를 건네보세요."}</p>
                           <time>{formatTime(room.lastMessageAt || room.createdAt)}</time>
                         </div>

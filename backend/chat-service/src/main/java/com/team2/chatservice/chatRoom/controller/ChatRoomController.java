@@ -14,7 +14,7 @@ public class ChatRoomController {
     private final ChatRoomService chatRoomService;
 
     @GetMapping
-    public java.util.List<com.team2.chatservice.chatRoom.dto.ChatRoomListItem> getMyRooms(
+    public java.util.List<com.team2.chatservice.chatRoom.dto.ChatRoomListResponse> getMyRooms(
             @AuthenticationPrincipal LoginUser user,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
