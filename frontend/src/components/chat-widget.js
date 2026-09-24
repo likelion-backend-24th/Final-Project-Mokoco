@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChatCircleDots, ArrowRight, X } from "@phosphor-icons/react";
+import { ChatCircleDots, ArrowRight, X, Wrench } from "@phosphor-icons/react";
 import ChatRoom from "@/components/chat-room";
 import "./chat-widget.css";
 
@@ -62,14 +62,13 @@ export default function ChatWidget({ isAuthenticated }) {
     )}
 
     {open && (
-      <div className="conversation-overlay" onClick={close}>
+      <div className="conversation-overlay chat-widget-overlay" onClick={close}>
         {activeRoomId ? (
-          <div onClick={event => event.stopPropagation()}>
-            <ChatRoom roomId={activeRoomId} embedded onBack={backToList} />
-          </div>
+          <ChatRoom roomId={activeRoomId} embedded onBack={backToList} />
         ) : (
           <div className="conversation-shell chat-widget-list" onClick={event => event.stopPropagation()}>
             <header className="conversation-header">
+              <div className="conversation-mark"><ChatCircleDots size={22} weight="fill" /></div>
               <div className="conversation-heading"><span>동네수리</span><h1>내 채팅</h1></div>
               <button type="button" onClick={close} className="chat-icon-button" aria-label="닫기"><X size={20} /></button>
             </header>
@@ -85,7 +84,8 @@ export default function ChatWidget({ isAuthenticated }) {
                   {rooms.map(room => (
                     <li key={room.chatRoomId}>
                       <button type="button" onClick={() => setActiveRoomId(room.chatRoomId)} className="chat-widget-room-row">
-                        <div>
+                        <div className="chat-widget-room-icon"><Wrench size={18} weight="duotone" /></div>
+                        <div className="chat-widget-room-text">
                           <h3>{room.postTitle || "수리 요청 채팅"}</h3>
                           <p>{room.lastMessage || "아직 메시지가 없습니다. 첫 인사를 건네보세요."}</p>
                           <time>{formatTime(room.lastMessageAt || room.createdAt)}</time>

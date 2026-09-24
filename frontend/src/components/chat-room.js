@@ -143,7 +143,7 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
     } catch { setError("전송하지 못했습니다. 다시 시도해주세요."); }
   }
 
-  const shell = <main className="conversation-shell" data-theme={theme} onClick={embedded ? undefined : event => event.stopPropagation()}>
+  const shell = <main className="conversation-shell" data-theme={theme} onClick={event => event.stopPropagation()}>
     <header className="conversation-header">
       <button type="button" onClick={goBack} className="chat-icon-button" aria-label="뒤로가기"><ArrowLeft size={22} /></button>
       <div className="conversation-mark"><Wrench size={24} weight="duotone" /></div>
