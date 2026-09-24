@@ -1,10 +1,11 @@
 .conversation-overlay{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:20px}
-.conversation-shell{width:100%;max-width:420px;height:min(720px,85vh);display:flex;flex-direction:column;background:#fff;color:#282838;font-family:inherit;border:1px solid #ebe8f1;border-radius:26px;overflow:hidden;box-shadow:0 20px 60px #170f2840}
-.conversation-header{display:flex;align-items:center;gap:14px;padding:24px 30px;background:#fff;border-bottom:1px solid #f0eff5;flex-shrink:0}
-.chat-icon-button{display:grid;place-items:center;width:36px;height:40px;border-radius:12px;color:#686678}.chat-icon-button:hover{background:#f5f3fa}
-.conversation-mark{display:grid;place-items:center;width:46px;height:46px;border-radius:17px;background:#eeebf8;color:#72609d}
-.conversation-heading{flex:1;min-width:0}.conversation-heading>span{font-size:11px;letter-spacing:.06em;color:#9591a2}.conversation-heading h1{font-size:19px;font-weight:750;letter-spacing:-.04em;margin-top:3px}.conversation-heading small{font-size:13px;font-weight:500;color:#aaa6b5;margin-left:5px}
-.connection-status{font-size:11px;color:#8c8898;background:#f6f5f8;padding:6px 10px;border-radius:20px;white-space:nowrap}.connection-status.is-connected{color:#527b65;background:#f0f7f2}
+.conversation-shell{width:100%;max-width:420px;height:min(720px,85vh);display:flex;flex-direction:column;background:#fff;color:#282838;font-family:inherit;border:1px solid #ebe8f1;border-radius:26px;overflow:hidden;box-shadow:0 20px 60px #170f2840;animation:chat-shell-pop .2s cubic-bezier(.2,.8,.3,1)}
+@keyframes chat-shell-pop{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+.conversation-header{display:flex;align-items:center;gap:14px;padding:24px 30px;background:linear-gradient(135deg,var(--chat-accent),var(--chat-hover));border-bottom:0;flex-shrink:0}
+.chat-icon-button{display:grid;place-items:center;width:36px;height:40px;border-radius:12px;color:#fff}.chat-icon-button:hover{background:#ffffff26}
+.conversation-mark{display:grid;place-items:center;width:46px;height:46px;border-radius:17px;background:#ffffff2b;color:#fff}
+.conversation-heading{flex:1;min-width:0}.conversation-heading>span{font-size:11px;letter-spacing:.06em;color:#ffffffb8}.conversation-heading h1{font-size:19px;font-weight:750;letter-spacing:-.04em;margin-top:3px;color:#fff}.conversation-heading small{font-size:13px;font-weight:500;color:#ffffffa8;margin-left:5px}
+.connection-status{font-size:11px;color:#fff;background:#ffffff26;padding:6px 10px;border-radius:20px;white-space:nowrap}.connection-status.is-connected{color:#d6f3df;background:#ffffff26}
 .conversation-banner{display:flex;justify-content:center;align-items:center;gap:8px;padding:12px 20px;font-size:12px;color:#8a849c;background:#faf9fc;flex-shrink:0}
 .deal-banner{display:flex;justify-content:center;align-items:center;gap:8px;padding:14px 20px;font-size:13px;font-weight:500;color:#8a849c;background:#faf9fc;flex-shrink:0;text-align:center}
 .deal-banner-action{gap:10px;padding:16px 20px;font-size:15px;font-weight:700;color:#fff;background:var(--chat-accent,#65438a);transition:background .15s;text-decoration:none}
