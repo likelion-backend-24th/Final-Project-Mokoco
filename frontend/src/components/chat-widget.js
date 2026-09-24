@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { ChatCircleDots, ArrowRight, X, Wrench } from "@phosphor-icons/react";
 import ChatRoom from "@/components/chat-room";
+import { useChatWidgetStore } from "@/store/chatWidgetStore";
+import { useAuthStore } from "@/store/authStore";
 import "./chat-widget.css";
 
 function formatTime(value) {
@@ -14,9 +16,14 @@ function formatTime(value) {
   return date.toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-export default function ChatWidget({ isAuthenticated }) {
-  const [open, setOpen] = useState(false);
-  const [activeRoomId, setActiveRoomId] = useState(null);
+export default function ChatWidget() {
+  const isAuthenticated = useAuthStore(state => Boolean(state.accessToken));
+  const open = useChatWidgetStore(state => state.open);
+  const activeRoomId = useChatWidgetStore(state => state.activeRoomId);
+  const openList = useChatWidgetStore(state => state.openList);
+  const backToListAction = useChatWidgetStore(state => state.backToList);
+  const closeAction = useChatWidgetStore(state => state.close);
+  const openRoom = useChatWidgetStore(state => state.openRoom);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -36,20 +43,15 @@ export default function ChatWidget({ isAuthenticated }) {
   }, [open, activeRoomId, isAuthenticated]);
 
   function openWidget() {
-    setOpen(true);
+    openList();
     setLoading(true);
     setError("");
   }
 
   function backToList() {
-    setActiveRoomId(null);
+    backToListAction();
     setLoading(true);
     setError("");
-  }
-
-  function close() {
-    setOpen(false);
-    setActiveRoomId(null);
   }
 
   if (!isAuthenticated) return null;
@@ -62,7 +64,7 @@ export default function ChatWidget({ isAuthenticated }) {
     )}
 
     {open && (
-      <div className="conversation-overlay chat-widget-overlay" onClick={close}>
+      <div className="conversation-overlay chat-widget-overlay" onClick={closeAction}>
         {activeRoomId ? (
           <ChatRoom roomId={activeRoomId} embedded onBack={backToList} />
         ) : (
@@ -70,7 +72,7 @@ export default function ChatWidget({ isAuthenticated }) {
             <header className="conversation-header">
               <div className="conversation-mark"><ChatCircleDots size={22} weight="fill" /></div>
               <div className="conversation-heading"><span>동네수리</span><h1>내 채팅</h1></div>
-              <button type="button" onClick={close} className="chat-icon-button" aria-label="닫기"><X size={20} /></button>
+              <button type="button" onClick={closeAction} className="chat-icon-button" aria-label="닫기"><X size={20} /></button>
             </header>
             <div className="conversation-messages chat-widget-room-list" role="log" aria-label="내 채팅방 목록">
               {loading ? (
@@ -83,7 +85,7 @@ export default function ChatWidget({ isAuthenticated }) {
                 <ul>
                   {rooms.map(room => (
                     <li key={room.chatRoomId}>
-                      <button type="button" onClick={() => setActiveRoomId(room.chatRoomId)} className="chat-widget-room-row">
+                      <button type="button" onClick={() => openRoom(room.chatRoomId)} className="chat-widget-room-row">
                         <div className="chat-widget-room-icon"><Wrench size={18} weight="duotone" /></div>
                         <div className="chat-widget-room-text">
                           <h3>{room.postTitle || "수리 요청 채팅"}</h3>

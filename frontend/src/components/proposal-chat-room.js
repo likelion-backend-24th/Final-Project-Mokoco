@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ChatCircle } from "@phosphor-icons/react";
+import { useChatWidgetStore } from "@/store/chatWidgetStore";
 
 // compact면 제안 카드용 작은 버튼 한 줄만 렌더링한다(채택 전 목록에서 쓰는 용도).
 // 채팅방 생성/조회 권한은 백엔드가 로그인 사용자 기준으로 검증한다.
@@ -10,7 +10,7 @@ export default function ProposalChatRoom({ proposalId, compact = false }) {
   const [room, setRoom] = useState(null);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
-  const router = useRouter();
+  const openChatRoom = useChatWidgetStore(state => state.openRoom);
   const endpoint = `/api/chat-rooms/proposals/${proposalId}`;
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function ProposalChatRoom({ proposalId, compact = false }) {
   }, [endpoint, proposalId]);
 
   async function openRoom() {
-    if (room) { router.push(`/chat-rooms/${room.chatRoomId}`); return; }
+    if (room) { openChatRoom(room.chatRoomId); return; }
     setStatus("loading");
     setError("");
     try {
@@ -47,7 +47,7 @@ export default function ProposalChatRoom({ proposalId, compact = false }) {
       }
       if (!response.ok) throw new Error(data.error || "채팅방 요청에 실패했습니다.");
       setRoom(data);
-      router.push(`/chat-rooms/${data.chatRoomId}`);
+      openChatRoom(data.chatRoomId);
       setStatus("ready");
     } catch (failure) { setError(failure.message); setStatus("error"); }
   }

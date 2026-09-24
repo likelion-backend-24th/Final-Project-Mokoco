@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { ArrowRight, ClipboardText, UserCircle, Wrench } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
 import LocationPermissionPrompt from "@/components/location-permission-prompt";
-import ChatWidget from "@/components/chat-widget";
 import { imageSrc } from "@/lib/backend";
 import { getNearbyPosts } from "@/lib/nearby-posts";
 import RegionScopeFilter from "@/components/region-scope-filter";
@@ -105,8 +104,6 @@ function UnifiedHome({ posts, error, userEmail, isAuthenticated, pagination, reg
               <Link href="/login" className="compact-primary-button w-full justify-center">로그인하기</Link>
             </section>
           )}
-
-          <ChatWidget isAuthenticated={isAuthenticated} />
 
           {isAuthenticated && (
             <section className="reference-card signed-in-card">
