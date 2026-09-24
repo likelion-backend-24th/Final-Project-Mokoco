@@ -7,41 +7,47 @@ import { UserCircle } from "@phosphor-icons/react/dist/ssr";
 import BrandLogo from "@/components/brand-logo";
 import NotificationBell from "@/components/notification-bell";
 import { useAuthStore } from "@/store/authStore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function SiteHeader({ userEmail: serverUserEmail }) {
   const pathname = usePathname();
-  const { userEmail: storeEmail, initAuth, setLogout } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
+  const { userEmail: storeEmail, accessToken, initAuth, setLogout } = useAuthStore();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [nickname, setNickname] = useState(null);
+  // 닉네임은 /api/users/me 응답이 오기 전까지 userEmail이 폴백으로 보여서 화면 전환마다
+  // 이메일이 잠깐 스쳐 지나가는데, 직전에 받아둔 값을 첫 렌더부터 바로 쓰면(지연 초기화) 그
+  // 틈이 없어진다 — effect에서 나중에 set하면 한 프레임 늦게 나타나 깜빡임이 남는다.
+  const [nickname, setNickname] = useState(() => {
+    if (typeof window === "undefined") return null;
+    try { return localStorage.getItem("nickname"); } catch { return null; }
+  });
+  // AuthInitializer가 토큰 재발급 실패 시 배경에서 조용히 setLogout()을 부르는데, 페이지 이동이
+  // 없으니 이 컴포넌트는 그대로 남아있다. 아래에서 serverUserEmail을 최우선으로 두는 이유는
+  // 첫 렌더에서 로그인 여부가 깜빡이지 않게 하기 위해서인데, 그 우선순위 때문에 로그아웃이
+  // 일어나도 헤더가 계속 로그인 상태로 보였다 — 세션 토큰이 있다가 사라지는 진짜 로그아웃
+  // 전환만 감지해서 그때는 serverUserEmail보다 우선하도록 별도로 추적한다.
+  const [loggedOut, setLoggedOut] = useState(false);
+  const hadAccessTokenRef = useRef(false);
 
   useEffect(() => {
-    setMounted(true);
+    if (accessToken) hadAccessTokenRef.current = true;
+    else if (hadAccessTokenRef.current) setLoggedOut(true);
+  }, [accessToken]);
+
+  useEffect(() => {
     initAuth();
-    // 닉네임은 아래 effect에서 /api/users/me로 매번 새로 조회하는데, 그 응답이 오기 전까지
-    // userEmail이 폴백으로 보여서 화면 전환마다 이메일이 잠깐 스쳐 지나간다. 직전에 받아둔
-    // 닉네임을 캐시해뒀다가 먼저 보여주면(네트워크 왕복 없이 즉시) 그 틈을 없앨 수 있다.
-    try {
-      const cached = localStorage.getItem("nickname");
-      if (cached) setNickname(cached);
-    } catch { /* 무시 */ }
   }, [initAuth]);
 
   const cookieEmail = typeof document !== "undefined"
     ? document.cookie.match(/user_email=([^;]+)/)?.[1] ? decodeURIComponent(document.cookie.match(/user_email=([^;]+)/)[1]) : null
     : null;
 
-  const userEmail = serverUserEmail || storeEmail || cookieEmail;
+  const userEmail = loggedOut ? null : (serverUserEmail || storeEmail || cookieEmail);
 
   // 관리자 메뉴 노출 여부 및 닉네임 표시 — 페이지마다 넘겨받을 필요 없이 헤더가 직접 확인한다.
+  // userEmail이 없을 땐 아래 JSX가 이 값들을 아예 안 쓰니 굳이 리셋할 필요가 없고(캐시된 닉네임
+  // 정리는 setLogout()이 이미 한다), 조회만 건너뛴다.
   useEffect(() => {
-    if (!userEmail) {
-      setIsAdmin(false);
-      setNickname(null);
-      try { localStorage.removeItem("nickname"); } catch { /* 무시 */ }
-      return;
-    }
+    if (!userEmail) return;
     let active = true;
     fetch("/api/users/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
@@ -84,7 +90,7 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
         {userEmail && (
           <Link href="/profile" className={`nav-link ${pathname.startsWith("/profile") ? "nav-link-active" : ""}`}>내 프로필</Link>
         )}
-        {isAdmin && (
+        {isAdmin && userEmail && (
           <Link href="/admin" className={`nav-link ${pathname.startsWith("/admin") ? "nav-link-active" : ""}`}>관리자</Link>
         )}
       </nav>
