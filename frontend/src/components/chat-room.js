@@ -169,12 +169,10 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
       <button type="button" onClick={goBack} className="chat-icon-button" aria-label="뒤로가기"><ArrowLeft size={22} /></button>
       <div className="conversation-mark"><Wrench size={24} weight="duotone" /></div>
       <div className="conversation-heading">
-        <span>동네수리 · 1:1 대화</span>
-        <h1>
-          {detail?.roomId === roomId && detail.postId
-            ? <Link href={`/posts/${detail.postId}`} className="conversation-post-link">{detail.postTitle || "글 보러 가기"}</Link>
-            : (nickname || "수리 상담")}
-        </h1>
+        <h1>{nickname || "수리 상담"}</h1>
+        {detail?.roomId === roomId && detail.postId
+          ? <Link href={`/posts/${detail.postId}`} className="conversation-post-link">{detail.postTitle || "글 보러 가기"}</Link>
+          : <span>동네수리 · 1:1 대화</span>}
       </div>
       {status !== "연결됨" && <span role="status" className="connection-status">{status}</span>}
       <div className="theme-menu-anchor" ref={themeMenuRef}>
@@ -212,7 +210,6 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
               </div>
             )}
             <div className="conversation-message">
-              {isGroupStart && !mine && <p className="message-sender">{nickname || "이웃"}</p>}
               <div className="message-bubble-row">
                 <div className={`message-bubble ${message.attachmentUrl ? "has-media" : ""} ${message.deleted ? "is-deleted" : ""}`}>
                   {message.attachmentUrl ? message.type === "VIDEO"
