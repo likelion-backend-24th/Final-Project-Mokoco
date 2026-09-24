@@ -53,11 +53,11 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
   const [more, setMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const clientRef = useRef(null);
   const bottom = useRef(null);
   const themeMenuRef = useRef(null);
   const pressTimer = useRef(null);
-  const touchDeleteFired = useRef(false);
 
   useEffect(() => () => { if (pressTimer.current) clearTimeout(pressTimer.current); }, []);
 
@@ -78,7 +78,6 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
     });
   }
   async function deleteMessage(messageId) {
-    if (!window.confirm("메시지를 삭제하시겠습니까? 상대방에게도 삭제된 메시지로 표시됩니다.")) return;
     setError("");
     try {
       const response = await fetch(`/api/chat-rooms/${roomId}/messages/${messageId}`, { method: "DELETE" });
@@ -87,23 +86,17 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
       merge([data]);
     } catch (failure) { setError(failure.message); }
   }
-  // 삭제 버튼을 따로 안 두고, 데스크톱은 우클릭, 모바일은 길게 눌렀을 때만 삭제를 물어본다.
+  // 삭제 버튼을 따로 안 두고, 데스크톱은 우클릭, 모바일은 길게 눌렀을 때 모달 안에서만
+  // 뜨는 확인 카드를 연다(브라우저 기본 confirm()은 전체 화면을 덮어서 안 씀).
   function startLongPress(messageId) {
-    touchDeleteFired.current = false;
-    pressTimer.current = setTimeout(() => {
-      touchDeleteFired.current = true;
-      deleteMessage(messageId);
-    }, 550);
+    pressTimer.current = setTimeout(() => setConfirmDeleteId(messageId), 550);
   }
   function cancelLongPress() {
     if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null; }
   }
   function handleContextMenu(event, messageId) {
     event.preventDefault();
-    // 모바일에서 롱프레스가 이미 삭제를 띄웠다면(브라우저가 그 제스처로 contextmenu도 같이
-    // 쏘는 경우가 있음) 확인창이 두 번 뜨지 않게 여기서는 건너뛴다.
-    if (touchDeleteFired.current) { touchDeleteFired.current = false; return; }
-    deleteMessage(messageId);
+    setConfirmDeleteId(messageId);
   }
   async function history(before) {
     const response = await fetch(`/api/chat-rooms/${roomId}/messages${before ? `?before=${before}` : ""}`, { cache: "no-store" });
@@ -273,6 +266,24 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
 
     {contractOpen && detail?.fixDealId && (
       <ContractModal roomId={roomId} onClose={() => setContractOpen(false)} />
+    )}
+
+    {confirmDeleteId != null && (
+      <div className="delete-confirm-overlay" onClick={() => setConfirmDeleteId(null)}>
+        <div className="delete-confirm-card" onClick={event => event.stopPropagation()}>
+          <p>메시지를 삭제하시겠습니까?<br />상대방에게도 삭제된 메시지로 표시됩니다.</p>
+          <div className="delete-confirm-actions">
+            <button type="button" onClick={() => setConfirmDeleteId(null)}>취소</button>
+            <button
+              type="button"
+              className="is-danger"
+              onClick={() => { deleteMessage(confirmDeleteId); setConfirmDeleteId(null); }}
+            >
+              삭제
+            </button>
+          </div>
+        </div>
+      </div>
     )}
 
     <footer className="conversation-footer">

@@ -1,5 +1,5 @@
 .conversation-overlay{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:20px}
-.conversation-shell{width:100%;max-width:420px;height:min(720px,85vh);display:flex;flex-direction:column;background:#fff;color:#282838;font-family:inherit;border:1px solid #ebe8f1;border-radius:26px;overflow:hidden;box-shadow:0 20px 60px #170f2840;animation:chat-shell-pop .2s cubic-bezier(.2,.8,.3,1)}
+.conversation-shell{position:relative;width:100%;max-width:420px;height:min(720px,85vh);display:flex;flex-direction:column;background:#fff;color:#282838;font-family:inherit;border:1px solid #ebe8f1;border-radius:26px;overflow:hidden;box-shadow:0 20px 60px #170f2840;animation:chat-shell-pop .2s cubic-bezier(.2,.8,.3,1)}
 @keyframes chat-shell-pop{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
 .conversation-header{display:flex;align-items:center;gap:14px;padding:24px 30px;background:linear-gradient(135deg,var(--chat-accent),var(--chat-hover));border-bottom:0;flex-shrink:0}
 .chat-icon-button{display:grid;place-items:center;width:36px;height:40px;border-radius:12px;color:#fff}.chat-icon-button:hover{background:#ffffff26}
@@ -15,6 +15,15 @@
 .deal-banner-wrap{display:flex;justify-content:center;padding:7px 20px;flex-shrink:0;background:#fff;border-top:1px solid #f5f3f8}
 .deal-fab{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:20px;padding:8px 16px;font-size:12.5px;font-weight:700;color:#fff;background:linear-gradient(135deg,#f0a02e,#dd7f0e);box-shadow:0 6px 16px #dd7f0e40;transition:background .15s,transform .15s;cursor:pointer}
 .deal-fab:hover{background:linear-gradient(135deg,#e3901f,#c67209);transform:translateY(-1px)}
+.delete-confirm-overlay{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:#1c1530a6;padding:24px}
+.delete-confirm-card{width:100%;max-width:260px;background:#fff;border-radius:16px;padding:18px;box-shadow:0 14px 34px #170f2840}
+.delete-confirm-card p{margin:0;font-size:13px;line-height:1.5;color:#514a5d;text-align:center}
+.delete-confirm-actions{display:flex;gap:8px;margin-top:14px}
+.delete-confirm-actions button{flex:1;border:0;border-radius:10px;padding:9px;font-size:13px;font-weight:700;cursor:pointer}
+.delete-confirm-actions button:first-child{background:#f0edf4;color:#514a5d}
+.delete-confirm-actions button:first-child:hover{background:#e6e1eb}
+.delete-confirm-actions button.is-danger{background:#e5484d;color:#fff}
+.delete-confirm-actions button.is-danger:hover{background:#c8383e}
 .conversation-error{padding:10px 24px;font-size:12px;color:#ac495a;background:#fff3f4}
 .conversation-messages{flex:1;min-height:0;overflow-y:auto;padding:8px 36px 28px;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#e5e1ee transparent}
 .conversation-date{display:flex;justify-content:center;margin:25px 0 30px}.conversation-date span{font-size:11px;font-weight:500;color:#aaa5b5;background:#faf9fc;padding:6px 14px;border-radius:20px}
