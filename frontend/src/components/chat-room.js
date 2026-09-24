@@ -142,7 +142,8 @@ export default function ChatRoom({ roomId }) {
     } catch { setError("전송하지 못했습니다. 다시 시도해주세요."); }
   }
 
-  return <main className="conversation-shell" data-theme={theme}>
+  return <div className="conversation-overlay" onClick={() => router.back()}>
+  <main className="conversation-shell" data-theme={theme} onClick={event => event.stopPropagation()}>
     <header className="conversation-header">
       <button type="button" onClick={() => router.back()} className="chat-icon-button" aria-label="뒤로가기"><ArrowLeft size={22} /></button>
       <div className="conversation-mark"><Wrench size={24} weight="duotone" /></div>
@@ -214,5 +215,6 @@ export default function ChatRoom({ roomId }) {
       </div>
       <p className="composer-hint">사진과 동영상으로 수리할 부분을 더 자세히 알려주세요.</p>
     </footer>
-  </main>;
+  </main>
+  </div>;
 }
