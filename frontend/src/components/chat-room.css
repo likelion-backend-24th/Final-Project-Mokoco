@@ -4,7 +4,8 @@
 .conversation-header{display:flex;align-items:center;gap:14px;padding:24px 30px;background:linear-gradient(135deg,var(--chat-accent),var(--chat-hover));border-bottom:0;flex-shrink:0}
 .chat-icon-button{display:grid;place-items:center;width:36px;height:40px;border-radius:12px;color:#fff}.chat-icon-button:hover{background:#ffffff26}
 .conversation-mark{display:grid;place-items:center;width:46px;height:46px;border-radius:17px;background:#ffffff2b;color:#fff}
-.conversation-heading{flex:1;min-width:0}.conversation-heading>span,.conversation-post-link{font-size:11px;letter-spacing:.06em;color:#ffffffb8;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.conversation-post-link{text-decoration:none}.conversation-post-link:hover{text-decoration:underline;color:#fff}.conversation-heading h1{font-size:19px;font-weight:750;letter-spacing:-.04em;margin-top:3px;color:#fff}.conversation-heading small{font-size:13px;font-weight:500;color:#ffffffa8;margin-left:5px}
+.conversation-heading{flex:1;min-width:0}.conversation-heading>span{font-size:11px;letter-spacing:.06em;color:#ffffffb8;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.conversation-heading h1{font-size:19px;font-weight:750;letter-spacing:-.04em;margin-top:3px;color:#fff}
+.conversation-post-link{color:inherit;text-decoration:none}.conversation-post-link:hover{text-decoration:underline}
 .connection-status{font-size:11px;color:#fff;background:#ffffff26;padding:6px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
 .theme-menu-anchor{position:relative;flex-shrink:0}
 .theme-menu-popover{position:absolute;top:46px;right:0;z-index:6;width:130px;background:#fff;border-radius:12px;padding:9px;box-shadow:0 14px 34px #170f2833;color:#282838}

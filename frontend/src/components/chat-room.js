@@ -169,10 +169,12 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
       <button type="button" onClick={goBack} className="chat-icon-button" aria-label="뒤로가기"><ArrowLeft size={22} /></button>
       <div className="conversation-mark"><Wrench size={24} weight="duotone" /></div>
       <div className="conversation-heading">
-        {detail?.roomId === roomId && detail.postId
-          ? <Link href={`/posts/${detail.postId}`} className="conversation-post-link">{detail.postTitle || "글 보러 가기"}</Link>
-          : <span>동네수리 · 1:1 대화</span>}
-        <h1>{nickname || "수리 상담"} <small>#{roomId}</small></h1>
+        <span>동네수리 · 1:1 대화</span>
+        <h1>
+          {detail?.roomId === roomId && detail.postId
+            ? <Link href={`/posts/${detail.postId}`} className="conversation-post-link">{detail.postTitle || "글 보러 가기"}</Link>
+            : (nickname || "수리 상담")}
+        </h1>
       </div>
       {status !== "연결됨" && <span role="status" className="connection-status">{status}</span>}
       <div className="theme-menu-anchor" ref={themeMenuRef}>
