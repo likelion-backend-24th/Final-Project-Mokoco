@@ -28,6 +28,10 @@ export default function ChatWidget() {
   const unreadChatCount = useNotificationStore(
     state => state.items.filter(n => n.type === "CHAT_MESSAGE" && !n.isRead).length
   );
+  // 목록에서 "어느 방에 새 메시지가 왔는지" 바로 보이도록 방 id 단위로 미읽음 여부를 묶어둔다.
+  const unreadRoomIds = useNotificationStore(state => new Set(
+    state.items.filter(n => n.type === "CHAT_MESSAGE" && !n.isRead && n.chatRoomId != null).map(n => n.chatRoomId)
+  ));
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -108,19 +112,27 @@ export default function ChatWidget() {
                 <p className="chat-widget-empty">아직 개설된 채팅방이 없습니다.</p>
               ) : (
                 <ul>
-                  {rooms.map(room => (
-                    <li key={room.chatRoomId}>
-                      <button type="button" onClick={() => openRoom(room.chatRoomId)} className="chat-widget-room-row">
-                        <div className="chat-widget-room-icon"><Wrench size={18} weight="duotone" /></div>
-                        <div className="chat-widget-room-text">
-                          <h3>{room.counterpartNickname || room.postTitle || "이웃"}</h3>
-                          <p>{room.lastMessage || "아직 메시지가 없습니다. 첫 인사를 건네보세요."}</p>
-                          <time>{formatTime(room.lastMessageAt || room.createdAt)}</time>
-                        </div>
-                        <ArrowRight size={16} weight="bold" />
-                      </button>
-                    </li>
-                  ))}
+                  {rooms.map(room => {
+                    const unread = unreadRoomIds.has(room.chatRoomId);
+                    return (
+                      <li key={room.chatRoomId}>
+                        <button
+                          type="button"
+                          onClick={() => openRoom(room.chatRoomId)}
+                          className={`chat-widget-room-row ${unread ? "is-unread" : ""}`}
+                        >
+                          <div className="chat-widget-room-icon"><Wrench size={18} weight="duotone" /></div>
+                          <div className="chat-widget-room-text">
+                            <h3>{room.counterpartNickname || "이웃"}{unread && <span className="chat-widget-unread-dot" aria-label="새 메시지" />}</h3>
+                            {room.postTitle && <p className="chat-widget-room-post">{room.postTitle}</p>}
+                            <p className="chat-widget-room-preview">{room.lastMessage || "아직 메시지가 없습니다. 첫 인사를 건네보세요."}</p>
+                            <time>{formatTime(room.lastMessageAt || room.createdAt)}</time>
+                          </div>
+                          <ArrowRight size={16} weight="bold" />
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
