@@ -29,8 +29,9 @@ const dealBannerLabel = {
   COMPLETED: "계약서 · 후기 보기 →",
 };
 
-export default function ChatRoom({ roomId }) {
+export default function ChatRoom({ roomId, embedded = false, onBack }) {
   const router = useRouter();
+  const goBack = onBack ?? (() => router.back());
   const [theme, selectTheme] = useChatTheme();
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
@@ -142,10 +143,9 @@ export default function ChatRoom({ roomId }) {
     } catch { setError("전송하지 못했습니다. 다시 시도해주세요."); }
   }
 
-  return <div className="conversation-overlay" onClick={() => router.back()}>
-  <main className="conversation-shell" data-theme={theme} onClick={event => event.stopPropagation()}>
+  const shell = <main className="conversation-shell" data-theme={theme} onClick={embedded ? undefined : event => event.stopPropagation()}>
     <header className="conversation-header">
-      <button type="button" onClick={() => router.back()} className="chat-icon-button" aria-label="뒤로가기"><ArrowLeft size={22} /></button>
+      <button type="button" onClick={goBack} className="chat-icon-button" aria-label="뒤로가기"><ArrowLeft size={22} /></button>
       <div className="conversation-mark"><Wrench size={24} weight="duotone" /></div>
       <div className="conversation-heading"><span>동네수리 · 1:1 대화</span><h1>{nickname || "수리 상담"} <small>#{roomId}</small></h1></div>
       <span role="status" className={`connection-status ${status === "연결됨" ? "is-connected" : ""}`}>{status}</span>
@@ -215,6 +215,8 @@ export default function ChatRoom({ roomId }) {
       </div>
       <p className="composer-hint">사진과 동영상으로 수리할 부분을 더 자세히 알려주세요.</p>
     </footer>
-  </main>
-  </div>;
+  </main>;
+
+  if (embedded) return shell;
+  return <div className="conversation-overlay" onClick={() => router.back()}>{shell}</div>;
 }
