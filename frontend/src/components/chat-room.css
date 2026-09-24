@@ -24,9 +24,7 @@
 .conversation-message{max-width:76%;min-width:0}
 .message-bubble-row{display:flex;align-items:flex-end;gap:6px}.is-mine .message-bubble-row{flex-direction:row-reverse}
 .message-side{display:flex;align-items:center;gap:3px;flex-shrink:0;padding-bottom:2px}.message-side time{font-size:10px;color:#aaa6b4;white-space:nowrap}
-.message-delete{border:0;display:grid;place-items:center;color:#aaa6b4;padding:3px;border-radius:5px;cursor:pointer;opacity:0;transition:opacity .15s}.message-delete:hover{color:#b94e68;background:#fbedf1}.message-delete:disabled{opacity:.4}
-.message-bubble-row:hover .message-delete,.message-bubble-row.is-active .message-delete,.message-delete:focus-visible{opacity:1}
-.is-mine .message-bubble:not(.is-deleted){cursor:pointer}
+.is-mine .message-bubble:not(.is-deleted){cursor:pointer;-webkit-touch-callout:none;user-select:none}
 .message-bubble{padding:7px 13px;background:#f5f3fa;border-radius:4px 16px 16px 16px;font-size:13.5px;line-height:1.45;letter-spacing:-.02em;white-space:pre-wrap;overflow-wrap:anywhere;width:fit-content}.is-mine .message-bubble{margin-left:auto;background:#eae5f5;color:#504164;border-radius:16px 4px 16px 16px}.message-bubble.is-deleted{background:#f8f7fa;color:#aaa5b3;font-size:12px;font-style:italic}.message-bubble.has-media{padding:5px;overflow:hidden}.message-bubble img,.message-bubble video{display:block;border-radius:13px;max-height:280px;max-width:100%;width:auto;object-fit:contain}
 .history-button{display:block;margin:12px auto;background:#faf9fc;border:1px solid #eeeaf3;border-radius:20px;padding:7px 16px;font-size:12px;color:#8a829b}
 .conversation-empty{min-height:240px;height:65%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#aca3bd;text-align:center}.conversation-empty h2{font-size:16px;color:#70677e;font-weight:600;margin:18px 0 7px}.conversation-empty p{font-size:12px;color:#a9a3b3}
@@ -45,7 +43,7 @@
 .message-bubble{background:#fff;color:var(--chat-ink);border:1px solid var(--chat-border);box-shadow:0 2px 4px #17202b05}
 .is-mine .message-bubble{background:var(--chat-accent);color:#fff;border-color:var(--chat-accent)}
 .message-bubble.is-deleted{background:var(--chat-soft);color:var(--chat-muted);border-color:var(--chat-border)}
-.message-side time,.message-delete{color:var(--chat-muted)}
+.message-side time{color:var(--chat-muted)}
 .conversation-date span{background:#ffffffb8;color:var(--chat-muted);border:1px solid var(--chat-border)}
 .conversation-avatar,.conversation-mark{background:var(--chat-soft);color:var(--chat-accent)}
 .message-send{background:var(--chat-accent)}.message-send:hover{background:var(--chat-hover)}.message-send:disabled{background:#cbc7d1}

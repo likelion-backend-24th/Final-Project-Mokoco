@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Client } from "@stomp/stompjs";
 import ChatAttachment from "@/components/chat-attachment";
 import ContractModal from "@/components/contract-modal";
-import { Trash, ArrowLeft, ArrowUp, ChatCircleDots, Gear, ShieldCheck, User, Wrench } from "@phosphor-icons/react";
+import { ArrowLeft, ArrowUp, ChatCircleDots, Gear, ShieldCheck, User, Wrench } from "@phosphor-icons/react";
 import "./chat-room.css";
 import { chatThemes, useChatTheme } from "@/components/chat-theme";
 
@@ -52,12 +52,14 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
   const nickname = counterpart?.roomId === roomId ? counterpart.nickname : "";
   const [more, setMore] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [deleting, setDeleting] = useState(null);
-  const [activeMessageId, setActiveMessageId] = useState(null);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const clientRef = useRef(null);
   const bottom = useRef(null);
   const themeMenuRef = useRef(null);
+  const pressTimer = useRef(null);
+  const touchDeleteFired = useRef(false);
+
+  useEffect(() => () => { if (pressTimer.current) clearTimeout(pressTimer.current); }, []);
 
   useEffect(() => {
     if (!themeMenuOpen) return;
@@ -77,14 +79,31 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
   }
   async function deleteMessage(messageId) {
     if (!window.confirm("메시지를 삭제하시겠습니까? 상대방에게도 삭제된 메시지로 표시됩니다.")) return;
-    setDeleting(messageId); setError("");
+    setError("");
     try {
       const response = await fetch(`/api/chat-rooms/${roomId}/messages/${messageId}`, { method: "DELETE" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       merge([data]);
     } catch (failure) { setError(failure.message); }
-    finally { setDeleting(null); }
+  }
+  // 삭제 버튼을 따로 안 두고, 데스크톱은 우클릭, 모바일은 길게 눌렀을 때만 삭제를 물어본다.
+  function startLongPress(messageId) {
+    touchDeleteFired.current = false;
+    pressTimer.current = setTimeout(() => {
+      touchDeleteFired.current = true;
+      deleteMessage(messageId);
+    }, 550);
+  }
+  function cancelLongPress() {
+    if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null; }
+  }
+  function handleContextMenu(event, messageId) {
+    event.preventDefault();
+    // 모바일에서 롱프레스가 이미 삭제를 띄웠다면(브라우저가 그 제스처로 contextmenu도 같이
+    // 쏘는 경우가 있음) 확인창이 두 번 뜨지 않게 여기서는 건너뛴다.
+    if (touchDeleteFired.current) { touchDeleteFired.current = false; return; }
+    deleteMessage(messageId);
   }
   async function history(before) {
     const response = await fetch(`/api/chat-rooms/${roomId}/messages${before ? `?before=${before}` : ""}`, { cache: "no-store" });
@@ -211,10 +230,14 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
               </div>
             )}
             <div className="conversation-message">
-              <div className={`message-bubble-row ${activeMessageId === message.messageId ? "is-active" : ""}`}>
+              <div className="message-bubble-row">
                 <div
                   className={`message-bubble ${message.attachmentUrl ? "has-media" : ""} ${message.deleted ? "is-deleted" : ""}`}
-                  onClick={mine && !message.deleted ? () => setActiveMessageId(id => id === message.messageId ? null : message.messageId) : undefined}
+                  onContextMenu={mine && !message.deleted ? event => handleContextMenu(event, message.messageId) : undefined}
+                  onTouchStart={mine && !message.deleted ? () => startLongPress(message.messageId) : undefined}
+                  onTouchEnd={mine && !message.deleted ? cancelLongPress : undefined}
+                  onTouchMove={mine && !message.deleted ? cancelLongPress : undefined}
+                  onTouchCancel={mine && !message.deleted ? cancelLongPress : undefined}
                 >
                   {message.attachmentUrl ? message.type === "VIDEO"
                     ? <video src={message.attachmentUrl} controls preload="metadata" />
@@ -226,7 +249,6 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
                 </div>
                 <div className="message-side">
                   <time>{date?.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
-                  {mine && !message.deleted && <button type="button" aria-label="메시지 삭제" title="메시지 삭제" disabled={deleting !== null} onClick={() => deleteMessage(message.messageId)} className="message-delete"><Trash size={14} /></button>}
                 </div>
               </div>
             </div>
