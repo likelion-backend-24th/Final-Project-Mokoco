@@ -3,7 +3,10 @@
 .chat-widget-fab:hover{transform:translateY(-2px);box-shadow:0 16px 34px #50336f66,0 2px 8px #29304d30}
 @media(max-width:600px){.chat-widget-fab{right:18px;bottom:22px;width:54px;height:54px}}
 
-.chat-widget-overlay{align-items:flex-end;justify-content:flex-end;padding:28px}
+/* 모바일(600px 이하)에서는 chat-room.css의 전체화면 규칙이 그대로 적용돼야 하므로,
+   버튼 위치에서 떠오르는 앵커링은 데스크톱 폭에서만 건다 — 안 그러면 이 파일이
+   chat-room.css보다 나중에 번들되면서 같은 우선순위로 모바일 전체화면 규칙을 덮어써버린다. */
+@media(min-width:601px){.chat-widget-overlay{align-items:flex-end;justify-content:flex-end;padding:28px}}
 
 .chat-widget-room-list{padding:6px 16px 20px}
 .chat-widget-room-row{display:flex;align-items:center;gap:12px;width:100%;padding:12px 8px;border-radius:14px;border:0;text-align:left;color:inherit;background:none;font:inherit;cursor:pointer;transition:background .12s}
