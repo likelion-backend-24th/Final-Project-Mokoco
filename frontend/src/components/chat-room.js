@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Client } from "@stomp/stompjs";
 import ChatAttachment from "@/components/chat-attachment";
 import ContractModal from "@/components/contract-modal";
-import { Trash, ArrowLeft, ArrowUp, ChatCircleDots, ShieldCheck, User, Wrench } from "@phosphor-icons/react";
+import { Trash, ArrowLeft, ArrowUp, ChatCircleDots, Gear, ShieldCheck, User, Wrench } from "@phosphor-icons/react";
 import "./chat-room.css";
 import { chatThemes, useChatTheme } from "@/components/chat-theme";
 
@@ -28,6 +28,14 @@ const dealBannerLabel = {
   REPAIR_DONE: "완료 확인하기 →",
   COMPLETED: "계약서 · 후기 보기 →",
 };
+// 떠 있는 작은 알약 버튼에는 위 문구가 너무 기니, 짧은 버전만 보여주고 전체 문구는 title/aria-label로 남긴다.
+const dealPillLabel = {
+  MATCHED: "계약서 작성",
+  PRODUCT_SENT: "진행 상황",
+  REPAIRING: "진행 상황",
+  REPAIR_DONE: "완료 확인",
+  COMPLETED: "계약서·후기",
+};
 
 export default function ChatRoom({ roomId, embedded = false, onBack }) {
   const router = useRouter();
@@ -45,8 +53,19 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
   const [more, setMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const clientRef = useRef(null);
   const bottom = useRef(null);
+  const themeMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!themeMenuOpen) return;
+    const onClick = event => {
+      if (themeMenuRef.current && !themeMenuRef.current.contains(event.target)) setThemeMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [themeMenuOpen]);
 
   function merge(rows) {
     setMessages(current => {
@@ -153,15 +172,20 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
           : <span>동네수리 · 1:1 대화</span>}
         <h1>{nickname || "수리 상담"} <small>#{roomId}</small></h1>
       </div>
-      <span role="status" className={`connection-status ${status === "연결됨" ? "is-connected" : ""}`}>{status}</span>
+      {status !== "연결됨" && <span role="status" className="connection-status">{status}</span>}
+      <div className="theme-menu-anchor" ref={themeMenuRef}>
+        <button type="button" onClick={() => setThemeMenuOpen(open => !open)} className="chat-icon-button" aria-label="채팅 테마 설정" aria-expanded={themeMenuOpen}><Gear size={18} /></button>
+        {themeMenuOpen && (
+          <div className="theme-menu-popover">
+            <label htmlFor="chat-theme">채팅 테마</label>
+            <select id="chat-theme" value={theme} onChange={event => selectTheme(event.target.value)}>
+              {chatThemes.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+            </select>
+            <p>내 화면에만 적용</p>
+          </div>
+        )}
+      </div>
     </header>
-    <div className="chat-theme-bar">
-      <label htmlFor="chat-theme">채팅 테마</label>
-      <select id="chat-theme" value={theme} onChange={event => selectTheme(event.target.value)}>
-        {chatThemes.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-      </select>
-      <span>내 화면에만 적용</span>
-    </div>
 
     {error && <p role="alert" className="conversation-error">{error}</p>}
     <div className="conversation-messages" role="log" aria-label="채팅 메시지" aria-live="polite">
@@ -207,12 +231,16 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
       })}<div ref={bottom} />
     </div>
     {detail?.roomId === roomId && detail.fixDealId && (
-      <div className="deal-banner-wrap">
-        <button type="button" onClick={() => setContractOpen(true)} className="deal-banner-action">
-          <ShieldCheck size={15} weight="fill" />
-          <span>{dealBannerLabel[detail.dealStatus] || "수리 계약서 작성하기"}</span>
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => setContractOpen(true)}
+        className="deal-fab"
+        title={dealBannerLabel[detail.dealStatus] || "수리 계약서 작성하기"}
+        aria-label={dealBannerLabel[detail.dealStatus] || "수리 계약서 작성하기"}
+      >
+        <ShieldCheck size={15} weight="fill" />
+        <span>{dealPillLabel[detail.dealStatus] || "계약서"}</span>
+      </button>
     )}
 
     {contractOpen && detail?.fixDealId && (
