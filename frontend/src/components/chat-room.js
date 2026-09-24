@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Client } from "@stomp/stompjs";
 import ChatAttachment from "@/components/chat-attachment";
 import ContractModal from "@/components/contract-modal";
-import { Trash, ArrowLeft, ArrowRight, ArrowUp, ChatCircleDots, ShieldCheck, User, Wrench } from "@phosphor-icons/react";
+import { Trash, ArrowLeft, ArrowUp, ChatCircleDots, ShieldCheck, User, Wrench } from "@phosphor-icons/react";
 import "./chat-room.css";
 import { chatThemes, useChatTheme } from "@/components/chat-theme";
 
@@ -147,7 +147,12 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
     <header className="conversation-header">
       <button type="button" onClick={goBack} className="chat-icon-button" aria-label="뒤로가기"><ArrowLeft size={22} /></button>
       <div className="conversation-mark"><Wrench size={24} weight="duotone" /></div>
-      <div className="conversation-heading"><span>동네수리 · 1:1 대화</span><h1>{nickname || "수리 상담"} <small>#{roomId}</small></h1></div>
+      <div className="conversation-heading">
+        {detail?.roomId === roomId && detail.postId
+          ? <Link href={`/posts/${detail.postId}`} className="conversation-post-link">{detail.postTitle || "글 보러 가기"}</Link>
+          : <span>동네수리 · 1:1 대화</span>}
+        <h1>{nickname || "수리 상담"} <small>#{roomId}</small></h1>
+      </div>
       <span role="status" className={`connection-status ${status === "연결됨" ? "is-connected" : ""}`}>{status}</span>
     </header>
     <div className="chat-theme-bar">
@@ -158,7 +163,6 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
       <span>내 화면에만 적용</span>
     </div>
 
-    <div className="conversation-banner"><ShieldCheck size={17} /><span>수리 범위와 일정을 이곳에서 함께 확인하세요.</span></div>
     {error && <p role="alert" className="conversation-error">{error}</p>}
     <div className="conversation-messages" role="log" aria-label="채팅 메시지" aria-live="polite">
       {more && <button className="history-button" disabled={loading} onClick={async () => {
@@ -202,13 +206,14 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
         </div>;
       })}<div ref={bottom} />
     </div>
-    {detail?.roomId === roomId && (detail.fixDealId
-      ? <button type="button" onClick={() => setContractOpen(true)} className="deal-banner deal-banner-action">
-          <ShieldCheck size={20} weight="fill" />
+    {detail?.roomId === roomId && detail.fixDealId && (
+      <div className="deal-banner-wrap">
+        <button type="button" onClick={() => setContractOpen(true)} className="deal-banner-action">
+          <ShieldCheck size={15} weight="fill" />
           <span>{dealBannerLabel[detail.dealStatus] || "수리 계약서 작성하기"}</span>
-          <ArrowRight size={18} weight="bold" />
         </button>
-      : <p className="deal-banner">견적 상담 중입니다. 이 견적이 채택되면 계약서를 작성할 수 있습니다.</p>)}
+      </div>
+    )}
 
     {contractOpen && detail?.fixDealId && (
       <ContractModal roomId={roomId} onClose={() => setContractOpen(false)} />
@@ -224,7 +229,6 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
           <button aria-label="메시지 전송" disabled={status !== "연결됨" || !text.trim()} className="message-send"><ArrowUp size={23} weight="bold" /></button>
         </form>
       </div>
-      <p className="composer-hint">사진과 동영상으로 수리할 부분을 더 자세히 알려주세요.</p>
     </footer>
   </main>;
 

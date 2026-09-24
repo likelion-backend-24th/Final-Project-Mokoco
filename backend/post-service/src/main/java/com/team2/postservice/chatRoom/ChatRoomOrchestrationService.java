@@ -8,6 +8,8 @@ import com.team2.postservice.common.exception.ErrorCode;
 import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
+import com.team2.postservice.post.entity.Post;
+import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
 import feign.FeignException;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatRoomOrchestrationService {
     private final ProposalRepository proposalRepository;
     private final FixDealRepository fixDealRepository;
+    private final PostRepository postRepository;
     private final UserClient userClient;
     private final ChatRoomClient chatRoomClient;
 
@@ -35,14 +38,14 @@ public class ChatRoomOrchestrationService {
         ChatRoomClient.ChatRoomInfo room = chatRoomClient.ensureRoomForProposal(
                 new ChatRoomClient.ProposalRoomContext(proposal.getId(), proposal.getPost().getId(),
                         participants.requesterId(), participants.repairerId()));
-        return ChatRoomResponse.from(room, dealStatus(proposal));
+        return ChatRoomResponse.from(room, dealStatus(proposal), proposal.getPost().getTitle());
     }
 
     public ChatRoomResponse getForProposal(Long proposalId, Long userId) {
         Proposal proposal = proposalRepository.findById(proposalId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROPOSAL_NOT_FOUND));
         authorize(proposal, userId);
-        return ChatRoomResponse.from(requireRoomByProposal(proposalId), dealStatus(proposal));
+        return ChatRoomResponse.from(requireRoomByProposal(proposalId), dealStatus(proposal), proposal.getPost().getTitle());
     }
 
     @Transactional
@@ -56,7 +59,7 @@ public class ChatRoomOrchestrationService {
         ChatRoomClient.ChatRoomInfo room = chatRoomClient.ensureRoomForProposal(
                 new ChatRoomClient.ProposalRoomContext(deal.getProposalId(), deal.getPostId(),
                         deal.getRequesterId(), deal.getRepairerId()));
-        return ChatRoomResponse.from(room, deal.getStatus().name());
+        return ChatRoomResponse.from(room, deal.getStatus().name(), tryPostTitle(deal.getPostId()));
     }
 
     public ChatRoomResponse getForFixDeal(Long fixDealId, Long userId) {
@@ -64,7 +67,7 @@ public class ChatRoomOrchestrationService {
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
         if (!deal.getRequesterId().equals(userId) && !deal.getRepairerId().equals(userId))
             throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_ACCESS);
-        return ChatRoomResponse.from(requireRoomByProposal(deal.getProposalId()), deal.getStatus().name());
+        return ChatRoomResponse.from(requireRoomByProposal(deal.getProposalId()), deal.getStatus().name(), tryPostTitle(deal.getPostId()));
     }
 
     public ChatRoomResponse detail(Long roomId, Long userId) {
@@ -78,7 +81,13 @@ public class ChatRoomOrchestrationService {
             throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_ACCESS);
         String dealStatus = room.fixDealId() == null ? null
                 : fixDealRepository.findById(room.fixDealId()).map(deal -> deal.getStatus().name()).orElse(null);
-        return ChatRoomResponse.from(room, dealStatus);
+        return ChatRoomResponse.from(room, dealStatus, tryPostTitle(room.postId()));
+    }
+
+    // 채팅창 헤더에 글 제목 링크를 보여주기 위한 best-effort 조회 — 글이 삭제됐어도 채팅 자체는 봐야 하므로 실패는 삼킨다.
+    private String tryPostTitle(Long postId) {
+        if (postId == null) return null;
+        return postRepository.findById(postId).map(Post::getTitle).orElse(null);
     }
 
     private ChatRoomClient.ChatRoomInfo requireRoomByProposal(Long proposalId) {

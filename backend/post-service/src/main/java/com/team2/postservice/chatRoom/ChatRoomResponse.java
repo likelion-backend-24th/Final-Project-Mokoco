@@ -9,9 +9,12 @@ public record ChatRoomResponse(
         Long fixDealId,
         Long proposalId,
         String dealStatus,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        Long postId,
+        String postTitle
 ) {
-    public static ChatRoomResponse from(ChatRoomClient.ChatRoomInfo room, String dealStatus) {
-        return new ChatRoomResponse(room.id(), room.fixDealId(), room.proposalId(), dealStatus, room.createdAt());
+    public static ChatRoomResponse from(ChatRoomClient.ChatRoomInfo room, String dealStatus, String postTitle) {
+        return new ChatRoomResponse(room.id(), room.fixDealId(), room.proposalId(), dealStatus, room.createdAt(),
+                room.postId(), postTitle);
     }
 }
