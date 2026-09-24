@@ -168,23 +168,34 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
       {messages.map((message, index) => {
         const mine = message.senderId === userId;
         const date = messageDate(message.createdAt);
-        const newDay = index === 0 || dayLabel(messages[index - 1].createdAt) !== dayLabel(message.createdAt);
+        const prev = messages[index - 1];
+        const newDay = index === 0 || dayLabel(prev.createdAt) !== dayLabel(message.createdAt);
+        // 같은 사람이 연달아 보낸 메시지는 닉네임/아바타를 맨 위 하나에만 보여준다.
+        const isGroupStart = newDay || !prev || prev.senderId !== message.senderId;
         return <div key={message.messageId}>
           {newDay && <div className="conversation-date"><span>{dayLabel(message.createdAt)}</span></div>}
-          <article className={`conversation-row ${mine ? "is-mine" : ""}`}>
-            {!mine && <div className="conversation-avatar" aria-hidden="true"><User size={21} weight="duotone" /></div>}
-            <div className="conversation-message">
-              <div className="message-meta"><span>{mine ? "나" : nickname || "이웃"}</span><time>{date?.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
-                {mine && !message.deleted && <button type="button" aria-label="메시지 삭제" title="메시지 삭제" disabled={deleting !== null} onClick={() => deleteMessage(message.messageId)} className="message-delete"><Trash size={14} /></button>}
+          <article className={`conversation-row ${mine ? "is-mine" : ""} ${isGroupStart ? "is-group-start" : ""}`}>
+            {!mine && (
+              <div className="conversation-avatar-slot">
+                {isGroupStart && <div className="conversation-avatar" aria-hidden="true"><User size={21} weight="duotone" /></div>}
               </div>
-              <div className={`message-bubble ${message.attachmentUrl ? "has-media" : ""} ${message.deleted ? "is-deleted" : ""}`}>
-                {message.attachmentUrl ? message.type === "VIDEO"
-                  ? <video src={message.attachmentUrl} controls preload="metadata" />
-                  : <a href={message.attachmentUrl} target="_blank" rel="noreferrer">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={message.attachmentUrl} alt="첨부 이미지" loading="lazy" />
-                  </a>
-                  : <p>{message.content}</p>}
+            )}
+            <div className="conversation-message">
+              {isGroupStart && !mine && <p className="message-sender">{nickname || "이웃"}</p>}
+              <div className="message-bubble-row">
+                <div className={`message-bubble ${message.attachmentUrl ? "has-media" : ""} ${message.deleted ? "is-deleted" : ""}`}>
+                  {message.attachmentUrl ? message.type === "VIDEO"
+                    ? <video src={message.attachmentUrl} controls preload="metadata" />
+                    : <a href={message.attachmentUrl} target="_blank" rel="noreferrer">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={message.attachmentUrl} alt="첨부 이미지" loading="lazy" />
+                    </a>
+                    : <p>{message.content}</p>}
+                </div>
+                <div className="message-side">
+                  <time>{date?.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</time>
+                  {mine && !message.deleted && <button type="button" aria-label="메시지 삭제" title="메시지 삭제" disabled={deleting !== null} onClick={() => deleteMessage(message.messageId)} className="message-delete"><Trash size={14} /></button>}
+                </div>
               </div>
             </div>
           </article>
