@@ -64,12 +64,12 @@ public class PostService {
             String email, PostCategory category, int page, int size, RegionScope regionScope) {
         if (page < 0 || size < 1 || size > 100 || (long) page * size > Integer.MAX_VALUE)
             throw new CustomException(ErrorCode.INVALID_INPUT);
-        // ALL(기본값)은 활동 지역 설정 여부와 무관하게 필터링 없이 전체를 보여준다.
-        // 다만 칩에 표시할 지역명은 있으면 보여주도록 best-effort로만 조회(없어도 에러 아님).
-        var region = email == null ? null
-                : regionScope == RegionScope.ALL ? postViewerService.tryRegion(email)
-                : postViewerService.requireRegion(email);
-        String regionPattern = regionScope == RegionScope.ALL ? null : regionScope.queryPattern(region.regionCode());
+        // 활동 지역을 아직 등록하지 않은 사용자도 있어(온보딩 프롬프트가 강제가 아니라 건너뛸 수 있음),
+        // ALL이 아닌 범위를 요청했더라도 지역이 없으면 에러 대신 필터 없이(전체) 보여준다.
+        // 칩에 표시할 지역명은 있으면 보여주도록 best-effort로만 조회(없어도 에러 아님).
+        var region = email == null ? null : postViewerService.tryRegion(email);
+        String regionPattern = regionScope == RegionScope.ALL || region == null
+                ? null : regionScope.queryPattern(region.regionCode());
         var pageable = PageRequest.of(page, size,
                 Sort.by(Sort.Direction.DESC, "createdAt", "id"));
         var posts = postRepository.findNearby(regionPattern, category == PostCategory.ALL ? null : category, pageable);
