@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChatCircleDots, ArrowRight, X, Wrench } from "@phosphor-icons/react";
 import ChatRoom from "@/components/chat-room";
 import { useChatWidgetStore } from "@/store/chatWidgetStore";
@@ -25,13 +25,18 @@ export default function ChatWidget() {
   const backToListAction = useChatWidgetStore(state => state.backToList);
   const closeAction = useChatWidgetStore(state => state.close);
   const openRoom = useChatWidgetStore(state => state.openRoom);
-  const unreadChatCount = useNotificationStore(
-    state => state.items.filter(n => n.type === "CHAT_MESSAGE" && !n.isRead).length
+  // items 자체(참조)만 구독하고, 파생값(Set 등)은 useMemo로 따로 계산한다 — 셀렉터가
+  // 매번 새 객체를 반환하면 useSyncExternalStore가 "항상 바뀐 값"으로 보고 무한 리렌더
+  // 루프에 빠진다(전역 마운트라 전 페이지가 그 여파로 멈춤).
+  const notificationItems = useNotificationStore(state => state.items);
+  const unreadChatCount = useMemo(
+    () => notificationItems.filter(n => n.type === "CHAT_MESSAGE" && !n.isRead).length,
+    [notificationItems]
   );
   // 목록에서 "어느 방에 새 메시지가 왔는지" 바로 보이도록 방 id 단위로 미읽음 여부를 묶어둔다.
-  const unreadRoomIds = useNotificationStore(state => new Set(
-    state.items.filter(n => n.type === "CHAT_MESSAGE" && !n.isRead && n.chatRoomId != null).map(n => n.chatRoomId)
-  ));
+  const unreadRoomIds = useMemo(() => new Set(
+    notificationItems.filter(n => n.type === "CHAT_MESSAGE" && !n.isRead && n.chatRoomId != null).map(n => n.chatRoomId)
+  ), [notificationItems]);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
