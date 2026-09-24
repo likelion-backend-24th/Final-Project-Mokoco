@@ -22,7 +22,6 @@ function dayLabel(value) {
 
 // 채팅에서 계약서 화면으로 넘어갈 때 지금 뭘 해야 하는지 바로 보이도록 배너 문구를 거래 상태별로 다르게 보여준다.
 const dealBannerLabel = {
-  MATCHED: "계약서 작성하고 결제하기 →",
   PRODUCT_SENT: "수리 진행 상황 보기 →",
   REPAIRING: "수리 진행 상황 보기 →",
   REPAIR_DONE: "완료 확인하기 →",
@@ -30,12 +29,25 @@ const dealBannerLabel = {
 };
 // 떠 있는 작은 알약 버튼에는 위 문구가 너무 기니, 짧은 버전만 보여주고 전체 문구는 title/aria-label로 남긴다.
 const dealPillLabel = {
-  MATCHED: "계약서 작성",
   PRODUCT_SENT: "진행 상황",
   REPAIRING: "진행 상황",
   REPAIR_DONE: "완료 확인",
   COMPLETED: "계약서·후기",
 };
+// MATCHED 상태는 "계약"이라는 큰 범주 안에서도 실제 진행 단계가 갈리므로(계약서가 아예
+// 없는지, 초안만 있는지, 서명 요청 중인지, 양측 서명까지 끝났는지) contractStatus로 더
+// 세분화한다 — 이미 만든 계약서를 또 "작성"하라고 하면 헷갈리니 "보기"로 바꿔준다.
+const matchedDealLabel = {
+  DRAFT: { banner: "계약서 초안 확인하기 →", pill: "계약서 보기" },
+  SIGNING: { banner: "계약서 서명하기 →", pill: "서명 대기중" },
+  SIGNED: { banner: "결제하고 수리 시작하기 →", pill: "결제하기" },
+};
+function dealLabels(detail) {
+  if (detail.dealStatus === "MATCHED") {
+    return matchedDealLabel[detail.contractStatus] || { banner: "계약서 작성하고 결제하기 →", pill: "계약서 작성" };
+  }
+  return { banner: dealBannerLabel[detail.dealStatus], pill: dealPillLabel[detail.dealStatus] };
+}
 
 export default function ChatRoom({ roomId, embedded = false, onBack }) {
   const router = useRouter();
@@ -50,6 +62,11 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
   const [counterpart, setCounterpart] = useState(null);
   const [detail, setDetail] = useState(null);
   const nickname = counterpart?.roomId === roomId ? counterpart.nickname : "";
+  // roomId가 바뀌면 아직 그 방의 데이터가 없으니(성공이든 실패든 응답이 오기 전까지는) 로딩
+  // 상태로 본다 — 위젯은 방을 바꿔도 ChatRoom이 리마운트되지 않아 effect 안에서 직접
+  // setState로 리셋할 수 없으므로, roomId 일치 여부로 로딩 여부를 도출한다.
+  const counterpartLoading = counterpart?.roomId !== roomId;
+  const detailLoading = detail?.roomId !== roomId;
   const [more, setMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
@@ -132,7 +149,13 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
         fetch(`/api/chat-rooms/${roomId}/counterpart`, { cache: "no-store" })
           .then(async response => { const data = await response.json(); if (!response.ok) throw new Error(data.error); return data; })
           .then(data => { if (active) setCounterpart({ roomId, nickname: data.nickname?.trim() || "이웃" }); })
-          .catch(failure => { if (active) setError(failure.message); });
+          .catch(failure => {
+            if (!active) return;
+            setError(failure.message);
+            // 실패해도 이 방에 대한 응답은 왔으니 로딩(스켈레톤)은 끝내되, 이전 방 데이터가
+            // 남아 화면에 잘못 보이지 않도록 닉네임은 비워 "수리 상담" 기본값으로 떨어뜨린다.
+            setCounterpart(prev => (prev?.roomId === roomId ? prev : { roomId, nickname: null }));
+          });
         client.subscribe(`/topic/chat/${roomId}`, frame => {
           if (active) merge([JSON.parse(frame.body)]);
         });
@@ -159,7 +182,9 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
       fetch(`/api/chat-rooms/${roomId}/detail`, { cache: "no-store" })
         .then(async response => { const data = await response.json(); if (!response.ok) throw new Error(data.error); return data; })
         .then(data => { if (active) setDetail({ roomId, ...data }); })
-        .catch(() => {});
+        // 실패해도 이 방에 대한 응답은 왔으니 로딩(스켈레톤)은 끝내되, 포커스 재조회 실패로
+        // 기존에 이미 불러온 이 방의 데이터를 지우지는 않는다.
+        .catch(() => { if (active) setDetail(prev => (prev?.roomId === roomId ? prev : { roomId })); });
     }
     loadDetail();
     window.addEventListener("focus", loadDetail);
@@ -182,10 +207,16 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
       <button type="button" onClick={goBack} className="chat-icon-button" aria-label="뒤로가기"><ArrowLeft size={22} /></button>
       <div className="conversation-mark"><Wrench size={24} weight="duotone" /></div>
       <div className="conversation-heading">
-        <h1>{nickname || "수리 상담"}</h1>
-        {detail?.roomId === roomId && detail.postId
-          ? <Link href={`/posts/${detail.postId}`} className="conversation-post-link">{detail.postTitle || "글 보러 가기"}</Link>
-          : <span>동네수리 · 1:1 대화</span>}
+        {counterpartLoading
+          ? <div className="heading-skeleton heading-skeleton-title" aria-hidden="true" />
+          : <h1>{nickname || "수리 상담"}</h1>}
+        {detailLoading ? (
+          <div className="heading-skeleton heading-skeleton-sub" aria-hidden="true" />
+        ) : detail?.roomId === roomId && detail.postId ? (
+          <Link href={`/posts/${detail.postId}`} className="conversation-post-link">{detail.postTitle || "글 보러 가기"}</Link>
+        ) : (
+          <span>동네수리 · 1:1 대화</span>
+        )}
       </div>
       {status !== "연결됨" && <span role="status" className="connection-status">{status}</span>}
       <div className="theme-menu-anchor" ref={themeMenuRef}>
@@ -249,20 +280,23 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
         </div>;
       })}<div ref={bottom} />
     </div>
-    {hasDealFab && (
-      <div className="deal-banner-wrap">
-        <button
-          type="button"
-          onClick={() => setContractOpen(true)}
-          className="deal-fab"
-          title={dealBannerLabel[detail.dealStatus] || "수리 계약서 작성하기"}
-          aria-label={dealBannerLabel[detail.dealStatus] || "수리 계약서 작성하기"}
-        >
-          <ShieldCheck size={15} weight="fill" />
-          <span>{dealPillLabel[detail.dealStatus] || "계약서"}</span>
-        </button>
-      </div>
-    )}
+    {hasDealFab && (() => {
+      const { banner, pill } = dealLabels(detail);
+      return (
+        <div className="deal-banner-wrap">
+          <button
+            type="button"
+            onClick={() => setContractOpen(true)}
+            className="deal-fab"
+            title={banner || "수리 계약서 작성하기"}
+            aria-label={banner || "수리 계약서 작성하기"}
+          >
+            <ShieldCheck size={15} weight="fill" />
+            <span>{pill || "계약서"}</span>
+          </button>
+        </div>
+      );
+    })()}
 
     {contractOpen && detail?.fixDealId && (
       <ContractModal roomId={roomId} onClose={() => setContractOpen(false)} />

@@ -5,6 +5,8 @@ import com.team2.postservice.client.ChatRoomClient;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.common.exception.ErrorCode;
+import com.team2.postservice.contract.ContractRepository;
+import com.team2.postservice.contract.RepairContract;
 import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
@@ -27,6 +29,7 @@ public class ChatRoomOrchestrationService {
     private final ProposalRepository proposalRepository;
     private final FixDealRepository fixDealRepository;
     private final PostRepository postRepository;
+    private final ContractRepository contractRepository;
     private final UserClient userClient;
     private final ChatRoomClient chatRoomClient;
 
@@ -81,7 +84,9 @@ public class ChatRoomOrchestrationService {
             throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_ACCESS);
         String dealStatus = room.fixDealId() == null ? null
                 : fixDealRepository.findById(room.fixDealId()).map(deal -> deal.getStatus().name()).orElse(null);
-        return ChatRoomResponse.from(room, dealStatus, tryPostTitle(room.postId()));
+        String contractStatus = contractRepository.findFirstByChatRoomIdOrderByRevisionDesc(roomId)
+                .map(RepairContract::getStatus).orElse(null);
+        return ChatRoomResponse.from(room, dealStatus, contractStatus, tryPostTitle(room.postId()));
     }
 
     // 채팅창 헤더에 글 제목 링크를 보여주기 위한 best-effort 조회 — 글이 삭제됐어도 채팅 자체는 봐야 하므로 실패는 삼킨다.

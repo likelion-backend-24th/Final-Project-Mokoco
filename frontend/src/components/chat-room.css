@@ -7,6 +7,10 @@
 .conversation-heading{flex:1;min-width:0}.conversation-heading h1{font-size:19px;font-weight:750;letter-spacing:-.04em;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .conversation-heading>span,.conversation-post-link{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px;font-size:14px;font-weight:500;color:#ffffffc0}
 .conversation-post-link{text-decoration:none}.conversation-post-link:hover{text-decoration:underline;color:#fff}
+.heading-skeleton{background:#ffffff40;border-radius:6px;animation:heading-skeleton-pulse 1.2s ease-in-out infinite}
+.heading-skeleton-title{width:100px;height:17px;margin-bottom:5px}
+.heading-skeleton-sub{width:140px;height:13px;margin-top:4px}
+@keyframes heading-skeleton-pulse{0%,100%{opacity:.6}50%{opacity:.2}}
 .connection-status{font-size:11px;color:#fff;background:#ffffff26;padding:6px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
 .theme-menu-anchor{position:relative;flex-shrink:0}
 .theme-menu-popover{position:absolute;top:46px;right:0;z-index:6;width:130px;background:#fff;border-radius:12px;padding:9px;box-shadow:0 14px 34px #170f2833;color:#282838}
