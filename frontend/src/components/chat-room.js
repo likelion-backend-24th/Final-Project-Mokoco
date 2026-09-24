@@ -53,6 +53,7 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
   const [more, setMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [activeMessageId, setActiveMessageId] = useState(null);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const clientRef = useRef(null);
   const bottom = useRef(null);
@@ -210,8 +211,11 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
               </div>
             )}
             <div className="conversation-message">
-              <div className="message-bubble-row">
-                <div className={`message-bubble ${message.attachmentUrl ? "has-media" : ""} ${message.deleted ? "is-deleted" : ""}`}>
+              <div className={`message-bubble-row ${activeMessageId === message.messageId ? "is-active" : ""}`}>
+                <div
+                  className={`message-bubble ${message.attachmentUrl ? "has-media" : ""} ${message.deleted ? "is-deleted" : ""}`}
+                  onClick={mine && !message.deleted ? () => setActiveMessageId(id => id === message.messageId ? null : message.messageId) : undefined}
+                >
                   {message.attachmentUrl ? message.type === "VIDEO"
                     ? <video src={message.attachmentUrl} controls preload="metadata" />
                     : <a href={message.attachmentUrl} target="_blank" rel="noreferrer">
