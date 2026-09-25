@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Wrench, Upload, X, Sparkle } from "@phosphor-icons/react";
 import Link from "next/link";
 import { backendUrl, imageSrc } from "@/lib/backend";
 import { plainTextToHtml } from "@/lib/plain-text-to-html";
+import { htmlToText } from "@/lib/html-to-text";
 import PostAiAssist from "./post-ai-assist";
 import RichTextEditor from "./rich-text-editor";
 
@@ -22,7 +23,6 @@ const MAX_AI_REVISIONS = 3;
 
 export default function PostForm({ postId, initialValue, accessToken }) {
   const router = useRouter();
-  const editorRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -41,10 +41,9 @@ export default function PostForm({ postId, initialValue, accessToken }) {
   const isEdit = Boolean(postId);
 
   // "사진으로 작성 도움받기"로 AI 초안을 한 번 만들면 세션(draftId)이 열리고, 그 안에서
-  // 본문 중 선택한 문장만 다시 써달라고 최대 3번까지 요청할 수 있다.
+  // 작성된 글 전체를 지시사항에 맞게 다시 써달라고 최대 3번까지 요청할 수 있다.
   const [aiDraftId, setAiDraftId] = useState(null);
   const [remainingRevisions, setRemainingRevisions] = useState(MAX_AI_REVISIONS);
-  const [aiSelection, setAiSelection] = useState(null);
   const [aiInstruction, setAiInstruction] = useState("");
   const [aiRevisionBusy, setAiRevisionBusy] = useState(false);
 
@@ -105,23 +104,21 @@ export default function PostForm({ postId, initialValue, accessToken }) {
     }
   }
 
-  function handleSelectionChange(selection) {
-    setAiSelection(selection);
-  }
-
   function cancelAiRevision() {
     if (aiRevisionBusy) return;
     setAiInstruction("");
-    setAiSelection(null);
   }
 
-  async function reviseSelectedText() {
+  // 문장을 드래그로 선택해야만 쓸 수 있던 이전 방식 대신, 지시사항만 적으면 작성된 글 전체를
+  // 다시 써준다 — 선택 상태를 추적/기억할 필요가 없어 훨씬 단순하고 안정적이다.
+  async function reviseContent() {
     if (aiRevisionBusy) return;
-    if (!aiDraftId) { setMessage("먼저 사진을 분석하면 문장 다듬기를 쓸 수 있어요."); return; }
-    if (!aiSelection?.text?.trim()) { setMessage("AI로 다듬을 문장을 선택해주세요."); return; }
+    if (!aiDraftId) { setMessage("먼저 사진을 분석하면 글 다듬기를 쓸 수 있어요."); return; }
     if (remainingRevisions <= 0) { setMessage("AI 부분 수정 횟수를 모두 사용했습니다."); return; }
     const instruction = aiInstruction.trim();
     if (!instruction) { setMessage("어떻게 고칠지 요청 내용을 입력해주세요."); return; }
+    const plainContent = htmlToText(content);
+    if (!plainContent) { setMessage("먼저 내용을 입력해주세요."); return; }
 
     setAiRevisionBusy(true);
     setMessage("");
@@ -129,32 +126,20 @@ export default function PostForm({ postId, initialValue, accessToken }) {
       const response = await fetch("/api/ai/post-revise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          draftId: aiDraftId,
-          selectedText: aiSelection.text,
-          contextBefore: aiSelection.contextBefore || "",
-          contextAfter: aiSelection.contextAfter || "",
-          instruction,
-        }),
+        body: JSON.stringify({ draftId: aiDraftId, content: plainContent, instruction }),
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
-        setMessage(payload?.message || "AI 부분 수정에 실패했습니다. 직접 수정해주세요.");
+        setMessage(payload?.message || "AI 글 다듬기에 실패했습니다. 직접 수정해주세요.");
         return;
       }
-      const replacement = payload?.replacement;
-      if (!replacement?.trim()) {
+      if (!payload?.content?.trim()) {
         setMessage("AI가 수정 결과를 만들지 못했습니다. 다시 시도해주세요.");
         return;
       }
-      const replaced = editorRef.current?.replaceSelection?.(replacement, aiSelection);
-      if (replaced === false) {
-        setMessage("선택한 문장이 바뀌었습니다. 다시 선택해주세요.");
-        return;
-      }
+      setContent(plainTextToHtml(payload.content));
       if (typeof payload.remainingRevisions === "number") setRemainingRevisions(payload.remainingRevisions);
       setAiInstruction("");
-      setAiSelection(null);
     } catch {
       setMessage("AI 서버와 통신할 수 없습니다. 입력 내용은 유지됩니다.");
     } finally {
@@ -335,7 +320,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
               </strong>
               <span className="text-xs font-medium text-violet-700">남은 수정 {remainingRevisions} / {MAX_AI_REVISIONS}</span>
             </div>
-            <p className="mt-1 text-xs text-slate-500">본문에서 고치고 싶은 문장을 선택한 뒤 어떻게 고칠지 적어주세요.</p>
+            <p className="mt-1 text-xs text-slate-500">어떻게 고칠지 적으면 AI가 위 내용 전체를 다시 써줘요.</p>
 
             <div className="mb-3 mt-3 flex flex-wrap gap-2">
               <button type="button" onClick={() => setAiInstruction("더 자연스럽고 읽기 쉽게 고쳐줘")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-50">자연스럽게</button>
@@ -347,7 +332,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
               onChange={(event) => setAiInstruction(event.target.value)}
               rows={3}
               maxLength={500}
-              placeholder="예: 증상이 좀 더 잘 드러나도록 자연스럽게 써줘"
+              placeholder="예: 아이폰14프로라는 것을 강조해줘"
               disabled={aiRevisionBusy}
               className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm text-slate-800 outline-none transition focus:border-violet-500 disabled:bg-slate-50"
             />
@@ -355,7 +340,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
               <button type="button" onClick={cancelAiRevision} disabled={aiRevisionBusy} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50">취소</button>
               <button
                 type="button"
-                onClick={reviseSelectedText}
+                onClick={reviseContent}
                 disabled={aiRevisionBusy || !aiInstruction.trim() || remainingRevisions <= 0}
                 className="flex items-center gap-1 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -363,6 +348,12 @@ export default function PostForm({ postId, initialValue, accessToken }) {
                 {aiRevisionBusy ? "수정 중..." : "수정하기"}
               </button>
             </div>
+            {/* 이 카드가 본문 위에 있어서, 에러가 폼 맨 아래에만 뜨면 안 보이고 지나칠 수 있다. */}
+            {message && (
+              <div className="mt-3 rounded-xl bg-red-50 p-3 text-center text-sm font-medium text-red-600">
+                {message}
+              </div>
+            )}
           </div>
         </section>
 
@@ -384,10 +375,8 @@ export default function PostForm({ postId, initialValue, accessToken }) {
         <label className="form-field">
           <span>내용</span>
           <RichTextEditor
-            ref={editorRef}
             value={content}
             onChange={setContent}
-            onSelectionChange={handleSelectionChange}
             placeholder="어떤 도움이 필요한지 자세히 적어주세요"
           />
         </label>

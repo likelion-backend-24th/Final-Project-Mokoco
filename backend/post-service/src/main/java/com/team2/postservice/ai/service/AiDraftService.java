@@ -61,9 +61,10 @@ public class AiDraftService {
         return response;
     }
 
-    // 본문 중 사용자가 선택한 문장만 지시사항에 맞게 다시 쓴다. Gemini 호출처럼 느린 외부 요청
-    // 동안 DB 트랜잭션(행 잠금)을 들고 있지 않도록, "자리 예약"(원자적 UPDATE)과 "실제 생성"을
-    // 분리한다 — 실패하면 예약한 자리를 환불해서 사용자가 실패한 시도로 횟수를 잃지 않게 한다.
+    // 본문 전체를 지시사항에 맞게 다시 쓴다(문장을 드래그로 선택해야 하는 방식은 사용성이
+    // 나빠서 뺐다 — 이제 사용자는 "어떻게 고칠지"만 적으면 된다). Gemini 호출처럼 느린 외부
+    // 요청 동안 DB 트랜잭션(행 잠금)을 들고 있지 않도록, "자리 예약"(원자적 UPDATE)과
+    // "실제 생성"을 분리한다 — 실패하면 예약한 자리를 환불해서 실패한 시도로 횟수를 잃지 않게 한다.
     public JsonNode revise(Long userId, PostRevisionRequest request) {
         AiPostDraft draft = postDrafts.findByIdAndUserId(request.draftId(), userId)
                 .orElseThrow(() -> new AiException(HttpStatus.NOT_FOUND, "AI_DRAFT_NOT_FOUND", "AI 초안을 찾을 수 없습니다. 다시 생성해주세요."));
@@ -74,33 +75,30 @@ public class AiDraftService {
 
         boolean consumed = false;
         try {
-            String before = Objects.requireNonNullElse(request.contextBefore(), "").trim();
-            String after = Objects.requireNonNullElse(request.contextAfter(), "").trim();
-            String selected = request.selectedText().trim();
+            String content = request.content().trim();
             String instruction = request.instruction().trim();
-            if (selected.isBlank() || instruction.isBlank()) throw AiException.input("선택한 문장과 수정 요청을 확인해주세요.");
+            if (content.isBlank() || instruction.isBlank()) throw AiException.input("내용과 수정 요청을 확인해주세요.");
 
             gemini.requireAvailable();
             limit.acquire(userId);
 
-            Map<String, Object> input = Map.of(
-                    "contextBefore", before, "selectedText", selected, "contextAfter", after, "userInstruction", instruction);
+            Map<String, Object> input = Map.of("currentContent", content, "userInstruction", instruction);
 
             var generated = gemini.generate(
                     COMMON
-                            + " 사용자가 선택한 문장만 요청에 맞게 고치세요. 앞뒤 문맥과 자연스럽게 이어져야 합니다. "
+                            + " 사용자의 지시사항에 맞게 글 전체를 다시 쓰세요. 기존 글의 핵심 정보(증상, 상황)는 유지하고, "
                             + "새 사실, 가격, 고장 원인 또는 수리 가능 여부를 만들지 마세요. "
-                            + "HTML 태그나 마크다운, 설명을 넣지 말고 replacement에 순수 텍스트로 대체 문장만 반환하세요.",
+                            + "HTML 태그나 마크다운, 설명을 넣지 말고 content에 순수 텍스트로 전체 글만 반환하세요. 800자 이내로 작성하세요.",
                     List.of(Map.of("text", input.toString())),
-                    objectSchema(Map.of("replacement", textSchema(800))));
+                    objectSchema(Map.of("content", textSchema(800))));
 
-            String replacement = text(generated.path("replacement"), 800, false).trim();
-            if (replacement.isBlank()) throw AiException.output();
+            String revised = text(generated.path("content"), 800, false).trim();
+            if (revised.isBlank()) throw AiException.output();
 
             consumed = true;
             int remaining = postDrafts.findById(request.draftId()).map(AiPostDraft::remainingRevisions).orElse(0);
             ObjectNode response = mapper.createObjectNode();
-            response.put("replacement", replacement);
+            response.put("content", revised);
             response.put("remainingRevisions", remaining);
             return response;
         } finally {
