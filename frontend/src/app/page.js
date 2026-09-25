@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { ArrowRight, ClipboardText, UserCircle, Wrench } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, CaretRight, ClipboardText, HandHeart, Wrench } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
 import LocationPermissionPrompt from "@/components/location-permission-prompt";
 import { imageSrc } from "@/lib/backend";
 import { getNearbyPosts } from "@/lib/nearby-posts";
+import { getMyActiveDeals } from "@/lib/active-deals";
 import { htmlToText } from "@/lib/html-to-text";
 import RegionScopeFilter from "@/components/region-scope-filter";
 import { normalizeRegionScope, regionListHref } from "@/lib/region-scope";
+
+const dealStatusLabel = { MATCHED: "매칭 완료", REPAIRING: "수리 진행중", REPAIR_DONE: "수리완료 신청됨" };
+const dealRoleLabel = { requester: "의뢰자", repairer: "수리자" };
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -69,7 +73,42 @@ function PostList({ posts, error, postHref }) {
   );
 }
 
-function UnifiedHome({ posts, error, userEmail, isAuthenticated, pagination, regionScope }) {
+function ActiveDealsCard({ deals }) {
+  return (
+    <section className="reference-card activity-card">
+      <div className="reference-card-heading">
+        <h2>내 진행 중인 거래</h2>
+        <Link href="/profile">전체 보기 <ArrowRight size={14} /></Link>
+      </div>
+      {deals.length === 0 ? (
+        <>
+          <p>아직 진행 중인 거래가 없어요. 주변 수리 요청을 둘러보고 제안해보세요.</p>
+          <Link href={"/posts"} className="wide-outline-button">주변 요청 보기</Link>
+        </>
+      ) : (
+        <ul className="active-deal-list">
+          {deals.map((deal) => (
+            <li key={`${deal.role}-${deal.fixDealId}`}>
+              <Link href={deal.chatRoomId ? `/chat-rooms/${deal.chatRoomId}` : `/posts/${deal.postId}`} className="active-deal-row">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="status-badge status-matched">{dealStatusLabel[deal.status] ?? deal.status}</span>
+                    <span className="text-xs text-slate-400">{dealRoleLabel[deal.role]}</span>
+                  </div>
+                  <p className="truncate font-semibold text-slate-800">{deal.postTitle}</p>
+                  <p className="text-sm text-slate-500">상대방: {deal.counterpartNickname || deal.counterpartEmail}</p>
+                </div>
+                <CaretRight size={16} className="shrink-0 text-slate-300" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function UnifiedHome({ posts, error, userEmail, isAuthenticated, pagination, regionScope, activeDeals }) {
   return (
     <main className="page-shell auth-main">
       {isAuthenticated && <LocationPermissionPrompt userEmail={userEmail} />}
@@ -83,33 +122,25 @@ function UnifiedHome({ posts, error, userEmail, isAuthenticated, pagination, reg
             </div>
             <PostList posts={posts} error={error} postHref={isAuthenticated ? "/posts/new" : "/login"} />
           </section>
-          <section className="reference-card">
-            <div className="reference-card-heading"><h2>{isAuthenticated ? "선택한 지역의 요청 현황" : "전체 수리 요청 현황"}</h2></div>
-            <div className="neighborhood-summary">
-              <Wrench size={38} weight="duotone" />
-              <div><strong>{error ? "확인 불가" : `${pagination?.totalElements ?? 0}건`}</strong><span>{isAuthenticated ? "활동 지역에서 제안을 기다리는 공개 요청" : ""}</span></div>
-            </div>
-          </section>
+          {!isAuthenticated && (
+            <section className="reference-card">
+              <div className="reference-card-heading"><h2>전체 수리 요청 현황</h2></div>
+              <div className="neighborhood-summary">
+                <Wrench size={38} weight="duotone" />
+                <div><strong>{error ? "확인 불가" : `${pagination?.totalElements ?? 0}건`}</strong></div>
+              </div>
+            </section>
+          )}
         </div>
         <aside className="dashboard-column">
           {isAuthenticated ? (
-            <section className="reference-card activity-card">
-              <h2>내 활동 요약</h2>
-              <p>활동 지역의 공개 수리 요청을 확인하고 이웃에게 제안해보세요.</p>
-              <Link href={regionListHref({ regionScope })} className="wide-outline-button">주변 요청 보기</Link>
-            </section>
+            <ActiveDealsCard deals={activeDeals} />
           ) : (
             <section className="reference-card activity-card text-center py-8">
+              <HandHeart size={40} weight="duotone" className="mx-auto mb-2 text-blue-500" />
               <h2 className="mb-2">로그인하고 더 많은 기능을 이용해보세요</h2>
               <p className="text-sm text-slate-500 mb-4">내 수리 요청 현황을 관리하고 이웃과 소통할 수 있습니다.</p>
               <Link href="/login" className="compact-primary-button w-full justify-center">로그인하기</Link>
-            </section>
-          )}
-
-          {isAuthenticated && (
-            <section className="reference-card signed-in-card">
-              <UserCircle size={28} weight="duotone" />
-              <div><span>로그인 계정</span><strong>{userEmail}</strong></div>
             </section>
           )}
         </aside>
@@ -126,11 +157,17 @@ export default async function Home({ searchParams }) {
   
   const isAuthenticated = Boolean(userEmail && accessToken);
 
-  const { posts, error, pagination } = await getNearbyPosts(accessToken, "ALL", 0, 5, regionScope);
+  const [{ posts, error, pagination }, activeDeals] = await Promise.all([
+    getNearbyPosts(accessToken, "ALL", 0, 5, regionScope),
+    isAuthenticated ? getMyActiveDeals(accessToken) : Promise.resolve([]),
+  ]);
   return (
     <div className="min-h-screen bg-[#f7f9fc]">
       <SiteHeader userEmail={isAuthenticated ? userEmail : null} />
-      <UnifiedHome regionScope={regionScope} pagination={pagination} posts={posts} error={error} userEmail={userEmail} isAuthenticated={isAuthenticated} />
+      <UnifiedHome
+        regionScope={regionScope} pagination={pagination} posts={posts} error={error}
+        userEmail={userEmail} isAuthenticated={isAuthenticated} activeDeals={activeDeals}
+      />
     </div>
   );
 }
