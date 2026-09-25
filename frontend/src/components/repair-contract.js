@@ -47,7 +47,10 @@ function SignatureForm({ version, consentText, busy, onSign }) {
   </form>;
 }
 
-export default function RepairContract({ roomId, embedded = false }) {
+// hideActions: 프로필 거래 카드처럼 결제/작업진행 액션을 보여주는 별도 진행상황판(ContractActionCard)이
+// 이미 같은 화면에 있는 곳에서는, 계약서 자체(문서·서명)만 보여주고 서명 완료 이후 액션 섹션은 숨긴다
+// (안 그러면 결제 버튼 등이 두 곳에 중복으로 뜬다).
+export default function RepairContract({ roomId, embedded = false, hideActions = false }) {
   const [overview, setOverview] = useState(null);
   const [userId, setUserId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
@@ -213,7 +216,7 @@ export default function RepairContract({ roomId, embedded = false }) {
         {isLatest && selected.status === "DRAFT" && <button className="contract-primary contract-controls" disabled={busy || userId === null} onClick={() => mutate("request", { versionId: selected.id })}>이 버전으로 양측 서명 요청</button>}
         {isLatest && selected.status === "SIGNING" && userId !== null && !selected.signatures.some(s => s.signerId === userId) && <SignatureForm key={selected.id} version={selected} consentText={overview.consentText} busy={busy} onSign={body => mutate("sign", { versionId: selected.id, ...body })} />}
         {isLatest && selected.status === "SIGNING" && selected.signatures.some(s => s.signerId === userId) && <p className="contract-controls">내 서명이 저장되었습니다. 상대방 서명을 기다리고 있습니다.</p>}
-        {isLatest && selected.status === "SIGNED" && <section className="contract-sign contract-controls"><h2>계약 체결 완료</h2><p>양측 서명이 완료되었습니다. 위 계약 내용을 기준으로 작업을 진행하세요.</p>
+        {!hideActions && isLatest && selected.status === "SIGNED" && <section className="contract-sign contract-controls"><h2>계약 체결 완료</h2><p>양측 서명이 완료되었습니다. 위 계약 내용을 기준으로 작업을 진행하세요.</p>
           {overview.estimatedPrice != null && Number(selected.terms.totalAmount) !== overview.estimatedPrice &&
             <p className="contract-error">계약서 금액({Number(selected.terms.totalAmount).toLocaleString("ko-KR")}원)과 채택된 견적 금액({overview.estimatedPrice.toLocaleString("ko-KR")}원)이 달라요. 결제는 채택된 견적 금액 기준으로 진행됩니다.</p>}
 

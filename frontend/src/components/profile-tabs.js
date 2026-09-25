@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FileText, Star, CaretDown } from "@phosphor-icons/react";
+import ContractActionCard from "./contract-action-card";
 import RepairContract from "./repair-contract";
 
 const STATUS_LABEL = {
@@ -64,9 +65,10 @@ function TransactionCard({ item }) {
       )}
       {item.chatRoomId && contractOpen && (
         <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
-          <RepairContract roomId={item.chatRoomId} embedded />
+          <RepairContract roomId={item.chatRoomId} embedded hideActions />
         </div>
       )}
+      {item.chatRoomId && <ContractActionCard roomId={item.chatRoomId} />}
       {item.review && (
         <div className="mt-3 rounded-lg bg-slate-50 p-3">
           <StarRow rating={item.review.rating} />
