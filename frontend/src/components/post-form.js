@@ -48,6 +48,9 @@ export default function PostForm({ postId, initialValue, accessToken }) {
   const [revisionPanelOpen, setRevisionPanelOpen] = useState(false);
   const [aiInstruction, setAiInstruction] = useState("");
   const [aiRevisionBusy, setAiRevisionBusy] = useState(false);
+  // 폼 맨 아래 message와 별도로 둔다 — 같은 message를 이 카드와 폼 하단에 둘 다 띄우면
+  // 똑같은 에러가 두 번 보였다.
+  const [aiError, setAiError] = useState("");
 
   const authHeaders = {
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
@@ -109,6 +112,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
   function cancelAiRevision() {
     if (aiRevisionBusy) return;
     setAiInstruction("");
+    setAiError("");
     setRevisionPanelOpen(false);
   }
 
@@ -116,15 +120,15 @@ export default function PostForm({ postId, initialValue, accessToken }) {
   // 다시 써준다 — 선택 상태를 추적/기억할 필요가 없어 훨씬 단순하고 안정적이다.
   async function reviseContent() {
     if (aiRevisionBusy) return;
-    if (!aiDraftId) { setMessage("먼저 사진을 분석하면 글 다듬기를 쓸 수 있어요."); return; }
-    if (remainingRevisions <= 0) { setMessage("AI 부분 수정 횟수를 모두 사용했습니다."); return; }
+    if (!aiDraftId) { setAiError("먼저 사진을 분석하면 글 다듬기를 쓸 수 있어요."); return; }
+    if (remainingRevisions <= 0) { setAiError("AI 부분 수정 횟수를 모두 사용했습니다."); return; }
     const instruction = aiInstruction.trim();
-    if (!instruction) { setMessage("어떻게 고칠지 요청 내용을 입력해주세요."); return; }
+    if (!instruction) { setAiError("어떻게 고칠지 요청 내용을 입력해주세요."); return; }
     const plainContent = htmlToText(content);
-    if (!plainContent) { setMessage("먼저 내용을 입력해주세요."); return; }
+    if (!plainContent) { setAiError("먼저 내용을 입력해주세요."); return; }
 
     setAiRevisionBusy(true);
-    setMessage("");
+    setAiError("");
     try {
       const response = await fetch("/api/ai/post-revise", {
         method: "POST",
@@ -133,11 +137,11 @@ export default function PostForm({ postId, initialValue, accessToken }) {
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
-        setMessage(payload?.message || "AI 글 다듬기에 실패했습니다. 직접 수정해주세요.");
+        setAiError(payload?.message || "AI 글 다듬기에 실패했습니다. 직접 수정해주세요.");
         return;
       }
       if (!payload?.content?.trim()) {
-        setMessage("AI가 수정 결과를 만들지 못했습니다. 다시 시도해주세요.");
+        setAiError("AI가 수정 결과를 만들지 못했습니다. 다시 시도해주세요.");
         return;
       }
       setContent(plainTextToHtml(payload.content));
@@ -145,7 +149,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
       setAiInstruction("");
       setRevisionPanelOpen(false);
     } catch {
-      setMessage("AI 서버와 통신할 수 없습니다. 입력 내용은 유지됩니다.");
+      setAiError("AI 서버와 통신할 수 없습니다. 입력 내용은 유지됩니다.");
     } finally {
       setAiRevisionBusy(false);
     }
@@ -321,7 +325,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
               <div>
                 <button
                   type="button"
-                  onClick={() => setRevisionPanelOpen(true)}
+                  onClick={() => { setAiError(""); setRevisionPanelOpen(true); }}
                   disabled={remainingRevisions <= 0}
                   className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -367,10 +371,9 @@ export default function PostForm({ postId, initialValue, accessToken }) {
                 </div>
               </div>
             )}
-            {/* 이 카드가 본문 위에 있어서, 에러가 폼 맨 아래에만 뜨면 안 보이고 지나칠 수 있다. */}
-            {message && (
+            {aiError && (
               <div className="mt-3 rounded-xl bg-red-50 p-3 text-center text-sm font-medium text-red-600">
-                {message}
+                {aiError}
               </div>
             )}
           </div>

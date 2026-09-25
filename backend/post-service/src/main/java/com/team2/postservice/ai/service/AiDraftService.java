@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -70,7 +71,7 @@ public class AiDraftService {
                 .orElseThrow(() -> new AiException(HttpStatus.NOT_FOUND, "AI_DRAFT_NOT_FOUND", "AI 초안을 찾을 수 없습니다. 다시 생성해주세요."));
         if (draft.isExpired()) throw new AiException(HttpStatus.GONE, "AI_DRAFT_EXPIRED", "AI 초안이 만료되었습니다. 다시 생성해주세요.");
 
-        int reserved = postDrafts.reserveRevision(request.draftId(), userId, AiPostDraft.MAX_REVISIONS);
+        int reserved = postDrafts.reserveRevision(request.draftId(), userId, AiPostDraft.MAX_REVISIONS, LocalDateTime.now());
         if (reserved == 0) throw new AiException(HttpStatus.CONFLICT, "AI_REVISION_LIMIT", "AI 부분 수정 3회를 모두 사용했습니다.");
 
         boolean consumed = false;
