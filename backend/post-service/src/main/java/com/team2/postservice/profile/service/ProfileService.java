@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -51,10 +52,12 @@ public class ProfileService {
 
         // "계약서 보기" 버튼을 채팅만 하고 계약서는 한 번도 안 만든 거래에도 항상 보여주고 있었다
         // — 채팅방 id가 있는 것만으로 계약서가 있다고 볼 수 없어서, 실제로 계약서가 있는 채팅방
-        // id만 한 번에 조회해 각 항목에 표시한다.
-        Set<Long> chatRoomIdsWithContract = chatRoomIdsByDealId.isEmpty()
+        // id만 한 번에 조회해 각 항목에 표시한다. 채팅방이 아직 없는 거래는 이 맵에 값이 null로
+        // 들어있을 수 있는데, 걸러내지 않으면 Set.copyOf가 null 원소에서 NPE를 던진다.
+        List<Long> chatRoomIds = chatRoomIdsByDealId.values().stream().filter(Objects::nonNull).toList();
+        Set<Long> chatRoomIdsWithContract = chatRoomIds.isEmpty()
                 ? Set.of()
-                : Set.copyOf(contractRepository.findDistinctChatRoomIdByChatRoomIdIn(chatRoomIdsByDealId.values()));
+                : Set.copyOf(contractRepository.findDistinctChatRoomIdByChatRoomIdIn(chatRoomIds));
 
         var items = page.getContent().stream()
                 .map(deal -> toItem(deal, asRequester, chatRoomIdsByDealId.get(deal.getId()), chatRoomIdsWithContract))

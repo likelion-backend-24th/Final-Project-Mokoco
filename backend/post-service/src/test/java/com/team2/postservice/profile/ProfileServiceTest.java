@@ -102,6 +102,33 @@ class ProfileServiceTest {
         assertThat(withContract.hasContract()).isTrue();
     }
 
+    @Test void doesNotThrowWhenAFixDealHasNoChatRoomYet() {
+        // Map.of()는 null 값을 거부하므로, 아직 채팅방이 없는 거래(값이 null)가 섞인 실제
+        // chat-service 응답을 재현하려면 일반 HashMap을 직접 만들어야 한다. null을 거르지 않고
+        // 그대로 contractRepository 쿼리의 IN 파라미터로 넘기던 걸 고쳤다 — 계약서 조회 자체를
+        // 아예 건너뛰어야 하는 상황인데(채팅방이 없으니 계약서도 있을 수 없음) null이 섞인 채로
+        // 쿼리를 호출하지 않는지 확인한다.
+        FixDeal deal = fixDeal(FixDealStatus.MATCHED, null);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(users.getUserByEmail("requester@test.com"))
+                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region", "USER"));
+        when(fixDeals.findByRequesterIdOrderByCreatedAtDesc(100L, pageable))
+                .thenReturn(new PageImpl<>(List.of(deal), pageable, 1));
+        when(posts.findById(10L)).thenReturn(Optional.of(samplePost()));
+        when(users.getUserById(200L))
+                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region", "USER"));
+        when(reviews.findByPostId(10L)).thenReturn(Optional.empty());
+        var chatRoomIdsByDealId = new java.util.HashMap<Long, Long>();
+        chatRoomIdsByDealId.put(1L, null);
+        when(chatRoomClient.byFixDealIds(any())).thenReturn(chatRoomIdsByDealId);
+
+        var item = service.getMyTransactions("requester@test.com", "requester", pageable).items().get(0);
+
+        assertThat(item.chatRoomId()).isNull();
+        assertThat(item.hasContract()).isFalse();
+        verify(contracts, never()).findDistinctChatRoomIdByChatRoomIdIn(any());
+    }
+
     @Test void returnsRepairerHistoryWithoutReviewWhenNotWritten() {
         FixDeal deal = fixDeal(FixDealStatus.COMPLETED, LocalDateTime.now().minusHours(2));
         Pageable pageable = PageRequest.of(0, 10);
