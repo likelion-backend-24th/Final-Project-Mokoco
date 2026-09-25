@@ -35,6 +35,15 @@ function formatRelativeDate(value) {
   return hours < 24 ? `${hours}시간 전` : `${Math.floor(hours / 24)}일 전`;
 }
 
+// 페이지가 많아지면 번호를 전부 보여주는 대신 현재 페이지 주변만 보여준다.
+function pageWindow(current, total, size = 7) {
+  if (total <= size) return Array.from({ length: total }, (_, i) => i);
+  let start = Math.max(0, current - Math.floor(size / 2));
+  const end = Math.min(total, start + size);
+  start = Math.max(0, end - size);
+  return Array.from({ length: end - start }, (_, i) => start + i);
+}
+
 function EmptyState({ error, postHref }) {
   return (
     <div className="reference-empty-state" role="status">
@@ -55,7 +64,7 @@ export default async function PostsPage({ searchParams }) {
   const userEmail = cookieStore.get("user_email")?.value ?? null;
   const accessToken = cookieStore.get("access_token")?.value ?? null;
   const page = resolvedSearchParams?.page ?? "0";
-  const { posts, error, pagination } = await getNearbyPosts(accessToken, currentCategory, page, 20, regionScope);
+  const { posts, error, pagination } = await getNearbyPosts(accessToken, currentCategory, page, 10, regionScope);
   const postHref = userEmail ? "/posts/new" : "/login";
 
   return (
@@ -145,11 +154,22 @@ export default async function PostsPage({ searchParams }) {
           </div>
         )}
 
-        {pagination && (
-          <nav className="flex justify-center items-center gap-4 mt-6" aria-label="수리 요청 페이지">
-            {!pagination.first && <Link href={regionListHref({ category: currentCategory, regionScope, page: pagination.number - 1 })}>이전</Link>}
-            <span>{pagination.number + 1}페이지 · 총 {pagination.totalElements}건</span>
-            {!pagination.last && <Link href={regionListHref({ category: currentCategory, regionScope, page: pagination.number + 1 })}>다음</Link>}
+        {pagination && pagination.totalPages > 1 && (
+          <nav className="flex justify-center items-center gap-1.5 mt-6" aria-label="수리 요청 페이지">
+            {pageWindow(pagination.number, pagination.totalPages).map((pageIndex) => (
+              <Link
+                key={pageIndex}
+                href={regionListHref({ category: currentCategory, regionScope, page: pageIndex })}
+                aria-current={pageIndex === pagination.number ? "page" : undefined}
+                className={`inline-flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-sm font-semibold transition ${
+                  pageIndex === pagination.number
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                {pageIndex + 1}
+              </Link>
+            ))}
           </nav>
         )}
       </main>
