@@ -52,7 +52,6 @@ export default function PostAiAssist({ files, values, categories, onApply, onDra
   }
   const labels = { title: "제목", content: "내용", category: "카테고리" };
   return <section className="ai-assist" aria-label="사진으로 작성 도움">
-    <h3>사진으로 작성 도움받기</h3>
     <p>선택한 사진과 작성 내용을 Gemini에 보내 제목·내용·카테고리를 자동으로 채웁니다. JPEG·PNG·WebP, 장당 5MB까지 지원합니다. 사진 속 개인정보를 확인해주세요.</p>
     <button type="button" disabled={busy} onClick={analyze}>{busy ? "사진을 살펴보고 있어요…" : "사진 분석하기"}</button>
     {busy && <span role="status">직접 작성하며 기다려도 괜찮아요.</span>}
