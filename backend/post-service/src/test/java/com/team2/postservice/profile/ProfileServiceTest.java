@@ -3,6 +3,7 @@ package com.team2.postservice.profile;
 import com.team2.postservice.client.ChatRoomClient;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
+import com.team2.postservice.contract.ContractRepository;
 import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
@@ -32,9 +33,10 @@ class ProfileServiceTest {
     final FixDealRepository fixDeals = mock(FixDealRepository.class);
     final PostRepository posts = mock(PostRepository.class);
     final ReviewRepository reviews = mock(ReviewRepository.class);
+    final ContractRepository contracts = mock(ContractRepository.class);
     final UserClient users = mock(UserClient.class);
     final ChatRoomClient chatRoomClient = mock(ChatRoomClient.class);
-    final ProfileService service = new ProfileService(fixDeals, posts, reviews, users, chatRoomClient);
+    final ProfileService service = new ProfileService(fixDeals, posts, reviews, contracts, users, chatRoomClient);
 
     private FixDeal fixDeal(FixDealStatus status, LocalDateTime completedAt) {
         return FixDeal.builder()
@@ -69,9 +71,35 @@ class ProfileServiceTest {
         var item = result.items().get(0);
         assertThat(item.role()).isEqualTo("REQUESTER");
         assertThat(item.counterpartEmail()).isEqualTo("repairer@test.com");
+        assertThat(item.counterpartNickname()).isEqualTo("repairer");
         assertThat(item.postTitle()).isEqualTo("선풍기 고쳐주세요");
         assertThat(item.review()).isNotNull();
         assertThat(item.review().content()).isEqualTo("좋았어요");
+    }
+
+    @Test void hasContractOnlyWhenTheChatRoomActuallyHasOne() {
+        FixDeal deal = fixDeal(FixDealStatus.MATCHED, null);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(users.getUserByEmail("requester@test.com"))
+                .thenReturn(new UserClientResponse(100L, "requester@test.com", "requester", "region", "USER"));
+        when(fixDeals.findByRequesterIdOrderByCreatedAtDesc(100L, pageable))
+                .thenReturn(new PageImpl<>(List.of(deal), pageable, 1));
+        when(posts.findById(10L)).thenReturn(Optional.of(samplePost()));
+        when(users.getUserById(200L))
+                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region", "USER"));
+        when(reviews.findByPostId(10L)).thenReturn(Optional.empty());
+        when(chatRoomClient.byFixDealIds(any())).thenReturn(java.util.Map.of(1L, 900L));
+
+        // 채팅방(900L)은 있지만 계약서를 한 번도 안 만든 경우: 버튼을 숨겨야 한다.
+        when(contracts.findDistinctChatRoomIdByChatRoomIdIn(any())).thenReturn(List.of());
+        var withoutContract = service.getMyTransactions("requester@test.com", "requester", pageable).items().get(0);
+        assertThat(withoutContract.chatRoomId()).isEqualTo(900L);
+        assertThat(withoutContract.hasContract()).isFalse();
+
+        // 계약서가 있는 경우엔 보여줘야 한다.
+        when(contracts.findDistinctChatRoomIdByChatRoomIdIn(any())).thenReturn(List.of(900L));
+        var withContract = service.getMyTransactions("requester@test.com", "requester", pageable).items().get(0);
+        assertThat(withContract.hasContract()).isTrue();
     }
 
     @Test void returnsRepairerHistoryWithoutReviewWhenNotWritten() {
@@ -131,11 +159,14 @@ class ProfileServiceTest {
                 .rating(4).content("만족합니다").build();
         when(reviews.findByReviewerEmailOrderByCreatedAtDesc("requester@test.com", pageable))
                 .thenReturn(new PageImpl<>(List.of(review), pageable, 1));
+        when(users.getUserByEmail("repairer@test.com"))
+                .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region", "USER"));
 
         MyWrittenReviewsResponse result = service.getMyWrittenReviews("requester@test.com", pageable);
 
         assertThat(result.totalCount()).isEqualTo(1);
         assertThat(result.reviews().get(0).reviewerEmail()).isEqualTo("requester@test.com");
+        assertThat(result.reviews().get(0).revieweeNickname()).isEqualTo("repairer");
     }
 
     private Post samplePost() {

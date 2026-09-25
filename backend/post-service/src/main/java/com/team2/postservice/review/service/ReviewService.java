@@ -22,7 +22,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -97,11 +99,25 @@ public class ReviewService {
         Page<Review> page = reviewRepository.findByRevieweeEmailOrderByCreatedAtDesc(revieweeEmail, pageable);
         Double average = reviewRepository.findAverageRatingByRevieweeEmail(revieweeEmail);
 
-        return new UserReviewsResponseDto(
-                average,
-                page.getTotalElements(),
-                page.getContent().stream().map(ReviewResponseDto::from).toList()
-        );
+        // 목록에 이메일 대신 작성자 닉네임을 보여주려고 채워 넣는다. 페이지 안에 같은 작성자가
+        // 여러 번 나올 수 있어 이메일별로 한 번만 조회하도록 캐시한다.
+        Map<String, String> nicknameByEmail = new HashMap<>();
+        List<ReviewResponseDto> reviews = page.getContent().stream()
+                .map(ReviewResponseDto::from)
+                .map(dto -> dto.withNicknames(
+                        nicknameByEmail.computeIfAbsent(dto.reviewerEmail(), this::resolveNickname), null))
+                .toList();
+
+        return new UserReviewsResponseDto(average, page.getTotalElements(), reviews);
+    }
+
+    private String resolveNickname(String email) {
+        try {
+            UserClientResponse user = userClient.getUserByEmail(email);
+            return user != null ? user.nickname() : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public ReviewResponseDto getReview(Long reviewId) {

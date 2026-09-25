@@ -50,8 +50,8 @@ function TransactionCard({ item }) {
           {STATUS_LABEL[item.status] ?? item.status}
         </span>
       </div>
-      <p className="mt-1.5 text-sm text-slate-500">상대방: {item.counterpartEmail}</p>
-      {item.chatRoomId && (
+      <p className="mt-1.5 text-sm text-slate-500">상대방: {item.counterpartNickname || item.counterpartEmail}</p>
+      {item.hasContract && (
         <button
           type="button"
           onClick={() => setContractOpen((open) => !open)}
@@ -63,12 +63,12 @@ function TransactionCard({ item }) {
           <CaretDown size={13} weight="bold" className={contractOpen ? "rotate-180 transition-transform" : "transition-transform"} />
         </button>
       )}
-      {item.chatRoomId && contractOpen && (
+      {item.hasContract && contractOpen && (
         <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
           <RepairContract roomId={item.chatRoomId} embedded hideActions />
         </div>
       )}
-      {item.chatRoomId && <ContractActionCard roomId={item.chatRoomId} />}
+      {item.hasContract && <ContractActionCard roomId={item.chatRoomId} />}
       {item.review && (
         <div className="mt-3 rounded-lg bg-slate-50 p-3">
           <StarRow rating={item.review.rating} />
@@ -90,7 +90,9 @@ function ReviewCard({ review, showTarget }) {
       </div>
       <p className="mt-2 text-base text-slate-700 whitespace-pre-line">{review.content}</p>
       <p className="mt-1.5 text-sm text-slate-400">
-        {showTarget ? `대상: ${review.revieweeEmail}` : `작성자: ${review.reviewerEmail}`}
+        {showTarget
+          ? `대상: ${review.revieweeNickname || review.revieweeEmail}`
+          : `작성자: ${review.reviewerNickname || review.reviewerEmail}`}
       </p>
       {review.imageUrls?.length > 0 && (
         <div className="mt-2.5 flex flex-wrap gap-2">
