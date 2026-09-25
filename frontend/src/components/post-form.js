@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Wrench, Upload, X } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -41,21 +41,35 @@ export default function PostForm({ postId, initialValue, accessToken }) {
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
   };
 
+  // 새로 고른 파일은 아직 서버에 없어 URL이 없으므로, 선택하는 시점(이벤트 핸들러)에
+  // 바로 브라우저 메모리 안에서만 보이는 미리보기 URL을 만들어 파일과 함께 들고 있는다
+  // (렌더링 도중에 만들면 정리 시점을 놓쳐 메모리에 계속 쌓인다). 제거되거나 폼을 떠날 때
+  // 해제한다(revoke).
   const handleFileChange = (e) => {
     if (!e.target.files) return;
     const filesArray = Array.from(e.target.files);
-    
+
     if (existingImages.length + selectedFiles.length + filesArray.length > 5) {
       setMessage("이미지는 최대 5장까지 등록할 수 있습니다.");
       return;
     }
-    
-    setSelectedFiles((prev) => [...prev, ...filesArray]);
+
+    const withPreview = filesArray.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+    setSelectedFiles((prev) => [...prev, ...withPreview]);
     setMessage("");
   };
 
+  useEffect(() => () => {
+    // 함수형 업데이트로 언마운트 시점의 최신 목록을 읽되, 그대로 돌려줘서 리렌더는 일으키지 않는다.
+    setSelectedFiles((prev) => { prev.forEach((item) => URL.revokeObjectURL(item.previewUrl)); return prev; });
+  }, []);
+
   const removeNewFile = (index) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setSelectedFiles((prev) => {
+      const removed = prev[index];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   async function removeExistingImage(image) {
@@ -106,7 +120,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
       } else {
         const formData = new FormData();
         formData.append("post", new Blob([JSON.stringify(postDto)], { type: "application/json" }));
-        selectedFiles.forEach((file) => formData.append("images", file));
+        selectedFiles.forEach(({ file }) => formData.append("images", file));
         response = await fetch(backendUrl("/api/posts"), {
           method: "POST",
           headers: authHeaders,
@@ -128,7 +142,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
       // 수정 화면에서 새로 첨부한 사진이 있으면 이미지 추가 엔드포인트로 별도 업로드
       if (isEdit && selectedFiles.length > 0) {
         const imgForm = new FormData();
-        selectedFiles.forEach((file) => imgForm.append("images", file));
+        selectedFiles.forEach(({ file }) => imgForm.append("images", file));
         const imgRes = await fetch(backendUrl(`/api/posts/${postId}/images`), {
           method: "POST",
           headers: authHeaders,
@@ -231,18 +245,24 @@ export default function PostForm({ postId, initialValue, accessToken }) {
           
           {/* 선택된 파일 목록 프리뷰 */}
           <div className="flex flex-wrap gap-2 mt-2">
-            {selectedFiles.map((file, idx) => (
-              <div key={idx} className="relative bg-slate-100 px-3 py-1 rounded-lg text-xs flex items-center">
-                <span>{file.name}</span>
-                <button type="button" onClick={() => removeNewFile(idx)} className="ml-2 text-red-500">
-                  <X size={14} />
+            {selectedFiles.map(({ file, previewUrl }, idx) => (
+              <div key={idx} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={previewUrl} alt={file.name} className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeNewFile(idx)}
+                  aria-label="사진 삭제"
+                  className="absolute -right-1 -top-1 rounded-full bg-white p-0.5 text-red-500 shadow"
+                >
+                  <X size={12} weight="bold" />
                 </button>
               </div>
             ))}
           </div>
         </div>
 
-        <PostAiAssist files={selectedFiles} values={{ title, content, category: selectedCategory }} categories={categories}
+        <PostAiAssist files={selectedFiles.map(({ file }) => file)} values={{ title, content, category: selectedCategory }} categories={categories}
           onApply={(field, value) => { if (field === "title") setTitle(value); else if (field === "content") setContent(value); else if (field === "category") setSelectedCategory(value); }} />
 
         {/* 💡 에러 메시지를 파란색 등록 버튼 바로 위로 이동 */}
