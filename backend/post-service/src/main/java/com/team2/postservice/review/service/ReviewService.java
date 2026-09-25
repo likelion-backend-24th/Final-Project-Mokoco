@@ -29,7 +29,9 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ReviewService {
 
-    private static final long REVIEW_DEADLINE_DAYS = 3;
+    // ContractService(계약서/거래 진행상황 조회)도 후기 작성 가능 여부를 보여주려고 이 값을
+    // 그대로 참조한다 — 기한 판단 기준이 두 곳에서 따로 어긋나지 않도록 여기 하나만 둔다.
+    public static final long REVIEW_DEADLINE_DAYS = 3;
     private static final int MAX_IMAGE_COUNT = 5;
 
     private final ReviewRepository reviewRepository;

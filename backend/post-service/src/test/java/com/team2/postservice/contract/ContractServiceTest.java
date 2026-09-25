@@ -35,14 +35,17 @@ class ContractServiceTest {
     @MockitoBean PaymentClient paymentClient;
     @MockitoBean ChatRoomClient chatRoomClient;
     Long roomId;
+    Post post;
+    Proposal proposal;
+    FixDeal deal;
     @BeforeEach void setup() {
         Mockito.reset(paymentClient);
         Mockito.when(paymentClient.getPaymentByPostId(ArgumentMatchers.anyLong()))
                 .thenReturn(new PaymentClientResponse(1L, 1L, "COMPLETED", 55000, 5000, 50000, null));
-        var post = em.persist(Post.builder().title("의자 수리").content("다리가 흔들려요").authorEmail("requester@test.com")
+        post = em.persist(Post.builder().title("의자 수리").content("다리가 흔들려요").authorEmail("requester@test.com")
                 .regionName("서울특별시").regionCode("11000").category(PostCategory.LIVING_ETC).build());
-        var proposal = em.persist(Proposal.builder().post(post).estimatedPrice(50000).repairerEmail("repairer@test.com").content("견적 드립니다").build());
-        var deal = em.persist(FixDeal.builder().postId(post.getId()).proposalId(proposal.getId()).requesterId(10L).repairerId(20L).build());
+        proposal = em.persist(Proposal.builder().post(post).estimatedPrice(50000).repairerEmail("repairer@test.com").content("견적 드립니다").build());
+        deal = em.persist(FixDeal.builder().postId(post.getId()).proposalId(proposal.getId()).requesterId(10L).repairerId(20L).build());
         roomId = 1L;
         Mockito.when(chatRoomClient.getRoom(roomId))
                 .thenReturn(new ChatRoomClient.ChatRoomInfo(roomId, proposal.getId(), 10L, 20L, post.getId(), deal.getId(),
@@ -70,8 +73,42 @@ class ContractServiceTest {
         assertThatThrownBy(() -> service.advance(roomId, 10L, contract.id(), "accept")).isInstanceOf(ResponseStatusException.class);
         service.advance(roomId, 20L, contract.id(), "finish");
         service.advance(roomId, 10L, contract.id(), "accept");
-        assertThat(service.get(roomId, 10L).dealStatus()).isEqualTo(FixDealStatus.COMPLETED);
+        var completed = service.get(roomId, 10L);
+        assertThat(completed.dealStatus()).isEqualTo(FixDealStatus.COMPLETED);
+        // 막 완료됐으니 원글도 그대로 있고, 3일 기한도 당연히 안 지났어야 한다.
+        assertThat(completed.postDeleted()).isFalse();
+        assertThat(completed.reviewDeadlineExpired()).isFalse();
         Mockito.verify(paymentClient).settle(ArgumentMatchers.anyLong());
+    }
+    @Test void reviewDeadlineExpiresThreeDaysAfterCompletion() {
+        var contract = signing();
+        service.sign(roomId, 10L, contract.id(), contract.documentHash(), "의뢰인", true);
+        service.sign(roomId, 20L, contract.id(), contract.documentHash(), "수리자", true);
+        service.advance(roomId, 20L, contract.id(), "start");
+        service.advance(roomId, 20L, contract.id(), "finish");
+        service.advance(roomId, 10L, contract.id(), "accept");
+        // ReviewService와 같은 기준(완료 후 3일)으로 판단하는지 직접 확인하려고, 완료 시각을
+        // 4일 전으로 강제로 되돌린다.
+        em.getEntityManager().createQuery("update FixDeal d set d.completedAt = :past where d.id = :id")
+                .setParameter("past", java.time.LocalDateTime.now().minusDays(4))
+                .setParameter("id", deal.getId())
+                .executeUpdate();
+        em.clear();
+        assertThat(service.get(roomId, 10L).reviewDeadlineExpired()).isTrue();
+    }
+    @Test void postDeletedIsTrueWhenPostNoLongerExists() {
+        // 실제 PostService.deletePostInternal()과 같은 순서로 지운다 — Proposal이 Post를
+        // proposals.post_id FK로 물고 있어서 Proposal을 먼저 지워야 Post를 지울 수 있다.
+        // FixDeal.postId/proposalId는 순수 Long 참조(FK 아님)라 그대로 남고, 그게 바로
+        // 스크린샷의 "(삭제된 게시글)"처럼 거래 이력은 남지만 원글만 없는 상태다.
+        em.getEntityManager().createQuery("delete from Proposal p where p.id = :id")
+                .setParameter("id", proposal.getId())
+                .executeUpdate();
+        em.getEntityManager().createQuery("delete from Post p where p.id = :id")
+                .setParameter("id", post.getId())
+                .executeUpdate();
+        em.clear();
+        assertThat(service.get(roomId, 10L).postDeleted()).isTrue();
     }
     @Test void startIsBlockedUntilPaymentIsCompleted() {
         var contract = signing();

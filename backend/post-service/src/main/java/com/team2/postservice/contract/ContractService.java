@@ -10,6 +10,7 @@ import com.team2.postservice.fixDeal.repository.FixDealRepository;
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.proposal.repository.ProposalRepository;
+import com.team2.postservice.review.service.ReviewService;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +20,9 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
@@ -45,7 +48,10 @@ public class ContractService {
     public record PaymentSummary(String status, Integer amount, Integer feeAmount, Integer netAmount, boolean settled) {}
     public record Overview(Long requesterId, Long repairerId, String requesterEmail, String repairerEmail,
             Long postId, Long fixDealId, Integer estimatedPrice, FixDealStatus dealStatus,
-            PaymentSummary payment, String consentText, List<Version> versions) {}
+            PaymentSummary payment, String consentText, List<Version> versions,
+            // 프로필의 거래 카드가 후기 작성 칸을 보여줄지 판단하는 데 쓴다 — 원글이 삭제됐거나
+            // ReviewService와 같은 기준(완료 후 3일)으로 기한이 지났으면 프론트가 아예 안 보여준다.
+            boolean postDeleted, boolean reviewDeadlineExpired) {}
 
     // 채팅방(참가자·연결된 거래)은 chat-service 소유라 원격으로 확인하고, 실제 잠금·상태 변경은
     // 여전히 이 서비스가 갖고 있는 FixDeal에 건다 — 서비스 경계 너머로 비관적 락을 걸 수는 없지만,
@@ -98,9 +104,12 @@ public class ContractService {
         String repairerEmail = proposal != null ? proposal.getRepairerEmail() : null;
         Integer estimatedPrice = proposal != null ? proposal.getEstimatedPrice() : null;
         PaymentSummary payment = requesterEmail == null ? null : paymentSummaryOrNull(deal.getPostId());
+        boolean reviewDeadlineExpired = deal.getCompletedAt() == null
+                || Duration.between(deal.getCompletedAt(), LocalDateTime.now()).toDays() >= ReviewService.REVIEW_DEADLINE_DAYS;
         return new Overview(deal.getRequesterId(), deal.getRepairerId(), requesterEmail, repairerEmail,
                 deal.getPostId(), deal.getId(), estimatedPrice, deal.getStatus(), payment, CONSENT,
-                contracts.findByChatRoomIdOrderByRevisionDesc(roomId).stream().map(this::view).toList());
+                contracts.findByChatRoomIdOrderByRevisionDesc(roomId).stream().map(this::view).toList(),
+                post == null, reviewDeadlineExpired);
     }
     private RepairContract latest(Long roomId, Long expectedId) {
         var current = contracts.findFirstByChatRoomIdOrderByRevisionDesc(roomId)

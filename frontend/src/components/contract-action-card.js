@@ -203,7 +203,8 @@ export default function ContractActionCard({ roomId }) {
       {overview.dealStatus === "REPAIR_DONE" && !isRequester && (
         <p className="mt-2 text-sm text-slate-500">의뢰인의 완료 확인을 기다리고 있어요.</p>
       )}
-      {overview.dealStatus === "COMPLETED" && isRequester && !reviewSubmitted && (
+      {overview.dealStatus === "COMPLETED" && isRequester && !reviewSubmitted
+        && !overview.postDeleted && !overview.reviewDeadlineExpired && (
         <div className="mt-2"><ReviewForm postId={overview.postId} onSubmitted={() => setReviewSubmitted(true)} /></div>
       )}
       {overview.dealStatus === "COMPLETED" && isRequester && reviewSubmitted && (
