@@ -258,33 +258,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
           </select>
         </label>
         
-        {/* 제목 입력 */}
-        <label className="form-field">
-          <span>제목</span>
-          <input
-            name="title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="제목을 입력해주세요"
-            required
-            className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
-          />
-        </label>
-
-        {/* 내용 입력 */}
-        <label className="form-field">
-          <span>내용</span>
-          <RichTextEditor
-            ref={editorRef}
-            value={content}
-            onChange={setContent}
-            onSelectionChange={handleSelectionChange}
-            placeholder="어떤 도움이 필요한지 자세히 적어주세요"
-          />
-        </label>
-
-        {/* 파일 첨부 영역 */}
+        {/* 파일 첨부 영역 — AI가 사진을 보고 제목·내용을 채워주므로, 글을 쓰기 전에 먼저 올린다. */}
         <div className="form-field">
           <span>사진 첨부 (최대 5장)</span>
 
@@ -316,7 +290,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
             <span className="text-sm text-slate-600">이미지 파일 업로드</span>
             <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
           </label>
-          
+
           {/* 선택된 파일 목록 프리뷰 */}
           <div className="flex flex-wrap gap-2 mt-2">
             {selectedFiles.map(({ file, previewUrl }, idx) => (
@@ -336,17 +310,16 @@ export default function PostForm({ postId, initialValue, accessToken }) {
           </div>
         </div>
 
-        {/* 사진 분석(제목·내용 채우기)과 선택 문장 다듬기가 서로 다른 자리에 따로 있어서 중복처럼
-            보인다는 피드백에 따라, "글 작성 도우미" 하나로 합쳤다. */}
+        {/* 사진 분석(제목·내용 채우기)과 선택 문장 다듬기를 "글 작성 도우미" 하나로 합쳤다. */}
         <section className="rounded-2xl border border-slate-200 bg-white p-5">
           <h3 className="flex items-center gap-1.5 text-base font-bold text-slate-900">
             <Sparkle size={18} weight="fill" className="text-violet-600" />
             글 작성 도우미
           </h3>
-          <p className="mt-1 text-sm text-slate-500">사진으로 제목·내용을 채우거나, 본문에서 문장을 선택해 AI로 다듬어보세요.</p>
+          <p className="mt-1 text-sm text-slate-500">사진으로 제목·내용을 채우거나, 아래 본문에서 문장을 선택해 AI로 다듬어보세요.</p>
 
           <div className="mt-3">
-            <PostAiAssist files={selectedFiles.map(({ file }) => file)} values={{ title, content, category: selectedCategory }} categories={categories}
+            <PostAiAssist files={selectedFiles.map(({ file }) => file)} values={{ title, content, category: selectedCategory }}
               onApply={(field, value) => { if (field === "title") setTitle(value); else if (field === "content") setContent(value); else if (field === "category") setSelectedCategory(value); }}
               onDraftCreated={({ draftId, remainingRevisions: remaining }) => {
                 setAiDraftId(draftId);
@@ -358,53 +331,66 @@ export default function PostForm({ postId, initialValue, accessToken }) {
             <div className="flex items-center justify-between gap-3">
               <strong className="flex items-center gap-1 text-sm text-slate-900">
                 <Sparkle size={15} weight="fill" className="text-violet-600" />
-                선택한 문장 다듬기
+                작성된 글 수정하기
               </strong>
               <span className="text-xs font-medium text-violet-700">남은 수정 {remainingRevisions} / {MAX_AI_REVISIONS}</span>
             </div>
+            <p className="mt-1 text-xs text-slate-500">본문에서 고치고 싶은 문장을 선택한 뒤 어떻게 고칠지 적어주세요.</p>
 
-            {!aiDraftId ? (
-              <p className="mt-2 text-sm text-slate-500">먼저 위에서 사진을 분석하면 선택한 문장을 AI로 다듬을 수 있어요.</p>
-            ) : remainingRevisions <= 0 ? (
-              <p className="mt-2 text-sm text-slate-500">AI 부분 수정 {MAX_AI_REVISIONS}회를 모두 사용했습니다. 이후에는 직접 수정해주세요.</p>
-            ) : aiSelection?.text?.trim() ? (
-              <>
-                <div className="mt-3 rounded-lg bg-slate-50 p-3">
-                  <span className="text-xs font-medium text-slate-500">선택한 문장</span>
-                  <p className="mt-1 break-words text-sm text-slate-700">{aiSelection.text}</p>
-                </div>
-                <div className="mb-3 mt-3 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => setAiInstruction("더 자연스럽고 읽기 쉽게 고쳐줘")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-50">자연스럽게</button>
-                  <button type="button" onClick={() => setAiInstruction("상황을 이해하기 쉽도록 조금 더 구체적으로 써줘")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-50">더 자세하게</button>
-                  <button type="button" onClick={() => setAiInstruction("핵심만 남겨서 간결하게 고쳐줘")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-50">간결하게</button>
-                </div>
-                <textarea
-                  value={aiInstruction}
-                  onChange={(event) => setAiInstruction(event.target.value)}
-                  rows={3}
-                  maxLength={500}
-                  placeholder="예: 증상이 좀 더 잘 드러나도록 자연스럽게 써줘"
-                  disabled={aiRevisionBusy}
-                  className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm text-slate-800 outline-none transition focus:border-violet-500 disabled:bg-slate-50"
-                />
-                <div className="mt-3 flex justify-end gap-2">
-                  <button type="button" onClick={cancelAiRevision} disabled={aiRevisionBusy} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50">취소</button>
-                  <button
-                    type="button"
-                    onClick={reviseSelectedText}
-                    disabled={aiRevisionBusy || !aiInstruction.trim()}
-                    className="flex items-center gap-1 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Sparkle size={16} weight="fill" />
-                    {aiRevisionBusy ? "수정 중..." : "수정하기"}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <p className="mt-2 text-sm text-slate-500">본문에서 다듬고 싶은 문장을 드래그해서 선택해보세요.</p>
-            )}
+            <div className="mb-3 mt-3 flex flex-wrap gap-2">
+              <button type="button" onClick={() => setAiInstruction("더 자연스럽고 읽기 쉽게 고쳐줘")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-50">자연스럽게</button>
+              <button type="button" onClick={() => setAiInstruction("상황을 이해하기 쉽도록 조금 더 구체적으로 써줘")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-50">더 자세하게</button>
+              <button type="button" onClick={() => setAiInstruction("핵심만 남겨서 간결하게 고쳐줘")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-50">간결하게</button>
+            </div>
+            <textarea
+              value={aiInstruction}
+              onChange={(event) => setAiInstruction(event.target.value)}
+              rows={3}
+              maxLength={500}
+              placeholder="예: 증상이 좀 더 잘 드러나도록 자연스럽게 써줘"
+              disabled={aiRevisionBusy}
+              className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm text-slate-800 outline-none transition focus:border-violet-500 disabled:bg-slate-50"
+            />
+            <div className="mt-3 flex justify-end gap-2">
+              <button type="button" onClick={cancelAiRevision} disabled={aiRevisionBusy} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50">취소</button>
+              <button
+                type="button"
+                onClick={reviseSelectedText}
+                disabled={aiRevisionBusy || !aiInstruction.trim() || remainingRevisions <= 0}
+                className="flex items-center gap-1 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Sparkle size={16} weight="fill" />
+                {aiRevisionBusy ? "수정 중..." : "수정하기"}
+              </button>
+            </div>
           </div>
         </section>
+
+        {/* 제목 입력 */}
+        <label className="form-field">
+          <span>제목</span>
+          <input
+            name="title"
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="제목을 입력해주세요"
+            required
+            className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+          />
+        </label>
+
+        {/* 내용 입력 */}
+        <label className="form-field">
+          <span>내용</span>
+          <RichTextEditor
+            ref={editorRef}
+            value={content}
+            onChange={setContent}
+            onSelectionChange={handleSelectionChange}
+            placeholder="어떤 도움이 필요한지 자세히 적어주세요"
+          />
+        </label>
 
         {/* 💡 에러 메시지를 파란색 등록 버튼 바로 위로 이동 */}
         {message && (
