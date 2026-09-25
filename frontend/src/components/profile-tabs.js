@@ -5,15 +5,7 @@ import Link from "next/link";
 import { FileText, Star, CaretDown } from "@phosphor-icons/react";
 import ContractActionCard from "./contract-action-card";
 import RepairContract from "./repair-contract";
-
-const STATUS_LABEL = {
-  MATCHED: "매칭 완료",
-  PRODUCT_SENT: "제품 전달 완료",
-  REPAIRING: "수리 진행중",
-  REPAIR_DONE: "수리완료 신청됨",
-  COMPLETED: "거래 완료",
-  CANCELED: "거래 취소됨",
-};
+import { DEAL_STATUS_LABEL as STATUS_LABEL } from "@/lib/deal-status-label";
 
 const TABS = [
   { key: "requester", label: "의뢰자로 참여한 거래" },

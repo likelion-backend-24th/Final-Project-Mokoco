@@ -1,17 +1,15 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { ArrowRight, CaretRight, ClipboardText, HandHeart, Wrench } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, ClipboardText, HandHeart, Wrench } from "@phosphor-icons/react/dist/ssr";
 import SiteHeader from "@/components/site-header";
 import LocationPermissionPrompt from "@/components/location-permission-prompt";
+import ActiveDealsCard from "@/components/active-deals-card";
 import { imageSrc } from "@/lib/backend";
 import { getNearbyPosts } from "@/lib/nearby-posts";
 import { getMyActiveDeals } from "@/lib/active-deals";
 import { htmlToText } from "@/lib/html-to-text";
 import RegionScopeFilter from "@/components/region-scope-filter";
 import { normalizeRegionScope, regionListHref } from "@/lib/region-scope";
-
-const dealStatusLabel = { MATCHED: "매칭 완료", REPAIRING: "수리 진행중", REPAIR_DONE: "수리완료 신청됨" };
-const dealRoleLabel = { requester: "의뢰자", repairer: "수리자" };
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -73,41 +71,6 @@ function PostList({ posts, error, postHref }) {
   );
 }
 
-function ActiveDealsCard({ deals }) {
-  return (
-    <section className="reference-card activity-card">
-      <div className="reference-card-heading">
-        <h2>내 진행 중인 거래</h2>
-        <Link href="/profile">전체 보기 <ArrowRight size={14} /></Link>
-      </div>
-      {deals.length === 0 ? (
-        <>
-          <p>아직 진행 중인 거래가 없어요. 주변 수리 요청을 둘러보고 제안해보세요.</p>
-          <Link href={"/posts"} className="wide-outline-button">주변 요청 보기</Link>
-        </>
-      ) : (
-        <ul className="active-deal-list">
-          {deals.map((deal) => (
-            <li key={`${deal.role}-${deal.fixDealId}`}>
-              <Link href={deal.chatRoomId ? `/chat-rooms/${deal.chatRoomId}` : `/posts/${deal.postId}`} className="active-deal-row">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="status-badge status-matched">{dealStatusLabel[deal.status] ?? deal.status}</span>
-                    <span className="text-xs text-slate-400">{dealRoleLabel[deal.role]}</span>
-                  </div>
-                  <p className="truncate font-semibold text-slate-800">{deal.postTitle}</p>
-                  <p className="text-sm text-slate-500">상대방: {deal.counterpartNickname || deal.counterpartEmail}</p>
-                </div>
-                <CaretRight size={16} className="shrink-0 text-slate-300" />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
-
 function UnifiedHome({ posts, error, userEmail, isAuthenticated, pagination, regionScope, activeDeals }) {
   return (
     <main className="page-shell auth-main">
@@ -159,7 +122,7 @@ export default async function Home({ searchParams }) {
 
   const [{ posts, error, pagination }, activeDeals] = await Promise.all([
     getNearbyPosts(accessToken, "ALL", 0, 5, regionScope),
-    isAuthenticated ? getMyActiveDeals(accessToken) : Promise.resolve([]),
+    isAuthenticated ? getMyActiveDeals(accessToken) : Promise.resolve({ requester: [], repairer: [] }),
   ]);
   return (
     <div className="min-h-screen bg-[#f7f9fc]">
