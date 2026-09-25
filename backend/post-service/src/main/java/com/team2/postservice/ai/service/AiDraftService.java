@@ -1,12 +1,17 @@
 package com.team2.postservice.ai.service;
 
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.team2.postservice.ai.AiImages;
 import com.team2.postservice.ai.AiRateLimit;
 import com.team2.postservice.ai.client.GeminiClient;
+import com.team2.postservice.ai.dto.PostRevisionRequest;
+import com.team2.postservice.ai.entity.AiPostDraft;
+import com.team2.postservice.ai.repository.AiPostDraftRepository;
 import com.team2.postservice.common.exception.AiException;
 import com.team2.postservice.post.entity.PostCategory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
@@ -22,6 +27,7 @@ public class AiDraftService {
     private final AiContractContext context;
     private final ObjectMapper mapper;
     private final com.team2.postservice.ai.AiDraftCache cache;
+    private final AiPostDraftRepository postDrafts;
     static final Set<String> SERVER_FIELDS = Set.of("totalAmount", "startDate", "endDate");
     static final Map<String, Integer> TERMS = Map.ofEntries(
             Map.entry("title",120), Map.entry("scope",4000), Map.entry("exclusions",2000), Map.entry("materials",2000),
@@ -37,16 +43,69 @@ public class AiDraftService {
         gemini.requireAvailable();
         var parts = images.parts(files);
         parts.add(Map.of("text", "현재 입력(참고 자료): " + Map.of("title", title, "content", content, "category", category)));
-        return cache.get(cacheKey(user, "post", parts), () -> limit.acquire(user), () -> {
-            var result = gemini.generate(COMMON + " 사진에서 제품 종류와 외관 손상을 관찰하고 의뢰 제목/설명/카테고리를 제안하세요. "
+        JsonNode result = cache.get(cacheKey(user, "post", parts), () -> limit.acquire(user), () -> {
+            var generated = gemini.generate(COMMON + " 사진에서 제품 종류와 외관 손상을 관찰하고 의뢰 제목/설명/카테고리를 제안하세요. "
                     + "실제 이 물건을 쓰다가 문제가 생긴 사람이 동네 커뮤니티에 편하게 글을 올리듯 자연스러운 1인칭 구어체로 작성하세요. "
                     + "'~관찰됩니다', '~확인이 필요합니다', '~점검이 필요합니다', '외관상 큰 파손은 명확히 보이지 않으나' 같은 딱딱한 점검 보고서 투는 쓰지 말고, "
                     + "이웃에게 편하게 부탁하듯 자연스러운 문장으로 쓰세요. "
                     + "제목은 100자, 본문은 800자 이내로 간결하게 작성하세요. 가격·수리 가능 여부·내부 고장을 확정하지 마세요. 근거 없는 모델명은 쓰지 마세요. "
                     + "액정과 전면 유리 손상을 단정하지 말고 확인이 필요한 내용은 자연스러운 말투로 본문에 짧게 포함하세요.", parts, postSchema());
-            validatePost(result);
-            return result;
+            validatePost(generated);
+            return generated;
         });
+        // 초안 하나당 "선택한 문장만 AI로 다듬기"를 몇 번 썼는지 추적하는 세션을 새로 연다.
+        AiPostDraft draft = postDrafts.save(new AiPostDraft(user));
+        ObjectNode response = result.deepCopy();
+        response.put("draftId", draft.getId());
+        response.put("remainingRevisions", draft.remainingRevisions());
+        return response;
+    }
+
+    // 본문 중 사용자가 선택한 문장만 지시사항에 맞게 다시 쓴다. Gemini 호출처럼 느린 외부 요청
+    // 동안 DB 트랜잭션(행 잠금)을 들고 있지 않도록, "자리 예약"(원자적 UPDATE)과 "실제 생성"을
+    // 분리한다 — 실패하면 예약한 자리를 환불해서 사용자가 실패한 시도로 횟수를 잃지 않게 한다.
+    public JsonNode revise(Long userId, PostRevisionRequest request) {
+        AiPostDraft draft = postDrafts.findByIdAndUserId(request.draftId(), userId)
+                .orElseThrow(() -> new AiException(HttpStatus.NOT_FOUND, "AI_DRAFT_NOT_FOUND", "AI 초안을 찾을 수 없습니다. 다시 생성해주세요."));
+        if (draft.isExpired()) throw new AiException(HttpStatus.GONE, "AI_DRAFT_EXPIRED", "AI 초안이 만료되었습니다. 다시 생성해주세요.");
+
+        int reserved = postDrafts.reserveRevision(request.draftId(), userId, AiPostDraft.MAX_REVISIONS);
+        if (reserved == 0) throw new AiException(HttpStatus.CONFLICT, "AI_REVISION_LIMIT", "AI 부분 수정 3회를 모두 사용했습니다.");
+
+        boolean consumed = false;
+        try {
+            String before = Objects.requireNonNullElse(request.contextBefore(), "").trim();
+            String after = Objects.requireNonNullElse(request.contextAfter(), "").trim();
+            String selected = request.selectedText().trim();
+            String instruction = request.instruction().trim();
+            if (selected.isBlank() || instruction.isBlank()) throw AiException.input("선택한 문장과 수정 요청을 확인해주세요.");
+
+            gemini.requireAvailable();
+            limit.acquire(userId);
+
+            Map<String, Object> input = Map.of(
+                    "contextBefore", before, "selectedText", selected, "contextAfter", after, "userInstruction", instruction);
+
+            var generated = gemini.generate(
+                    COMMON
+                            + " 사용자가 선택한 문장만 요청에 맞게 고치세요. 앞뒤 문맥과 자연스럽게 이어져야 합니다. "
+                            + "새 사실, 가격, 고장 원인 또는 수리 가능 여부를 만들지 마세요. "
+                            + "HTML 태그나 마크다운, 설명을 넣지 말고 replacement에 순수 텍스트로 대체 문장만 반환하세요.",
+                    List.of(Map.of("text", input.toString())),
+                    objectSchema(Map.of("replacement", textSchema(800))));
+
+            String replacement = text(generated.path("replacement"), 800, false).trim();
+            if (replacement.isBlank()) throw AiException.output();
+
+            consumed = true;
+            int remaining = postDrafts.findById(request.draftId()).map(AiPostDraft::remainingRevisions).orElse(0);
+            ObjectNode response = mapper.createObjectNode();
+            response.put("replacement", replacement);
+            response.put("remainingRevisions", remaining);
+            return response;
+        } finally {
+            if (!consumed) postDrafts.refundRevision(request.draftId());
+        }
     }
 
     public JsonNode contract(Long user, Long room, Long baseId, Map<String, String> currentTerms, String instructions) {

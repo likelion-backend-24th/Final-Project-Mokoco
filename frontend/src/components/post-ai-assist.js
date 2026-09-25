@@ -2,14 +2,14 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import "./ai-assist.css";
 
-export default function PostAiAssist({ files, values, categories, onApply }) {
+export default function PostAiAssist({ files, values, categories, onApply, onDraftCreated }) {
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
   const [result, setResult] = useState(null);
   const [undo, setUndo] = useState({});
   const controller = useRef(null);
   const inFlight = useRef(false);
-  const latest = useRef({ values, files, onApply });
-  useLayoutEffect(() => { latest.current = { values, files, onApply }; }, [values, files, onApply]);
+  const latest = useRef({ values, files, onApply, onDraftCreated });
+  useLayoutEffect(() => { latest.current = { values, files, onApply, onDraftCreated }; }, [values, files, onApply, onDraftCreated]);
   useEffect(() => () => controller.current?.abort(), []);
   const inputKey = JSON.stringify([values, files.map(f => [f.name, f.size, f.lastModified])]);
   async function analyze() {
@@ -32,6 +32,9 @@ export default function PostAiAssist({ files, values, categories, onApply }) {
       const current = latest.current;
       if (current.files !== files) {
         setError("분석 중 사진이 바뀌었습니다. 현재 사진으로 다시 분석해주세요."); return;
+      }
+      if (typeof payload.draftId === "number" && typeof payload.remainingRevisions === "number") {
+        current.onDraftCreated?.({ draftId: payload.draftId, remainingRevisions: payload.remainingRevisions });
       }
       const updated = { ...current.values }, previous = {}, skipped = [];
       for (const field of ["title", "content", "category"]) {

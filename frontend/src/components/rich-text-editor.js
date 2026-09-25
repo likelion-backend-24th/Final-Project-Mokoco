@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { forwardRef, useEffect, useImperativeHandle } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -30,7 +30,7 @@ function ToolbarButton({ onClick, active, disabled, label, children }) {
 // 저장 시 서버가 허용하는 태그(p/br/strong/em/u/s/h2/h3/ul/ol/li/blockquote)만 생기도록
 // StarterKit에서 쓰지 않는 노드(코드블록/구분선/인라인코드)는 아예 꺼둔다 — 에디터에서
 // 보이는 서식이 저장 후에도 그대로 유지되게(정제 과정에서 조용히 사라지지 않게) 하기 위함.
-export default function RichTextEditor({ value, onChange, placeholder }) {
+const RichTextEditor = forwardRef(function RichTextEditor({ value, onChange, placeholder, onSelectionChange }, ref) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -45,6 +45,22 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
     content: value || "",
     immediatelyRender: false,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    // 커서만 있고 실제 선택 범위가 없으면(from===to) AI 부분 수정 대상이 없는 것이므로 null을
+    // 올려서 상위(PostForm)가 제안 배너를 접게 한다. AI에게 문맥을 같이 주기 위해 선택 앞뒤
+    // 약 250자를 함께 담아 올린다(TipTap position은 글자 수와 정확히 같지는 않지만 이 용도엔 충분).
+    onSelectionUpdate: ({ editor }) => {
+      if (!onSelectionChange) return;
+      const { from, to } = editor.state.selection;
+      if (from === to) { onSelectionChange(null); return; }
+      const text = editor.state.doc.textBetween(from, to, " ");
+      if (!text.trim()) { onSelectionChange(null); return; }
+      const docSize = editor.state.doc.content.size;
+      onSelectionChange({
+        from, to, text,
+        contextBefore: editor.state.doc.textBetween(Math.max(0, from - 250), from, " "),
+        contextAfter: editor.state.doc.textBetween(to, Math.min(docSize, to + 250), " "),
+      });
+    },
     editorProps: {
       attributes: {
         class: "rte-content",
@@ -61,6 +77,23 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
       editor.commands.setContent(value || "", false);
     }
   }, [value, editor]);
+
+  useImperativeHandle(ref, () => ({
+    // AI가 반환한 replacement로 선택했던 범위(from/to)를 교체한다. 문자열을 그대로 넘기면
+    // TipTap이 HTML로 파싱하므로, AI 응답이 실수로라도 마크업을 포함하면 안 되니 순수 텍스트
+    // 노드로 명시해서 넣는다(HTML로 해석될 여지 자체를 없앤다).
+    replaceSelection(replacement, selection) {
+      if (!editor || !replacement || !selection) return false;
+      const { from, to } = selection;
+      const maxPosition = editor.state.doc.content.size;
+      if (from < 0 || to <= from || from > maxPosition || to > maxPosition) return false;
+      // AI 응답을 기다리는 동안 사용자가 그 문장을 수정했다면, 엉뚱한 위치를 덮어쓰지 않도록 취소한다.
+      const currentSelectedText = editor.state.doc.textBetween(from, to, " ");
+      if (selection.text && currentSelectedText.trim() !== selection.text.trim()) return false;
+      editor.chain().focus().insertContentAt({ from, to }, { type: "text", text: replacement }).run();
+      return true;
+    },
+  }), [editor]);
 
   if (!editor) return null;
 
@@ -85,4 +118,6 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
       <EditorContent editor={editor} />
     </div>
   );
-}
+});
+
+export default RichTextEditor;
