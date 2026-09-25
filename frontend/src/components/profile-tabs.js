@@ -96,7 +96,7 @@ function ReviewCard({ review, showTarget }) {
         <div className="mt-2.5 flex flex-wrap gap-2">
           {review.imageUrls.map((url) => (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img key={url} src={url} alt="후기 이미지" className="h-20 w-20 rounded-md border border-slate-200 object-cover" />
+            <img key={url} src={url} alt="후기 이미지" loading="lazy" className="h-20 w-20 rounded-md border border-slate-200 object-cover" />
           ))}
         </div>
       )}

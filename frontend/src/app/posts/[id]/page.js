@@ -141,6 +141,7 @@ export default async function PostDetailPage({ params }) {
                         <img
                           src={imageSrc(imgUrl)}
                           alt={`수리 요청 이미지 ${index + 1}`}
+                          loading={index === 0 ? "eager" : "lazy"}
                           className="block w-full h-auto"
                         />
                       </div>
