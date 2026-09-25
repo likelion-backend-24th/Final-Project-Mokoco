@@ -44,6 +44,8 @@ export default function PostForm({ postId, initialValue, accessToken }) {
   // 작성된 글 전체를 지시사항에 맞게 다시 써달라고 최대 3번까지 요청할 수 있다.
   const [aiDraftId, setAiDraftId] = useState(null);
   const [remainingRevisions, setRemainingRevisions] = useState(MAX_AI_REVISIONS);
+  // 재작성 버튼을 눌러야만 지시사항 입력 패널이 열린다 — 처음엔 버튼 하나만 보이게 하기 위함.
+  const [revisionPanelOpen, setRevisionPanelOpen] = useState(false);
   const [aiInstruction, setAiInstruction] = useState("");
   const [aiRevisionBusy, setAiRevisionBusy] = useState(false);
 
@@ -107,6 +109,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
   function cancelAiRevision() {
     if (aiRevisionBusy) return;
     setAiInstruction("");
+    setRevisionPanelOpen(false);
   }
 
   // 문장을 드래그로 선택해야만 쓸 수 있던 이전 방식 대신, 지시사항만 적으면 작성된 글 전체를
@@ -140,6 +143,7 @@ export default function PostForm({ postId, initialValue, accessToken }) {
       setContent(plainTextToHtml(payload.content));
       if (typeof payload.remainingRevisions === "number") setRemainingRevisions(payload.remainingRevisions);
       setAiInstruction("");
+      setRevisionPanelOpen(false);
     } catch {
       setMessage("AI 서버와 통신할 수 없습니다. 입력 내용은 유지됩니다.");
     } finally {
@@ -295,59 +299,74 @@ export default function PostForm({ postId, initialValue, accessToken }) {
           </div>
         </div>
 
-        {/* 사진 분석(제목·내용 채우기)과 선택 문장 다듬기를 "글 작성 도우미" 하나로 합쳤다. */}
+        {/* 사진 분석(제목·내용 채우기)과 전체 글 다시 쓰기를 "글 작성 도우미" 하나로 합쳤다.
+            버튼이 하나만 보이게: 처음엔 "사진으로 작성하기", 한 번 쓰고 나면 "재작성"으로
+            바뀌고, 그걸 눌러야만 지시사항 입력 패널이 열린다. */}
         <section className="rounded-2xl border border-slate-200 bg-white p-5">
           <h3 className="flex items-center gap-1.5 text-base font-bold text-slate-900">
             <Sparkle size={18} weight="fill" className="text-violet-600" />
             글 작성 도우미
           </h3>
-          <p className="mt-1 text-sm text-slate-500">사진으로 제목·내용을 채우거나, 아래 본문에서 문장을 선택해 AI로 다듬어보세요.</p>
+          <p className="mt-1 text-sm text-slate-500">사진으로 제목·내용을 채우고, 마음에 안 들면 원하는 방향을 적어 다시 써달라고 할 수 있어요.</p>
 
           <div className="mt-3">
-            <PostAiAssist files={selectedFiles.map(({ file }) => file)} values={{ title, content, category: selectedCategory }}
-              onApply={(field, value) => { if (field === "title") setTitle(value); else if (field === "content") setContent(value); else if (field === "category") setSelectedCategory(value); }}
-              onDraftCreated={({ draftId, remainingRevisions: remaining }) => {
-                setAiDraftId(draftId);
-                setRemainingRevisions(Math.max(0, Math.min(MAX_AI_REVISIONS, remaining)));
-              }} />
-          </div>
+            {!aiDraftId ? (
+              <PostAiAssist files={selectedFiles.map(({ file }) => file)} values={{ title, content, category: selectedCategory }}
+                onApply={(field, value) => { if (field === "title") setTitle(value); else if (field === "content") setContent(value); else if (field === "category") setSelectedCategory(value); }}
+                onDraftCreated={({ draftId, remainingRevisions: remaining }) => {
+                  setAiDraftId(draftId);
+                  setRemainingRevisions(Math.max(0, Math.min(MAX_AI_REVISIONS, remaining)));
+                }} />
+            ) : !revisionPanelOpen ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setRevisionPanelOpen(true)}
+                  disabled={remainingRevisions <= 0}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Sparkle size={16} weight="fill" />
+                  {remainingRevisions > 0 ? `재작성 (남은 ${remainingRevisions}회)` : "AI 재작성 횟수를 모두 사용했습니다"}
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center justify-between gap-3">
+                  <strong className="flex items-center gap-1 text-sm text-slate-900">
+                    <Sparkle size={15} weight="fill" className="text-violet-600" />
+                    어떻게 다시 써줄까요?
+                  </strong>
+                  <span className="text-xs font-medium text-violet-700">남은 수정 {remainingRevisions} / {MAX_AI_REVISIONS}</span>
+                </div>
 
-          <div className="mt-4 border-t border-slate-100 pt-4">
-            <div className="flex items-center justify-between gap-3">
-              <strong className="flex items-center gap-1 text-sm text-slate-900">
-                <Sparkle size={15} weight="fill" className="text-violet-600" />
-                작성된 글 수정하기
-              </strong>
-              <span className="text-xs font-medium text-violet-700">남은 수정 {remainingRevisions} / {MAX_AI_REVISIONS}</span>
-            </div>
-            <p className="mt-1 text-xs text-slate-500">어떻게 고칠지 적으면 AI가 위 내용 전체를 다시 써줘요.</p>
-
-            <div className="mb-3 mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={() => setAiInstruction("더 자연스럽고 읽기 쉽게 고쳐줘")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-50">자연스럽게</button>
-              <button type="button" onClick={() => setAiInstruction("상황을 이해하기 쉽도록 조금 더 구체적으로 써줘")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-50">더 자세하게</button>
-              <button type="button" onClick={() => setAiInstruction("핵심만 남겨서 간결하게 고쳐줘")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-50">간결하게</button>
-            </div>
-            <textarea
-              value={aiInstruction}
-              onChange={(event) => setAiInstruction(event.target.value)}
-              rows={3}
-              maxLength={500}
-              placeholder="예: 아이폰14프로라는 것을 강조해줘"
-              disabled={aiRevisionBusy}
-              className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm text-slate-800 outline-none transition focus:border-violet-500 disabled:bg-slate-50"
-            />
-            <div className="mt-3 flex justify-end gap-2">
-              <button type="button" onClick={cancelAiRevision} disabled={aiRevisionBusy} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50">취소</button>
-              <button
-                type="button"
-                onClick={reviseContent}
-                disabled={aiRevisionBusy || !aiInstruction.trim() || remainingRevisions <= 0}
-                className="flex items-center gap-1 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Sparkle size={16} weight="fill" />
-                {aiRevisionBusy ? "수정 중..." : "수정하기"}
-              </button>
-            </div>
+                <div className="mb-3 mt-3 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setAiInstruction("더 자연스럽고 읽기 쉽게 고쳐줘")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-50">자연스럽게</button>
+                  <button type="button" onClick={() => setAiInstruction("상황을 이해하기 쉽도록 조금 더 구체적으로 써줘")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-50">더 자세하게</button>
+                  <button type="button" onClick={() => setAiInstruction("핵심만 남겨서 간결하게 고쳐줘")} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-700 transition hover:bg-slate-50">간결하게</button>
+                </div>
+                <textarea
+                  value={aiInstruction}
+                  onChange={(event) => setAiInstruction(event.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  placeholder="예: 아이폰14프로라는 것을 강조해줘"
+                  disabled={aiRevisionBusy}
+                  className="w-full resize-none rounded-xl border border-slate-200 p-3 text-sm text-slate-800 outline-none transition focus:border-violet-500 disabled:bg-slate-50"
+                />
+                <div className="mt-3 flex justify-end gap-2">
+                  <button type="button" onClick={cancelAiRevision} disabled={aiRevisionBusy} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50">취소</button>
+                  <button
+                    type="button"
+                    onClick={reviseContent}
+                    disabled={aiRevisionBusy || !aiInstruction.trim()}
+                    className="flex items-center gap-1 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Sparkle size={16} weight="fill" />
+                    {aiRevisionBusy ? "수정 중..." : "수정하기"}
+                  </button>
+                </div>
+              </div>
+            )}
             {/* 이 카드가 본문 위에 있어서, 에러가 폼 맨 아래에만 뜨면 안 보이고 지나칠 수 있다. */}
             {message && (
               <div className="mt-3 rounded-xl bg-red-50 p-3 text-center text-sm font-medium text-red-600">
