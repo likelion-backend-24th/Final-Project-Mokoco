@@ -190,6 +190,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .active-deal-list { display: flex; flex-direction: column; gap: 10px; list-style: none; margin: 0; padding: 0; }
 .active-deal-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid #e5eaf1; border-radius: 8px; background: white; transition: 150ms ease; min-width: 0; }
 .active-deal-row:hover { border-color: #b9cdfa; background: #f7faff; }
+.active-deal-icon { display: grid; flex: 0 0 44px; place-items: center; width: 44px; height: 44px; border-radius: 8px; color: #7c9ce3; background: linear-gradient(140deg,#f5f7fb,#e6ebf4); }
 
 .post-rich-content p { margin: 0 0 .9em; }
 .post-rich-content p:last-child { margin-bottom: 0; }

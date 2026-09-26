@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "@phosphor-icons/react";
+import { ArrowRight, Wrench } from "@phosphor-icons/react";
 import { DEAL_STATUS_LABEL } from "@/lib/deal-status-label";
+import { formatRelativeDate } from "@/lib/format-relative-date";
 
 const TABS = [
   { key: "requester", label: "의뢰자로서" },
@@ -41,13 +42,13 @@ export default function ActiveDealsCard({ deals }) {
         <ul className="active-deal-list">
           {list.map((deal) => (
             <li key={deal.fixDealId}>
-              <Link
-                href={deal.chatRoomId ? `/chat-rooms/${deal.chatRoomId}` : `/posts/${deal.postId}`}
-                className="active-deal-row"
-              >
+              <Link href={`/posts/${deal.postId}`} className="active-deal-row">
+                <div className="active-deal-icon" aria-hidden="true"><Wrench size={20} weight="duotone" /></div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-slate-800">{deal.postTitle}</p>
-                  <p className="text-sm text-slate-500">상대방: {deal.counterpartNickname || deal.counterpartEmail}</p>
+                  <p className="text-sm text-slate-500">
+                    상대방: {deal.counterpartNickname || deal.counterpartEmail} · {formatRelativeDate(deal.createdAt)}
+                  </p>
                 </div>
                 <span className={`status-badge shrink-0 ${deal.status === "MATCHED" ? "status-matched" : ""}`}>
                   {DEAL_STATUS_LABEL[deal.status] ?? deal.status}
