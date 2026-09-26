@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import SiteHeader from "@/components/site-header";
+import ContractList from "@/components/contract-list";
 import { useAuthStore } from "@/store/authStore";
 
 const STATUS_LABEL = {
@@ -61,6 +62,8 @@ export default function MyPage() {
 
         <h1 className="text-2xl font-bold text-slate-900">내 프로필</h1>
         {userEmail && <p className="mt-1 text-sm text-slate-500">{userEmail}</p>}
+
+        <ContractList />
 
         <section className="mt-8">
           <h2 className="text-lg font-semibold text-slate-800">정산내역</h2>

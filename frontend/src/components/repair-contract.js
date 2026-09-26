@@ -14,8 +14,8 @@ const fields = [
   ["cancellationTerms", "취소·지연·파손·수리 불가 시 처리", "area", 2000],
   ["additionalCostTerms", "추가 작업·비용의 사전 승인 절차", "area", 2000],
 ];
-const labels = { DRAFT: "초안", SIGNING: "서명 대기", SIGNED: "체결 완료", SUPERSEDED: "이전 버전" };
-const dealLabels = { MATCHED: "작업 전", REPAIRING: "수리 진행 중", REPAIR_DONE: "완료 확인 대기", COMPLETED: "거래 완료", CANCELED: "거래 취소", PRODUCT_SENT: "물품 전달" };
+export const labels = { DRAFT: "초안", SIGNING: "서명 대기", SIGNED: "체결 완료", SUPERSEDED: "이전 버전" };
+export const dealLabels = { MATCHED: "작업 전", REPAIRING: "수리 진행 중", REPAIR_DONE: "완료 확인 대기", COMPLETED: "거래 완료", CANCELED: "거래 취소", PRODUCT_SENT: "물품 전달" };
 const initial = Object.fromEntries(fields.map(([key]) => [key, ""]));
 const dateTime = value => value ? new Date(value).toLocaleString("ko-KR") : "—";
 
@@ -35,7 +35,26 @@ function SignatureForm({ version, consentText, busy, onSign }) {
   </form>;
 }
 
-export default function RepairContract({ roomId }) {
+export function ContractDocument({ selected, overview, roomId }) {
+  return (
+  <article className="contract-document">
+    <div className="contract-document-heading"><span>수리 도급계약 · 버전 {selected.revision}</span><strong>{labels[selected.status]}</strong></div>
+    <h2>{selected.terms.title}</h2>
+    <p>의뢰인 계정 #{overview.requesterId} · 수리자 계정 #{overview.repairerId} · 채팅방 #{roomId}</p>
+    <p>작성: {dateTime(selected.createdAt)} · 체결: {dateTime(selected.signedAt)}</p>
+    <dl>{fields.filter(([key]) => key !== "title").map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{key === "totalAmount" ? `${Number(selected.terms[key]).toLocaleString("ko-KR")}원` : selected.terms[key]}</dd></div>)}</dl>
+    <h3>서명 기록</h3><p>{overview.consentText}</p>
+    <div className="contract-signatures">{[[overview.requesterId, "의뢰인"], [overview.repairerId, "수리자"]].map(([id, role]) => {
+      const signature = selected.signatures.find(item => item.signerId === id);
+      return <section key={id}><strong>{role} · 계정 #{id}</strong><p>{signature ? signature.signerName : "미서명"}</p><small>{signature ? dateTime(signature.signedAt) : "서명을 기다리고 있습니다."}</small></section>;
+    })}</div>
+    <p className="contract-hash">문서 SHA-256: {selected.documentHash}</p>
+    <small>로그인 계정 기반 전자서명 기록입니다. 별도 본인인증·외부 전자서명 서비스는 미연동입니다.</small>
+  </article>
+  );
+}
+
+export default function RepairContract({ roomId, embedded = false }) {
   const [overview, setOverview] = useState(null);
   const [userId, setUserId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
@@ -88,9 +107,10 @@ export default function RepairContract({ roomId }) {
     const url = URL.createObjectURL(blob); const anchor = document.createElement("a");
     anchor.href = url; anchor.download = `repair-contract-${roomId}-v${selected.revision}.json`; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  return <main className="contract-page">
-    <header className="contract-controls"><Link href={`/chat-rooms/${roomId}`}>← 채팅으로 돌아가기</Link><h1>수리 계약서</h1>
-      <p>작업 범위와 조건을 확인하고 같은 계약에 양측이 서명하세요.</p></header>
+  const Wrapper = embedded ? "div" : "main";
+  return <Wrapper className={`contract-page${embedded ? " contract-embedded" : ""}`}>
+    {!embedded && <header className="contract-controls"><Link href={`/chat-rooms/${roomId}`}>← 채팅으로 돌아가기</Link><h1>수리 계약서</h1>
+      <p>작업 범위와 조건을 확인하고 같은 계약에 양측이 서명하세요.</p></header>}
     {error && <div role="alert" className="contract-error contract-controls">{error}<button type="button" onClick={() => load().then(() => setError("")).catch(e => setError(e.message))}>다시 불러오기</button></div>}
     {notice && <p role="status" className="contract-controls">{notice}</p>}
     {!overview ? <p>계약 정보를 불러오는 중입니다.</p> : <>
@@ -114,20 +134,7 @@ export default function RepairContract({ roomId }) {
         <div className="contract-toolbar"><button disabled={busy}>초안 저장</button><button type="button" disabled={busy} onClick={() => setEditing(null)}>취소</button></div>
       </form> : selected ? <>
         {!isLatest && <p className="contract-error contract-controls">이전 계약 버전입니다. 최신 버전을 선택해 진행해주세요.</p>}
-        <article className="contract-document">
-          <div className="contract-document-heading"><span>수리 도급계약 · 버전 {selected.revision}</span><strong>{labels[selected.status]}</strong></div>
-          <h2>{selected.terms.title}</h2>
-          <p>의뢰인 계정 #{overview.requesterId} · 수리자 계정 #{overview.repairerId} · 채팅방 #{roomId}</p>
-          <p>작성: {dateTime(selected.createdAt)} · 체결: {dateTime(selected.signedAt)}</p>
-          <dl>{fields.filter(([key]) => key !== "title").map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{key === "totalAmount" ? `${Number(selected.terms[key]).toLocaleString("ko-KR")}원` : selected.terms[key]}</dd></div>)}</dl>
-          <h3>서명 기록</h3><p>{overview.consentText}</p>
-          <div className="contract-signatures">{[[overview.requesterId, "의뢰인"], [overview.repairerId, "수리자"]].map(([id, role]) => {
-            const signature = selected.signatures.find(item => item.signerId === id);
-            return <section key={id}><strong>{role} · 계정 #{id}</strong><p>{signature ? signature.signerName : "미서명"}</p><small>{signature ? dateTime(signature.signedAt) : "서명을 기다리고 있습니다."}</small></section>;
-          })}</div>
-          <p className="contract-hash">문서 SHA-256: {selected.documentHash}</p>
-          <small>로그인 계정 기반 전자서명 기록입니다. 별도 본인인증·외부 전자서명 서비스는 미연동입니다.</small>
-        </article>
+        <ContractDocument selected={selected} overview={overview} roomId={roomId} />
         <div className="contract-toolbar contract-controls"><button onClick={() => window.print()}>인쇄 / PDF 저장</button><button onClick={download}>계약·서명 기록 저장</button></div>
         {isLatest && selected.status === "DRAFT" && <button className="contract-primary contract-controls" disabled={busy || userId === null} onClick={() => mutate("request", { versionId: selected.id })}>이 버전으로 양측 서명 요청</button>}
         {isLatest && selected.status === "SIGNING" && userId !== null && !selected.signatures.some(s => s.signerId === userId) && <SignatureForm key={selected.id} version={selected} consentText={overview.consentText} busy={busy} onSign={body => mutate("sign", { versionId: selected.id, ...body })} />}
@@ -139,5 +146,5 @@ export default function RepairContract({ roomId }) {
         </section>}
       </> : <p className="contract-sign">아직 계약서가 없습니다. 채팅에서 합의한 조건으로 초안을 작성해주세요.</p>}
     </>}
-  </main>;
+  </Wrapper>;
 }
