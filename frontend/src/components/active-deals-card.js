@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Wrench } from "@phosphor-icons/react";
 import { DEAL_STATUS_LABEL } from "@/lib/deal-status-label";
-import { formatRelativeDate } from "@/lib/format-relative-date";
 
 const TABS = [
   { key: "requester", label: "요청한 거래" },
@@ -46,9 +45,7 @@ export default function ActiveDealsCard({ deals }) {
                 <div className="active-deal-icon" aria-hidden="true"><Wrench size={20} weight="duotone" /></div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-slate-800">{deal.postTitle}</p>
-                  <p className="text-sm text-slate-500">
-                    상대방: {deal.counterpartNickname || deal.counterpartEmail} · {formatRelativeDate(deal.createdAt)}
-                  </p>
+                  <p className="text-sm text-slate-500">{deal.counterpartNickname || deal.counterpartEmail}</p>
                 </div>
                 <span className={`status-badge shrink-0 ${deal.status === "MATCHED" ? "status-matched" : ""}`}>
                   {DEAL_STATUS_LABEL[deal.status] ?? deal.status}
