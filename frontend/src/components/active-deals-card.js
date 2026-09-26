@@ -7,8 +7,8 @@ import { DEAL_STATUS_LABEL } from "@/lib/deal-status-label";
 import { formatRelativeDate } from "@/lib/format-relative-date";
 
 const TABS = [
-  { key: "requester", label: "의뢰자로서" },
-  { key: "repairer", label: "수리자로서" },
+  { key: "requester", label: "요청한 거래" },
+  { key: "repairer", label: "도와준 거래" },
 ];
 
 export default function ActiveDealsCard({ deals }) {
