@@ -1,5 +1,6 @@
 package com.team2.chatservice.client;
 
+import com.team2.chatservice.client.dto.ChatMessageNotificationRequest;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,8 +13,6 @@ import org.springframework.web.bind.annotation.*;
         configuration = ChatNotificationClientConfig.class
 )
 public interface ChatNotificationClient {
-
-    record ChatMessageNotificationRequest(Long recipientId, Long postId, Long chatRoomId, String content) {}
 
     @PostMapping("/api/internal/notifications/chat-message")
     void notifyChatMessage(@RequestBody ChatMessageNotificationRequest request);

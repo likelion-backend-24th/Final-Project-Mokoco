@@ -6,6 +6,7 @@ import com.team2.chatservice.chatMessage.repository.ChatMessageRepository;
 import com.team2.chatservice.chatRoom.entity.ChatRoom;
 import com.team2.chatservice.chatRoom.repository.ChatRoomRepository;
 import com.team2.chatservice.client.ChatNotificationClient;
+import com.team2.chatservice.client.dto.ChatMessageNotificationRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -69,7 +70,7 @@ public class ChatService {
         try {
             Long recipientId = userId.equals(room.getRequesterId())
                     ? room.getRepairerId() : room.getRequesterId();
-            notificationClient.notifyChatMessage(new ChatNotificationClient.ChatMessageNotificationRequest(
+            notificationClient.notifyChatMessage(new ChatMessageNotificationRequest(
                     recipientId, room.getPostId(), room.getId(), trimmed));
         } catch (Exception e) {
             log.warn("채팅 메시지 알림 전송 실패 roomId={}", roomId, e);
