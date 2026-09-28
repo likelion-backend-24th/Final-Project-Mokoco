@@ -6,7 +6,7 @@ import { DEAL_STATUS_LABEL } from "@/lib/deal-status-label";
 // 결제/진행상태 조작은 전부 채팅방의 계약서 페이지(repair-contract.js)에서 이루어진다.
 // 여기서는 지금 어느 단계인지만 읽기 전용으로 보여준다.
 export default function FixDealProgress({ fixDealId }) {
-  const [status, setStatus] = useState(null);
+  const [deal, setDeal] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -16,7 +16,7 @@ export default function FixDealProgress({ fixDealId }) {
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "거래 상태를 불러오지 못했습니다.");
-        setStatus(data.status);
+        setDeal(data);
       })
       .catch((failure) => {
         if (!controller.signal.aborted) setError(failure.message ?? "서버에 연결할 수 없습니다.");
@@ -26,11 +26,16 @@ export default function FixDealProgress({ fixDealId }) {
 
   if (!fixDealId) return null;
   if (error) return <p role="alert" className="mt-4 text-sm text-red-600">거래 상태를 불러오지 못했어요: {error}</p>;
-  if (!status) return null;
+  if (!deal) return null;
+
+  // MATCHED는 계약서가 양측 서명까지 끝났는지에 따라 계약서 페이지와 같은 문구로 더 자세히 보여준다.
+  const label = deal.status === "MATCHED" && deal.contractSigned
+    ? "계약 체결 완료"
+    : DEAL_STATUS_LABEL[deal.status] ?? deal.status;
 
   return (
     <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-      <span className="text-sm font-bold text-slate-800">거래 진행 상태: {DEAL_STATUS_LABEL[status] ?? status}</span>
+      <span className="text-sm font-bold text-slate-800">거래 진행 상태: {label}</span>
     </div>
   );
 }

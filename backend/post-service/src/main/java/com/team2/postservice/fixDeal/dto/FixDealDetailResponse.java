@@ -13,9 +13,12 @@ public record FixDealDetailResponse(
         Long repairerId,
         FixDealStatus status,
         LocalDateTime createdAt,
-        LocalDateTime completedAt
+        LocalDateTime completedAt,
+        // 계약서가 양측 서명까지 끝났는지 — MATCHED 상태를 "이웃과 연결됨"과 "계약 체결 완료"로
+        // 더 자세히 나눠 보여주기 위함(계약서 페이지가 이미 쓰는 문구와 통일).
+        boolean contractSigned
 ) {
-    public static FixDealDetailResponse from(FixDeal fixDeal) {
+    public static FixDealDetailResponse from(FixDeal fixDeal, boolean contractSigned) {
         return new FixDealDetailResponse(
                 fixDeal.getId(),
                 fixDeal.getPostId(),
@@ -24,7 +27,8 @@ public record FixDealDetailResponse(
                 fixDeal.getRepairerId(),
                 fixDeal.getStatus(),
                 fixDeal.getCreatedAt(),
-                fixDeal.getCompletedAt()
+                fixDeal.getCompletedAt(),
+                contractSigned
         );
     }
 }

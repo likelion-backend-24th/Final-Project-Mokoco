@@ -3,6 +3,7 @@ package com.team2.postservice.fixDeal.service;
 import com.team2.common.security.LoginUser;
 import com.team2.postservice.admin.dto.AdminPaymentListResponse;
 import com.team2.postservice.admin.dto.AdminPaymentResponse;
+import com.team2.postservice.client.ChatRoomClient;
 import com.team2.postservice.client.PaymentClient;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.AdminPaymentClientResponse;
@@ -12,6 +13,7 @@ import com.team2.postservice.client.dto.AdminUserStatsResponse;
 import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.common.exception.CustomException;
 import com.team2.postservice.common.exception.ErrorCode;
+import com.team2.postservice.contract.ContractRepository;
 import com.team2.postservice.fixDeal.dto.AdminDealResponse;
 import com.team2.postservice.fixDeal.dto.AdminOverviewResponse;
 import com.team2.postservice.fixDeal.dto.FixDealDetailResponse;
@@ -52,6 +54,8 @@ public class FixDealService {
     private final PostViewerService postViewerService;
     private final UserClient userClient;
     private final PaymentClient paymentClient;
+    private final ChatRoomClient chatRoomClient;
+    private final ContractRepository contractRepository;
 
     // 거래 진행 상태 전이는 전부 ContractService.advance()(계약서 페이지)가 담당한다.
     // 여기는 읽기 전용 조회만 제공한다.
@@ -66,7 +70,23 @@ public class FixDealService {
             throw new CustomException(ErrorCode.UNAUTHORIZED_FIX_DEAL_ACTION);
         }
 
-        return FixDealDetailResponse.from(fixDeal);
+        return FixDealDetailResponse.from(fixDeal, hasSignedContract(fixDealId));
+    }
+
+    // 거래 진행 상태 화면이 MATCHED를 "이웃과 연결됨"/"계약 체결 완료"로 더 자세히 나눠 보여주려고
+    // 계약서가 양측 서명까지 끝났는지 확인한다. 채팅방 조회(chat-service)나 계약서 조회 중 하나라도
+    // 실패해도 이 화면 자체가 죽으면 안 되므로, 실패 시 "서명 안 됨"으로 조용히 처리한다.
+    private boolean hasSignedContract(Long fixDealId) {
+        try {
+            Long chatRoomId = chatRoomClient.byFixDealIds(new ChatRoomClient.FixDealIdsRequest(List.of(fixDealId)))
+                    .get(fixDealId);
+            if (chatRoomId == null) return false;
+            return contractRepository.findFirstByChatRoomIdOrderByRevisionDesc(chatRoomId)
+                    .map(contract -> "SIGNED".equals(contract.getStatus()))
+                    .orElse(false);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public FixDealStatusResponse getStatusByPostId(Long postId) {
