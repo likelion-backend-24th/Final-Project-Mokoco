@@ -51,6 +51,9 @@ public class ProposalService {
         if (!post.isAcceptingProposals())
             throw new CustomException(ErrorCode.POST_NOT_ACCEPTING_PROPOSALS);
 
+        if (post.getAuthorEmail().equals(repairerEmail))
+            throw new CustomException(ErrorCode.SELF_PROPOSAL_NOT_ALLOWED);
+
         Proposal proposal = Proposal.builder()
                 .post(post)
                 .repairerEmail(repairerEmail)
