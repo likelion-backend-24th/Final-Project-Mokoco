@@ -6,7 +6,7 @@ import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
 export const metadata = {
-  title: "Mokoco",
+  title: "동네수리",
   description: "가까운 이웃과 함께하는 지역 커뮤니티",
 };
 
