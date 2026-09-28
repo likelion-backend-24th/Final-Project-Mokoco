@@ -12,13 +12,15 @@ import LocationPermissionPrompt from "@/components/location-permission-prompt";
 import ActiveDealsCard from "@/components/active-deals-card";
 import HowItWorksCard from "@/components/how-it-works-card";
 import RepairCategorySection from "@/components/repair-category-section";
+import RecentCompletedRepairs from "@/components/recent-completed-repairs";
+import RegionScopeFilter from "@/components/region-scope-filter";
 
 import { imageSrc } from "@/lib/backend";
 import { getNearbyPosts } from "@/lib/nearby-posts";
 import { getMyActiveDeals } from "@/lib/active-deals";
+import { getRecentCompletedPosts } from "@/lib/recent-completed-posts";
 import { htmlToText } from "@/lib/html-to-text";
 import { formatRelativeDate } from "@/lib/format-relative-date";
-import RegionScopeFilter from "@/components/region-scope-filter";
 import {
   normalizeRegionScope,
   regionListHref,
@@ -48,9 +50,7 @@ function EmptyPosts({ error, postHref }) {
           : "아직 등록된 수리 요청이 없어요"}
       </h3>
 
-      <p>
-        {error ?? "첫 번째 수리 요청을 올려보세요!"}
-      </p>
+      <p>{error ?? "첫 번째 수리 요청을 올려보세요!"}</p>
 
       <Link
         href={postHref}
@@ -108,11 +108,14 @@ function PostList({
           <div className="min-w-0 flex-1">
             <div className="post-title-line">
               <h3>
-                {post.title || "제목 없는 수리 요청"}
+                {post.title ||
+                  "제목 없는 수리 요청"}
               </h3>
 
               <time>
-                {formatRelativeDate(post.createdAt)}
+                {formatRelativeDate(
+                  post.createdAt
+                )}
               </time>
             </div>
 
@@ -120,7 +123,9 @@ function PostList({
               <span
                 className={`status-badge status-${post.status?.toLowerCase()}`}
               >
-                {statusLabel[post.status] ??
+                {statusLabel[
+                  post.status
+                ] ??
                   post.status ??
                   "상태 미정"}
               </span>
@@ -133,7 +138,9 @@ function PostList({
             </div>
 
             <p className="post-content">
-              {htmlToText(post.content) ||
+              {htmlToText(
+                post.content
+              ) ||
                 "등록된 상세 내용이 없습니다."}
             </p>
           </div>
@@ -151,6 +158,7 @@ function UnifiedHome({
   pagination,
   regionScope,
   activeDeals,
+  recentCompletedPosts,
 }) {
   return (
     <main className="page-shell auth-main">
@@ -215,12 +223,14 @@ function UnifiedHome({
               />
 
               <h2 className="mb-2">
-                로그인하고 더 많은 기능을 이용해보세요
+                로그인하고 더 많은
+                기능을 이용해보세요
               </h2>
 
               <p className="text-sm text-slate-500 mb-4">
-                내 수리 요청 현황을 관리하고
-                이웃과 소통할 수 있습니다.
+                내 수리 요청 현황을
+                관리하고 이웃과 소통할
+                수 있습니다.
               </p>
 
               <Link
@@ -238,6 +248,10 @@ function UnifiedHome({
 
       <RepairCategorySection
         regionScope={regionScope}
+      />
+
+      <RecentCompletedRepairs
+        posts={recentCompletedPosts}
       />
     </main>
   );
@@ -279,6 +293,7 @@ export default async function Home({
       pagination,
     },
     activeDeals,
+    recentCompletedPosts,
   ] = await Promise.all([
     getNearbyPosts(
       accessToken,
@@ -296,6 +311,8 @@ export default async function Home({
           requester: [],
           repairer: [],
         }),
+
+    getRecentCompletedPosts(),
   ]);
 
   return (
@@ -309,15 +326,26 @@ export default async function Home({
       />
 
       <UnifiedHome
-        regionScope={regionScope}
-        pagination={pagination}
+        regionScope={
+          regionScope
+        }
+        pagination={
+          pagination
+        }
         posts={posts}
         error={error}
-        userEmail={userEmail}
+        userEmail={
+          userEmail
+        }
         isAuthenticated={
           isAuthenticated
         }
-        activeDeals={activeDeals}
+        activeDeals={
+          activeDeals
+        }
+        recentCompletedPosts={
+          recentCompletedPosts
+        }
       />
     </div>
   );
