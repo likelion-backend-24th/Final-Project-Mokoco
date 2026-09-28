@@ -1,6 +1,8 @@
 package com.team2.postservice.contract.controller;
 
 import com.team2.common.security.LoginUser;
+import com.team2.postservice.contract.dto.Overview;
+import com.team2.postservice.contract.dto.Version;
 import com.team2.postservice.contract.service.ContractService;
 import com.team2.postservice.contract.dto.ActionRequest;
 import com.team2.postservice.contract.dto.DraftRequest;
@@ -20,16 +22,16 @@ import java.util.Map;
 public class ContractController {
     private final ContractService service;
     @GetMapping
-    public ContractService.Overview get(@PathVariable Long roomId, @AuthenticationPrincipal LoginUser user) {
+    public Overview get(@PathVariable Long roomId, @AuthenticationPrincipal LoginUser user) {
         return service.get(roomId, user.id());
     }
     @PostMapping
-    public ContractService.Version draft(@PathVariable Long roomId, @AuthenticationPrincipal LoginUser user,
-            @Valid @RequestBody DraftRequest request) {
+    public Version draft(@PathVariable Long roomId, @AuthenticationPrincipal LoginUser user,
+                         @Valid @RequestBody DraftRequest request) {
         return service.draft(roomId, user.id(), request.baseId(), request.terms());
     }
     @PostMapping("/{action}")
-    public ContractService.Overview action(@PathVariable Long roomId, @PathVariable String action,
+    public Overview action(@PathVariable Long roomId, @PathVariable String action,
             @AuthenticationPrincipal LoginUser user, @Valid @RequestBody ActionRequest request) {
         Long userId = user.id();
         switch (action) {
