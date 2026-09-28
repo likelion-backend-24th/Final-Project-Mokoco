@@ -86,8 +86,10 @@ public class PostService {
         RegionResponse region = email == null ? null : postViewerService.tryRegion(email);
         String regionPattern = regionScope == RegionScope.ALL || region == null
                 ? null : regionScope.queryPattern(region.regionCode());
+        // 제안이 없어 끌어올려진(bumpToTop) 글이 최신 글처럼 다시 위로 오도록 createdAt이 아닌
+        // bumpedAt으로 정렬한다 — PostReminderScheduler가 끌어올릴 때마다 이 값을 갱신한다.
         PageRequest pageable = PageRequest.of(page, size,
-                Sort.by(Sort.Direction.DESC, "createdAt", "id"));
+                Sort.by(Sort.Direction.DESC, "bumpedAt", "id"));
         Page<NearbyRepairRequest> posts = postRepository.findNearby(regionPattern, category == PostCategory.ALL ? null : category, pageable);
         // 같은 페이지 안에서 작성자가 겹칠 수 있어(같은 사람의 여러 글), 이메일당 한 번만 조회하도록
         // 이 요청 범위에서만 쓰는 로컬 캐시를 사용한다(인스턴스 필드로 두면 요청 간에 공유되어 버그가 된다).
