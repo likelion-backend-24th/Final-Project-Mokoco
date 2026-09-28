@@ -192,7 +192,7 @@ public class AiDraftService {
                 if (value == null || value.isBlank()) continue;
                 if (value.length() > TERMS.get(entry.getKey())) throw new IllegalArgumentException();
                 if (entry.getKey().equals("totalAmount")) {
-                    if (!value.matches("[0-9]{1,10}(\\.[0-9]{1,2})?") || new BigDecimal(value).signum() <= 0) throw new IllegalArgumentException();
+                    if (!value.matches("[0-9]{1,10}") || new BigDecimal(value).signum() <= 0) throw new IllegalArgumentException();
                 }
                 if (entry.getKey().equals("startDate") || entry.getKey().equals("endDate")) {
                     if (!value.matches("\\d{4}-\\d{2}-\\d{2}")) throw new IllegalArgumentException();

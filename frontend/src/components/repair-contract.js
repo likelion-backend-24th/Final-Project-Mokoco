@@ -214,7 +214,7 @@ export default function RepairContract({ roomId, embedded = false, hideActions =
           onApply={(field, value) => setEditing(current => current ? { ...current, terms: { ...current.terms, [field]: value } } : current)} />
         {fields.map(([key, label, type, max]) => <label key={key}>{label}
           {type === "area" ? <textarea required maxLength={max} rows={3} value={editing.terms[key]} onChange={e => setEditing({ ...editing, terms: { ...editing.terms, [key]: e.target.value } })} />
-            : <input required type={type} maxLength={max} min={type === "number" ? "0.01" : undefined} max={type === "number" ? "9999999999.99" : undefined} step={type === "number" ? "0.01" : undefined} value={editing.terms[key]} onChange={e => setEditing({ ...editing, terms: { ...editing.terms, [key]: e.target.value } })} />}
+            : <input required type={type} maxLength={max} min={type === "number" ? "1" : undefined} max={type === "number" ? "9999999999" : undefined} step={type === "number" ? "1" : undefined} onWheel={type === "number" ? e => e.target.blur() : undefined} value={editing.terms[key]} onChange={e => setEditing({ ...editing, terms: { ...editing.terms, [key]: e.target.value } })} />}
         </label>)}
         <div className="contract-toolbar"><button disabled={busy}>초안 저장</button><button type="button" disabled={busy} onClick={() => setEditing(null)}>취소</button></div>
       </form> : selected ? <>
