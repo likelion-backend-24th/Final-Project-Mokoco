@@ -89,7 +89,7 @@ public class PostController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/api/posts/completed/recent")
+    @GetMapping("/completed/recent")
     public ResponseEntity<List<RecentCompletedPostResponse>> getRecentCompletedPosts(
             @RequestParam(defaultValue = "3") int size
     ) {
