@@ -3,15 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Star, X } from "@phosphor-icons/react";
-
-const STATUS_LABEL = {
-  MATCHED: "매칭 완료",
-  PRODUCT_SENT: "제품 전달 완료",
-  REPAIRING: "수리 진행중",
-  REPAIR_DONE: "수리완료 신청됨",
-  COMPLETED: "거래 완료",
-  CANCELED: "거래 취소됨",
-};
+import { DEAL_STATUS_LABEL as STATUS_LABEL } from "@/lib/deal-status-label";
 
 export default function RepairerTransactionsModal({ email, onClose }) {
   const [data, setData] = useState(null);

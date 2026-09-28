@@ -1,15 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-const STATUS_LABEL = {
-  MATCHED: "매칭 완료",
-  PRODUCT_SENT: "제품 전달 완료",
-  REPAIRING: "수리 진행중",
-  REPAIR_DONE: "수리완료 신청됨",
-  COMPLETED: "거래 완료",
-  CANCELED: "거래 취소됨",
-};
+import { DEAL_STATUS_LABEL } from "@/lib/deal-status-label";
 
 // 결제/진행상태 조작은 전부 채팅방의 계약서 페이지(repair-contract.js)에서 이루어진다.
 // 여기서는 지금 어느 단계인지만 읽기 전용으로 보여준다.
@@ -38,7 +30,7 @@ export default function FixDealProgress({ fixDealId }) {
 
   return (
     <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-      <span className="text-sm font-bold text-slate-800">거래 진행 상태: {STATUS_LABEL[status] ?? status}</span>
+      <span className="text-sm font-bold text-slate-800">거래 진행 상태: {DEAL_STATUS_LABEL[status] ?? status}</span>
     </div>
   );
 }
