@@ -3,6 +3,7 @@ package com.team2.postservice.post.controller;
 import com.team2.common.security.LoginUser;
 import com.team2.postservice.post.dto.PostRequestDto;
 import com.team2.postservice.post.dto.NearbyRepairRequest;
+import com.team2.postservice.post.dto.RecentCompletedPostResponse;
 import jakarta.validation.constraints.NotNull;
 import com.team2.postservice.post.dto.PostResponseDto;
 import com.team2.postservice.post.entity.PostCategory;
@@ -86,5 +87,14 @@ public class PostController {
                                             @AuthenticationPrincipal LoginUser user) {
         postService.deleteImage(id, imageId, user.email());
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/api/posts/completed/recent")
+    public ResponseEntity<List<RecentCompletedPostResponse>> getRecentCompletedPosts(
+            @RequestParam(defaultValue = "3") int size
+    ) {
+        return ResponseEntity.ok(
+                postService.getRecentCompletedPosts(size)
+        );
     }
 }
