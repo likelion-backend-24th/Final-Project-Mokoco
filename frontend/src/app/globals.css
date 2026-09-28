@@ -188,7 +188,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .post-rich-content p:last-child { margin-bottom: 0; }
 .post-rich-content h2 { font-size: 20px; font-weight: 750; margin: 1em 0 .4em; }
 .post-rich-content h3 { font-size: 17px; font-weight: 700; margin: .9em 0 .35em; }
-.post-rich-content ul, .post-rich-content ol { padding-left: 1.4em; margin: 0 0 .9em; }
+/* Tailwind 기본 리셋이 ul/ol의 list-style을 none으로 지워버려서, list-style-type을
+   명시하지 않으면 번호·글머리 기호 없이 그냥 줄바꿈된 텍스트로만 보인다(rte-content와 동일 문제). */
+.post-rich-content ul { padding-left: 1.4em; margin: 0 0 .9em; list-style-type: disc; }
+.post-rich-content ol { padding-left: 1.4em; margin: 0 0 .9em; list-style-type: decimal; }
 .post-rich-content li { margin: .2em 0; }
 .post-rich-content blockquote { margin: 0 0 .9em; padding: 2px 0 2px 14px; border-left: 3px solid #cbd5e1; color: #64748b; }
 
