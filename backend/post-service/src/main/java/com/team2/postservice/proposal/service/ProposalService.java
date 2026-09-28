@@ -14,6 +14,7 @@ import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.proposal.dto.ProposalRequestDto;
 import com.team2.postservice.proposal.dto.ProposalResponseDto;
+import com.team2.postservice.proposal.dto.RepairerSummary;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
 import com.team2.postservice.notification.service.NotificationService;
@@ -237,7 +238,6 @@ public class ProposalService {
                 .toList();
     }
 
-    private record RepairerSummary(String region, long completedCount, String nickname) {}
 
     // 수리공 지역/채택 횟수/닉네임 조회 — 실패해도 제안 목록 자체는 보여야 하므로 개별로 감싸서 무해하게 실패시킨다.
     private RepairerSummary repairerSummary(String repairerEmail) {

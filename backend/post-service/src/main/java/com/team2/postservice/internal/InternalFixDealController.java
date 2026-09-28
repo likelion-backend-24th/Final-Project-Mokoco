@@ -1,6 +1,7 @@
 package com.team2.postservice.internal;
 
-import com.team2.postservice.fixDeal.entity.FixDeal;
+import com.team2.postservice.fixDeal.dto.FixDealInfo;
+import com.team2.postservice.fixDeal.dto.ProposalInfo;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
@@ -19,21 +20,12 @@ public class InternalFixDealController {
     private final FixDealRepository fixDealRepository;
     private final ProposalRepository proposalRepository;
 
-    public record FixDealInfo(Long id, String status, Long requesterId, Long repairerId, Long postId, Long proposalId) {
-        static FixDealInfo from(FixDeal deal) {
-            return new FixDealInfo(deal.getId(), deal.getStatus().name(), deal.getRequesterId(),
-                    deal.getRepairerId(), deal.getPostId(), deal.getProposalId());
-        }
-    }
-
     @GetMapping("/fix-deals/{id}")
     public FixDealInfo getFixDeal(@PathVariable Long id) {
         return fixDealRepository.findById(id)
                 .map(FixDealInfo::from)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
-
-    public record ProposalInfo(Long id, Long postId, String requesterEmail, String repairerEmail) {}
 
     @GetMapping("/proposals/{id}")
     public ProposalInfo getProposal(@PathVariable Long id) {

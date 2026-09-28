@@ -1,5 +1,6 @@
-package com.team2.postservice.contract;
+package com.team2.postservice.contract.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
@@ -15,7 +16,7 @@ public class ContractSignature {
     @Column(nullable = false, length = 80) private String signerName;
     @Column(nullable = false, length = 64) private String documentHash;
     @Column(nullable = false, length = 500) private String consentText;
-    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING)
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     @Column(nullable = false) private Instant signedAt;
     public ContractSignature(Long contractId, Long signerId, String name, String hash, String consent) {
         this.contractId = contractId; this.signerId = signerId; this.signerName = name;

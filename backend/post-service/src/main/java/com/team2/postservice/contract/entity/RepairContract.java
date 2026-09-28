@@ -1,4 +1,4 @@
-package com.team2.postservice.contract;
+package com.team2.postservice.contract.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

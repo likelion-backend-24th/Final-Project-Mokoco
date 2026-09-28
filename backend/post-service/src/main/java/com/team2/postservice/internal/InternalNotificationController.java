@@ -1,5 +1,6 @@
 package com.team2.postservice.internal;
 
+import com.team2.postservice.fixDeal.dto.ChatMessageNotificationRequest;
 import com.team2.postservice.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,8 +14,6 @@ import org.springframework.web.bind.annotation.*;
 public class InternalNotificationController {
 
     private final NotificationService notificationService;
-
-    public record ChatMessageNotificationRequest(Long recipientId, Long postId, Long chatRoomId, String content) {}
 
     @PostMapping("/chat-message")
     public ResponseEntity<Void> chatMessage(@RequestBody ChatMessageNotificationRequest request) {
