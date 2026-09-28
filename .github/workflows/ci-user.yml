@@ -52,19 +52,23 @@ jobs:
           --health-retries=10
 
     env:
-      # CI용 DB 설정
       SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/user_db?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root1234
-
-      # OAuth 설정은 Spring Context 로딩 시 placeholder 오류를 막기 위한 CI dummy 값
+    
       GOOGLE_CLIENT_ID: ci-google-client-id
       GOOGLE_CLIENT_SECRET: ci-google-client-secret
       KAKAO_CLIENT_ID: ci-kakao-client-id
       KAKAO_CLIENT_SECRET: ci-kakao-client-secret
-
-      # 내부 서비스 인증용 CI dummy 값
+    
       INTERNAL_SERVICE_KEY: ci-internal-service-key
+    
+      SPRING_APPLICATION_JSON: >
+        {
+          "jwt": {
+            "secretKey": "ci-test-secret-key-ci-test-secret-key-ci-test-secret-key-123456789"
+          }
+        }
 
     defaults:
       run:
