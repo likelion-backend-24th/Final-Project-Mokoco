@@ -255,9 +255,11 @@ export default function PostForm({ postId, initialValue, accessToken }) {
         <div className="form-field">
           <span>사진 첨부 (최대 5장)</span>
 
-          {isEdit && existingImages.length > 0 && (
+          {/* 기존 사진과 새로 고른 사진을 한 줄에 같이 보여준다 — 따로 두면 업로드 버튼이
+              둘 사이에 끼어서 새로 고른 사진이 버튼 아래로 떨어져 보였다. */}
+          {(existingImages.length > 0 || selectedFiles.length > 0) && (
             <div className="flex flex-wrap gap-2 mb-2">
-              {existingImages.map((image) => (
+              {isEdit && existingImages.map((image) => (
                 <div key={image.id} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200">
                   <img
                     src={imageSrc(image.imageUrl)}
@@ -275,6 +277,20 @@ export default function PostForm({ postId, initialValue, accessToken }) {
                   </button>
                 </div>
               ))}
+              {selectedFiles.map(({ file, previewUrl }, idx) => (
+                <div key={idx} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={previewUrl} alt={file.name} className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeNewFile(idx)}
+                    aria-label="사진 삭제"
+                    className="absolute -right-1 -top-1 rounded-full bg-white p-0.5 text-red-500 shadow"
+                  >
+                    <X size={12} weight="bold" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
 
@@ -283,24 +299,6 @@ export default function PostForm({ postId, initialValue, accessToken }) {
             <span className="text-sm text-slate-600">이미지 파일 업로드</span>
             <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
           </label>
-
-          {/* 선택된 파일 목록 프리뷰 */}
-          <div className="flex flex-wrap gap-2 mt-2">
-            {selectedFiles.map(({ file, previewUrl }, idx) => (
-              <div key={idx} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={previewUrl} alt={file.name} className="h-full w-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => removeNewFile(idx)}
-                  aria-label="사진 삭제"
-                  className="absolute -right-1 -top-1 rounded-full bg-white p-0.5 text-red-500 shadow"
-                >
-                  <X size={12} weight="bold" />
-                </button>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* 사진 분석(제목·내용 채우기)과 전체 글 다시 쓰기를 "글 작성 도우미" 하나로 합쳤다.
