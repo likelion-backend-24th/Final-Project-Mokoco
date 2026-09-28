@@ -14,12 +14,40 @@ const statusLabel = { WAITING: "도움 기다리는 중", MATCHED: "이웃과 �
 
 async function getPost(id) {
   try {
-    const response = await fetch(backendUrl(`/posts/${id}`), { cache: "no-store", signal: AbortSignal.timeout(5000) });
-    if (response.status === 404) return { post: null, error: null };
-    if (!response.ok) return { post: null, error: "수리 요청을 불러오지 못했습니다." };
-    return { post: await response.json(), error: null };
-  } catch {
-    return { post: null, error: "백엔드 서버에 연결할 수 없습니다. 서버 실행 상태를 확인해주세요." };
+    const url = backendUrl(`/posts/${id}`);
+
+    console.log("[POST DETAIL URL]", url);
+
+    const response = await fetch(url, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (response.status === 404) {
+      return { post: null, error: null };
+    }
+
+    if (!response.ok) {
+      console.error("[POST DETAIL ERROR]", response.status);
+      return { post: null, error: "수리 요청을 불러오지 못했습니다." };
+    }
+
+    const post = await response.json();
+
+    console.log("[POST DETAIL DATA]", {
+      id: post.id,
+      contentFormat: post.contentFormat,
+      content: post.content,
+    });
+
+    return { post, error: null };
+  } catch (e) {
+    console.error("[POST DETAIL FETCH ERROR]", e);
+
+    return {
+      post: null,
+      error: "백엔드 서버에 연결할 수 없습니다. 서버 실행 상태를 확인해주세요.",
+    };
   }
 }
 
