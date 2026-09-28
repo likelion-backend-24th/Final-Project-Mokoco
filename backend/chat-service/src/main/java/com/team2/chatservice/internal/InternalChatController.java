@@ -98,7 +98,11 @@ public class InternalChatController {
     public record DealLinkRequest(Long proposalId, Long fixDealId, Long requesterId, Long repairerId, Long postId) {}
 
     // 제안 채택 직후(after-commit) 호출 — 없으면 조용히 무시(그 제안으로 만든 채팅방이 아직 없을 수도 있음).
+    // @Transactional이 빠져있으면 findByProposalId가 반환한 엔티티가 조회 즉시 detached 상태가 돼서,
+    // room.attachDeal(...)로 필드를 바꿔도 커밋될 트랜잭션이 없어 DB에는 전혀 반영되지 않는다 —
+    // 호출은 204로 "성공"하지만 실제로는 아무 것도 저장되지 않는 조용한 버그였다.
     @PostMapping("/attach-deal")
+    @Transactional
     public ResponseEntity<Void> attachDeal(@RequestBody DealLinkRequest request) {
         chatRoomRepository.findByProposalId(request.proposalId()).ifPresent(room ->
                 room.attachDeal(request.fixDealId(), request.proposalId(), request.requesterId(),
@@ -106,8 +110,9 @@ public class InternalChatController {
         return ResponseEntity.noContent().build();
     }
 
-    // 채택 취소 직후(after-commit) 호출.
+    // 채택 취소 직후(after-commit) 호출. 위와 같은 이유로 @Transactional이 필요하다.
     @PostMapping("/detach-deal")
+    @Transactional
     public ResponseEntity<Void> detachDeal(@RequestBody DealLinkRequest request) {
         chatRoomRepository.findByProposalId(request.proposalId()).ifPresent(room -> room.detachDeal(request.fixDealId()));
         return ResponseEntity.noContent().build();

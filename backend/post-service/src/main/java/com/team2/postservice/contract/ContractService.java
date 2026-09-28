@@ -72,10 +72,30 @@ public class ContractService {
         if (!userId.equals(room.requesterId()) && !userId.equals(room.repairerId()))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         // 채택 전(제안 단계) 채팅방은 FixDeal이 아직 없다 — 계약은 채택 후에만 가능하다.
-        if (room.fixDealId() == null)
+        // room.fixDealId()가 비어있어도 채택 시점 연결(attach-deal)이 실패했을 수 있으니, 바로
+        // "채택 전"으로 단정하지 않고 실제로 연결 가능한 거래가 있는지 한 번 더 확인한다
+        // (ChatRoomOrchestrationService.repairFixDealLink와 같은 이유).
+        Long fixDealId = room.fixDealId() != null ? room.fixDealId() : repairFixDealLink(room);
+        if (fixDealId == null)
             throw conflict("견적 채택 후 계약서를 작성할 수 있습니다.");
-        return (lock ? fixDealRepository.lockById(room.fixDealId()) : fixDealRepository.findById(room.fixDealId()))
+        return (lock ? fixDealRepository.lockById(fixDealId) : fixDealRepository.findById(fixDealId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
+
+    private Long repairFixDealLink(ChatRoomClient.ChatRoomInfo room) {
+        if (room.proposalId() == null) return null;
+        return fixDealRepository.findByProposalId(room.proposalId())
+                .filter(deal -> deal.getStatus() != FixDealStatus.CANCELED)
+                .map(deal -> {
+                    try {
+                        chatRoomClient.attachDeal(new ChatRoomClient.DealLinkRequest(
+                                room.proposalId(), deal.getId(), deal.getRequesterId(), deal.getRepairerId(), deal.getPostId()));
+                    } catch (Exception e) {
+                        log.warn("채팅방-거래 연결 복구 실패 roomId={} proposalId={}", room.id(), room.proposalId(), e);
+                    }
+                    return deal.getId();
+                })
+                .orElse(null);
     }
     private Version view(RepairContract contract) {
         try {
