@@ -59,6 +59,9 @@ export async function PATCH(request, { params }) {
 
   const payload = { title, content };
   if (typeof body.category === "string" && body.category) payload.category = body.category;
+  // contentFormat을 안 보내면 백엔드가 PLAIN_TEXT로 간주해버려서, 이미 HTML로 저장된 글도
+  // 수정할 때마다 태그가 escape되고 <p>로 또 감싸이는 문제가 있었다 — 반드시 같이 전달해야 한다.
+  if (typeof body.contentFormat === "string" && body.contentFormat) payload.contentFormat = body.contentFormat;
   return forwardPost(id, "PATCH", payload);
 }
 
