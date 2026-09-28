@@ -68,6 +68,8 @@ jobs:
           "jwt": {
             "secretKey": "ci-test-secret-key-ci-test-secret-key-ci-test-secret-key-123456789",
             "refreshKey": "ci-test-refresh-key-ci-test-refresh-key-ci-test-refresh-key-123456789"
+            "access-expiration-ms": 900000
+            "refresh-expiration-ms: 1209600000
           }
         }
 
