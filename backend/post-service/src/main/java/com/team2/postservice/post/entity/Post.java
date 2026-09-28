@@ -68,7 +68,7 @@ public class Post {
     public Post(String title, String content, ContentFormat contentFormat, String authorEmail, String regionName, String regionCode, PostCategory category) {
         this.title = title;
         this.content = content;
-        this.contentFormat = contentFormat;
+        this.contentFormat = contentFormat != null ? contentFormat : ContentFormat.PLAIN_TEXT;
         this.authorEmail = authorEmail;
         this.regionName = regionName; // 빌더에 지역 이름 추가
         this.regionCode = regionCode;
