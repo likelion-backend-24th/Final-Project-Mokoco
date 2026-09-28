@@ -1,5 +1,6 @@
-package com.team2.chatservice.chatMessage;
+package com.team2.chatservice.chatMessage.controller;
 
+import com.team2.chatservice.chatMessage.service.ChatService;
 import com.team2.chatservice.client.UserClient;
 import com.team2.chatservice.chatMessage.dto.*;
 import com.team2.common.security.LoginUser;
@@ -38,14 +39,14 @@ public class ChatController {
 
     @MessageMapping("/chat/{roomId}")
     public void send(@DestinationVariable Long roomId, ChatMessageRequest request, Principal principal) {
-        var saved = service.send(roomId, Long.valueOf(principal.getName()), request.content());
+        ChatMessageResponse saved = service.send(roomId, Long.valueOf(principal.getName()), request.content());
         broker.convertAndSend("/topic/chat/" + roomId, saved);
     }
 
     @DeleteMapping("/api/chat-rooms/{roomId}/messages/{messageId}")
     public ChatMessageResponse delete(@PathVariable Long roomId, @PathVariable Long messageId,
             @AuthenticationPrincipal LoginUser user) {
-        var deleted = service.delete(roomId, messageId, user.id());
+        ChatMessageResponse deleted = service.delete(roomId, messageId, user.id());
         broker.convertAndSend("/topic/chat/" + roomId, deleted);
         return deleted;
     }

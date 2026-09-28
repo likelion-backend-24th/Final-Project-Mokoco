@@ -1,6 +1,7 @@
 package com.team2.chatservice;
 
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.output.MigrateResult;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -30,7 +31,7 @@ class FlywaySchemaTest {
                 .locations("classpath:db/migration")
                 .load();
 
-        var result = flyway.migrate();
+        MigrateResult result = flyway.migrate();
 
         assertThat(result.success).isTrue();
         assertThat(result.migrationsExecuted).isEqualTo(2);

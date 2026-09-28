@@ -1,5 +1,6 @@
-package com.team2.chatservice.chatMessage;
+package com.team2.chatservice.chatMessage.controller;
 
+import com.team2.chatservice.chatMessage.service.ChatAttachmentService;
 import com.team2.chatservice.chatMessage.dto.ChatMessageResponse;
 import com.team2.common.security.LoginUser;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,6 @@
 package com.team2.chatservice.config;
 
-import com.team2.chatservice.chatMessage.ChatService;
+import com.team2.chatservice.chatMessage.service.ChatService;
 import com.team2.chatservice.client.UserClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

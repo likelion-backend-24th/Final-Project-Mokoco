@@ -1,5 +1,7 @@
 package com.team2.chatservice.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team2.chatservice.client.UserClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -16,8 +18,11 @@ public class SecurityConfig {
     // (공개 조회 없음 — 채팅은 전부 로그인 필요).
     @Bean
     @Order(1)
-    public SecurityFilterChain authenticatedApiSecurityFilterChain(HttpSecurity http,
-            com.team2.chatservice.client.UserClient users, com.fasterxml.jackson.databind.ObjectMapper mapper) throws Exception {
+    public SecurityFilterChain authenticatedApiSecurityFilterChain(
+            HttpSecurity http,
+            UserClient users,
+            ObjectMapper mapper
+    ) throws Exception {
         return http
                 .securityMatcher("/api/chat-rooms", "/api/chat-rooms/*/attachments/**",
                         "/api/chat-rooms/*/messages/**", "/api/chat-rooms/*/counterpart", "/api/chat-rooms/session")
