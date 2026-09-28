@@ -25,15 +25,21 @@ public interface AiPostDraftRepository extends JpaRepository<AiPostDraft, Long> 
     // 파라미터로 받는다 — expiresAt도 애초에 같은 LocalDateTime.now() 기준으로 저장했는데,
     // 운영 MySQL 컨테이너는 TZ를 안 맞춰줘서 기본 UTC로 뜬다(post-service는 Asia/Seoul). DB
     // 서버 시각과 비교하면 9시간이 어긋나 만료된 초안이 안 만료된 것으로(혹은 반대로) 판정된다.
+    // clearAutomatically=true가 필요하다: 이 서비스는 스프링 부트 기본값인 Open-Session-In-View라
+    // HTTP 요청 하나짜리 영속성 컨텍스트를 여러 리포지토리 호출이 공유한다. revise()가 맨 위에서
+    // findByIdAndUserId로 엔티티를 한 번 로드해두는데, 벌크 UPDATE는 그 캐시된 자바 객체의 필드를
+    // 갱신하지 않는다 — clearAutomatically 없이는 그다음 findById가 방금 UPDATE된 값이 아니라
+    // 그 캐시된(예약 전) 객체를 그대로 돌려줘서, 응답의 remainingRevisions가 실제보다 1 많게
+    // 나갔다(예: 첫 재작성 후에도 "남은 3회"로 그대로 보이다가, 두 번째부터 한 박자 늦게 줄어듦).
     @Transactional
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("update AiPostDraft d set d.revisionCount = d.revisionCount + 1 "
             + "where d.id = :id and d.userId = :userId and d.revisionCount < :max "
             + "and d.expiresAt > :now")
     int reserveRevision(@Param("id") Long id, @Param("userId") Long userId, @Param("max") int max, @Param("now") LocalDateTime now);
 
     @Transactional
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("update AiPostDraft d set d.revisionCount = d.revisionCount - 1 where d.id = :id and d.revisionCount > 0")
     int refundRevision(@Param("id") Long id);
 }

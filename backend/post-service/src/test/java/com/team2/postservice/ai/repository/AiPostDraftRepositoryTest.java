@@ -85,6 +85,20 @@ class AiPostDraftRepositoryTest {
         assertThat(repository.reserveRevision(expired.getId(), 2L, AiPostDraft.MAX_REVISIONS, LocalDateTime.now())).isZero();
     }
 
+    // 이 서비스는 스프링 부트 기본값(Open-Session-In-View)이라, revise() 한 번의 HTTP 요청 안에서
+    // findByIdAndUserId(엔티티를 영속성 컨텍스트에 로드) -> reserveRevision(벌크 UPDATE) ->
+    // findById(응답에 넣을 remainingRevisions 계산용)가 중간에 em.clear() 없이 이어진다. 위의 다른
+    // 테스트들은 각 단계 사이에 em.clear()를 직접 불러서 이 상황을 재현하지 못했다 — 실제 버그는
+    // clearAutomatically 없이는 findByIdAndUserId가 캐시해둔 자바 객체를 벌크 UPDATE 이후에도
+    // findById가 그대로 돌려줘서, revisionCount가 실제로는 늘었는데도 응답엔 예약 전 값이 나갔다.
+    @Test
+    void reservationIsVisibleToASubsequentFindInTheSameSessionWithoutManualClear() {
+        repository.findByIdAndUserId(draftId, 1L).orElseThrow();
+        repository.reserveRevision(draftId, 1L, AiPostDraft.MAX_REVISIONS, LocalDateTime.now());
+
+        assertThat(repository.findById(draftId).orElseThrow().getRevisionCount()).isEqualTo(1);
+    }
+
     @Test
     void refundGivesBackASlotButNeverGoesBelowZero() {
         repository.reserveRevision(draftId, 1L, AiPostDraft.MAX_REVISIONS, LocalDateTime.now());
