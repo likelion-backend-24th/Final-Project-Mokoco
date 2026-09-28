@@ -8,6 +8,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
@@ -34,6 +35,9 @@ class FlywaySchemaTest {
     @Autowired
     private Flyway flyway;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Test
     void schemaMatchesEntitiesAndMigrationIsRepeatable() {
         flyway.validate();
@@ -41,5 +45,23 @@ class FlywaySchemaTest {
         assertThat(flyway.migrate().migrationsExecuted).isZero();
         assertThat(flyway.getConfiguration().isBaselineOnMigrate()).isTrue();
         assertThat(flyway.getConfiguration().isCleanDisabled()).isTrue();
+    }
+
+    @Test
+    void cancelledPaymentCanBeFollowedByAnotherPaymentForTheSamePost() {
+        String sql = """
+                INSERT INTO payments
+                    (amount, created_at, fee_amount, net_amount, paid_at, payee_email,
+                     payer_email, portone_payment_id, post_id, status)
+                VALUES (10000, NOW(6), 1000, 9000, NOW(6), 'payee@example.com',
+                        'payer@example.com', ?, 10, ?)
+                """;
+
+        jdbcTemplate.update(sql, "payment-cancelled", "CANCELLED");
+        jdbcTemplate.update(sql, "payment-completed", "COMPLETED");
+
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM payments WHERE post_id = 10", Integer.class);
+        assertThat(count).isEqualTo(2);
     }
 }

@@ -9,10 +9,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // 깨끗한 빈 DB에 V1 마이그레이션이 처음부터 끝까지 실제로 돌고, 그 결과 스키마가 엔티티와
 // 정확히 일치하는지(ddl-auto=validate) 확인하는 스모크 테스트.
@@ -35,6 +38,9 @@ class FlywaySchemaTest {
     @Autowired
     private Flyway flyway;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Test
     void schemaMatchesEntitiesAndMigrationIsRepeatable() {
         flyway.validate();
@@ -46,5 +52,19 @@ class FlywaySchemaTest {
 
         assertThat(flyway.getConfiguration().isBaselineOnMigrate()).isTrue();
         assertThat(flyway.getConfiguration().isCleanDisabled()).isTrue();
+    }
+
+    @Test
+    void duplicateContractSignatureIsRejectedByMySql() {
+        String sql = """
+                INSERT INTO contract_signatures
+                    (consent_text, contract_id, document_hash, signed_at, signer_id, signer_name)
+                VALUES ('agreed', 10, REPEAT('a', 64), NOW(6), 20, ?)
+                """;
+
+        jdbcTemplate.update(sql, "first");
+
+        assertThatThrownBy(() -> jdbcTemplate.update(sql, "second"))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

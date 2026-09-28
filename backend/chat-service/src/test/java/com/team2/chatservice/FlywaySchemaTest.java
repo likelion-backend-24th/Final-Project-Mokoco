@@ -2,12 +2,20 @@ package com.team2.chatservice;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.output.MigrateResult;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // Spring 컨텍스트 없이 Flyway를 직접 구동해서 V1(+V2, 잔여 FK 제거 가드)이 빈 DB에서 처음부터
 // 끝까지 깨끗하게 실행되는지 확인한다.
@@ -24,17 +32,50 @@ class FlywaySchemaTest {
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.0")
             .withDatabaseName("chat_test");
 
+    private static MigrateResult migrationResult;
+
+    @BeforeAll
+    static void migrateSchema() {
+        migrationResult = flyway().migrate();
+    }
+
     @Test
     void migrationRunsCleanlyOnEmptySchema() {
-        Flyway flyway = Flyway.configure()
+        Flyway flyway = flyway();
+
+        assertThat(migrationResult.success).isTrue();
+        assertThat(migrationResult.migrationsExecuted).isEqualTo(2);
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("2");
+    }
+
+    @Test
+    void duplicateProposalChatRoomIsRejectedByMySql() throws SQLException {
+        try (Connection connection = DriverManager.getConnection(
+                MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())) {
+            insertRoom(connection, 10L, 100L);
+
+            assertThatThrownBy(() -> insertRoom(connection, 10L, 101L))
+                    .isInstanceOf(SQLIntegrityConstraintViolationException.class);
+        }
+    }
+
+    private static Flyway flyway() {
+        return Flyway.configure()
                 .dataSource(MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())
                 .locations("classpath:db/migration")
                 .load();
+    }
 
-        MigrateResult result = flyway.migrate();
-
-        assertThat(result.success).isTrue();
-        assertThat(result.migrationsExecuted).isEqualTo(2);
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("2");
+    private static void insertRoom(Connection connection, Long proposalId, Long postId) throws SQLException {
+        String sql = """
+                INSERT INTO chat_rooms
+                    (created_at, proposal_id, post_id, requester_id, repairer_id)
+                VALUES (NOW(6), ?, ?, 1, 2)
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, proposalId);
+            statement.setLong(2, postId);
+            statement.executeUpdate();
+        }
     }
 }
