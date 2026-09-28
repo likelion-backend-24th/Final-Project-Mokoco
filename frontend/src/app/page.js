@@ -66,15 +66,6 @@ function UnifiedHome({ posts, error, userEmail, isAuthenticated, pagination, reg
             </div>
             <PostList posts={posts} error={error} postHref={isAuthenticated ? "/posts/new" : "/login"} />
           </section>
-          {!isAuthenticated && (
-            <section className="reference-card">
-              <div className="reference-card-heading"><h2>전체 수리 요청 현황</h2></div>
-              <div className="neighborhood-summary">
-                <Wrench size={38} weight="duotone" />
-                <div><strong>{error ? "확인 불가" : `${pagination?.totalElements ?? 0}건`}</strong></div>
-              </div>
-            </section>
-          )}
         </div>
         <aside className="dashboard-column">
           {isAuthenticated ? (
