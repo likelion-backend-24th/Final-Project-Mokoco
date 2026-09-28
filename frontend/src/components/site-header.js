@@ -12,12 +12,12 @@ import { useEffect, useState } from "react";
 export default function SiteHeader({ userEmail: serverUserEmail }) {
   const pathname = usePathname();
   const { userEmail: storeEmail, initAuth, setLogout } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
+  // const [mounted, setMounted] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [nickname, setNickname] = useState(null);
 
   useEffect(() => {
-    setMounted(true);
+    //setMounted(true);
     initAuth();
     // 닉네임은 아래 effect에서 /api/users/me로 매번 새로 조회하는데, 그 응답이 오기 전까지
     // userEmail이 폴백으로 보여서 화면 전환마다 이메일이 잠깐 스쳐 지나간다. 직전에 받아둔
@@ -34,29 +34,52 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
 
   const userEmail = serverUserEmail || storeEmail || cookieEmail;
 
+  const displayIsAdmin = Boolean(userEmail) && isAdmin;
+  const displayNickname = userEmail ? nickname : null;
+
   // 관리자 메뉴 노출 여부 및 닉네임 표시 — 페이지마다 넘겨받을 필요 없이 헤더가 직접 확인한다.
   useEffect(() => {
     if (!userEmail) {
-      setIsAdmin(false);
-      setNickname(null);
-      try { localStorage.removeItem("nickname"); } catch { /* 무시 */ }
+      try {
+        localStorage.removeItem("nickname");
+      } catch {
+        // 무시
+      }
       return;
     }
+  
     let active = true;
+  
     fetch("/api/users/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((me) => {
         if (!active) return;
+  
         setIsAdmin(me?.role === "ADMIN");
+  
         const fetchedNickname = me?.nickname ?? null;
         setNickname(fetchedNickname);
+  
         try {
-          if (fetchedNickname) localStorage.setItem("nickname", fetchedNickname);
-          else localStorage.removeItem("nickname");
-        } catch { /* 무시 */ }
+          if (fetchedNickname) {
+            localStorage.setItem("nickname", fetchedNickname);
+          } else {
+            localStorage.removeItem("nickname");
+          }
+        } catch {
+          // 무시
+        }
       })
-      .catch(() => { if (active) { setIsAdmin(false); setNickname(null); } });
-    return () => { active = false; };
+      .catch(() => {
+        if (!active) return;
+  
+        setIsAdmin(false);
+        setNickname(null);
+      });
+  
+    return () => {
+      active = false;
+    };
   }, [userEmail]);
 
   const handleLogout = async (e) => {
