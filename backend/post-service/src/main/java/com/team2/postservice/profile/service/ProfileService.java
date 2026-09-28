@@ -11,6 +11,7 @@ import com.team2.postservice.profile.dto.MyWrittenReviewsResponse;
 import com.team2.postservice.profile.dto.TransactionHistoryItemResponse;
 import com.team2.postservice.profile.dto.TransactionHistoryResponse;
 import com.team2.postservice.review.dto.ReviewResponseDto;
+import com.team2.postservice.review.entity.Review;
 import com.team2.postservice.review.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -96,7 +97,7 @@ public class ProfileService {
     }
 
     public MyWrittenReviewsResponse getMyWrittenReviews(String reviewerEmail, Pageable pageable) {
-        Page<com.team2.postservice.review.entity.Review> page =
+        Page<Review> page =
                 reviewRepository.findByReviewerEmailOrderByCreatedAtDesc(reviewerEmail, pageable);
 
         return new MyWrittenReviewsResponse(

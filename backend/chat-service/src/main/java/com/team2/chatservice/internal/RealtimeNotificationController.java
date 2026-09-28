@@ -1,5 +1,6 @@
 package com.team2.chatservice.internal;
 
+import com.team2.chatservice.internal.dto.PushRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -18,7 +19,6 @@ public class RealtimeNotificationController {
 
     private final SimpMessagingTemplate broker;
 
-    public record PushRequest(Long recipientId, Object payload) {}
 
     @PostMapping("/notifications")
     public ResponseEntity<Void> push(@RequestBody PushRequest request) {

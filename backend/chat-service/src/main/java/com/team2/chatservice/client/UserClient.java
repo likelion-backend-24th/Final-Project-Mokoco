@@ -1,6 +1,7 @@
 package com.team2.chatservice.client;
 
 import com.team2.chatservice.client.dto.UserClientResponse;
+import com.team2.chatservice.client.dto.UserNicknameResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
         configuration = UserClientConfig.class
 )
 public interface UserClient {
-    record UserNicknameResponse(Long id, String nickname) {}
 
     @GetMapping("/api/internal/users/by-id/{userId}")
     UserNicknameResponse getNickname(@PathVariable("userId") Long userId);

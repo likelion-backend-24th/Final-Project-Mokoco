@@ -1,8 +1,10 @@
 package com.team2.chatservice.config;
 
-import com.team2.chatservice.chatMessage.ChatService;
+import com.team2.chatservice.chatMessage.service.ChatService;
 import com.team2.chatservice.client.UserClient;
+import com.team2.chatservice.client.dto.UserClientResponse;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.*;
@@ -10,6 +12,8 @@ import org.springframework.messaging.simp.config.*;
 import org.springframework.messaging.simp.stomp.*;
 import org.springframework.messaging.support.*;
 import org.springframework.web.socket.config.annotation.*;
+
+import java.util.Objects;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -33,16 +37,16 @@ public class ChatWebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
     @Override public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(new ChannelInterceptor() {
-            @Override public Message<?> preSend(Message<?> message, MessageChannel channel) {
-                var headers = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+            @Override public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
+                StompHeaderAccessor headers = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
                 if (headers == null || headers.getCommand() == null) return message;
-                var command = headers.getCommand();
+                StompCommand command = headers.getCommand();
                 if (command == StompCommand.CONNECT) {
                     String auth = headers.getFirstNativeHeader("Authorization");
                     if (auth == null || !auth.startsWith("Bearer ")) throw new MessagingException("Authentication required");
-                    var user = users.verifyToken(auth.substring(7));
+                    UserClientResponse user = users.verifyToken(auth.substring(7));
                     headers.setUser(() -> user.id().toString());
-                    headers.getSessionAttributes().put("accessToken", auth.substring(7));
+                    Objects.requireNonNull(headers.getSessionAttributes()).put("accessToken", auth.substring(7));
                 } else if (command == StompCommand.SEND || command == StompCommand.SUBSCRIBE) {
                     if (headers.getUser() == null) throw new MessagingException("Authentication required");
                     // Revalidate expiry/revocation on each operation, including long-lived connections.

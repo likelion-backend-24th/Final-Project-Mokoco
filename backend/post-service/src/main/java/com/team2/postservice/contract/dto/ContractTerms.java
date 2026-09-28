@@ -1,5 +1,6 @@
-package com.team2.postservice.contract;
+package com.team2.postservice.contract.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,8 +12,8 @@ public record ContractTerms(
         @NotBlank @Size(max = 2000) String materials,
         @NotNull @DecimalMin("0.01") @Digits(integer = 10, fraction = 2) BigDecimal totalAmount,
         @NotBlank @Size(max = 2000) String paymentTerms,
-        @NotNull @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) LocalDate startDate,
-        @NotNull @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) LocalDate endDate,
+        @NotNull @JsonFormat(shape = JsonFormat.Shape.STRING) LocalDate startDate,
+        @NotNull @JsonFormat(shape = JsonFormat.Shape.STRING) LocalDate endDate,
         @NotBlank @Size(max = 1000) String workLocation,
         @NotBlank @Size(max = 2000) String acceptanceCriteria,
         @NotBlank @Size(max = 2000) String warrantyTerms,

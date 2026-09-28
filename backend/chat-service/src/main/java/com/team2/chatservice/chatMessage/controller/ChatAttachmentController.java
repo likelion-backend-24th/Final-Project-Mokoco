@@ -1,5 +1,6 @@
-package com.team2.chatservice.chatMessage;
+package com.team2.chatservice.chatMessage.controller;
 
+import com.team2.chatservice.chatMessage.service.ChatAttachmentService;
 import com.team2.chatservice.chatMessage.dto.ChatMessageResponse;
 import com.team2.common.security.LoginUser;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class ChatAttachmentController {
     public ChatMessageResponse upload(@PathVariable Long roomId,
             @AuthenticationPrincipal LoginUser user,
             @RequestPart("file") MultipartFile file) throws IOException {
-        var saved = attachments.upload(roomId, user.id(), file);
+        ChatMessageResponse saved = attachments.upload(roomId, user.id(), file);
         broker.convertAndSend("/topic/chat/" + roomId, saved);
         return saved;
     }

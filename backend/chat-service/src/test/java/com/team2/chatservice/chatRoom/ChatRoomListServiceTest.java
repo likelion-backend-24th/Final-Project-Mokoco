@@ -4,6 +4,8 @@ import com.team2.chatservice.chatRoom.repository.ChatRoomRepository;
 import com.team2.chatservice.chatRoom.service.ChatRoomService;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.web.server.ResponseStatusException;
+
 import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.*;
 
@@ -18,8 +20,8 @@ class ChatRoomListServiceTest {
         verify(rooms).findMyRooms(7L, PageRequest.of(0, 5));
     }
     @Test void rejectsInvalidPaginationBeforeQuerying() {
-        assertThatThrownBy(() -> service.getMyRooms(7L, -1, 5)).isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
-        assertThatThrownBy(() -> service.getMyRooms(7L, 0, 51)).isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+        assertThatThrownBy(() -> service.getMyRooms(7L, -1, 5)).isInstanceOf(ResponseStatusException.class);
+        assertThatThrownBy(() -> service.getMyRooms(7L, 0, 51)).isInstanceOf(ResponseStatusException.class);
         verifyNoInteractions(rooms);
     }
 }

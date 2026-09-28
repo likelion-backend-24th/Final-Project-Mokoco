@@ -2,6 +2,7 @@ package com.team2.userservice.config;
 
 import com.team2.common.security.LoginUser;
 import com.team2.userservice.user.entity.AccountStatus;
+import com.team2.userservice.user.entity.User;
 import com.team2.userservice.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,7 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (token != null && jwtTokenProvider.validateAccessToken(token)) {
             Long userId = jwtTokenProvider.getUserIdFromAccessToken(token);
-            var user = userRepository.findById(userId).orElse(null);
+            User user = userRepository.findById(userId).orElse(null);
 
             // 토큰 자체는 아직 유효해도, 그 사이 관리자가 계정을 정지시켰을 수 있으므로
             // 요청마다 DB에서 현재 상태를 다시 확인한다(정지되면 인증을 아예 심지 않아 401로 막힘).

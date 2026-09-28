@@ -2,8 +2,10 @@ package com.team2.postservice.post.repository;
 
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.entity.PostCategory;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.team2.postservice.post.dto.NearbyRepairRequest;
@@ -38,7 +40,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Optional<Post> findById(Long id);
 
     // 제안 채택 시 동시 요청(여러 견적 동시 채택 시도 등)을 막기 위한 비관적 락 조회
-    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Post p where p.id = :id")
     Optional<Post> lockById(@Param("id") Long id);
 

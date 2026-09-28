@@ -10,6 +10,7 @@ import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.entity.PostCategory;
 import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.profile.dto.MyWrittenReviewsResponse;
+import com.team2.postservice.profile.dto.TransactionHistoryItemResponse;
 import com.team2.postservice.profile.dto.TransactionHistoryResponse;
 import com.team2.postservice.profile.service.ProfileService;
 import com.team2.postservice.review.entity.Review;
@@ -66,7 +67,7 @@ class ProfileServiceTest {
         TransactionHistoryResponse result = service.getMyTransactions("requester@test.com", "requester", pageable);
 
         assertThat(result.totalCount()).isEqualTo(1);
-        var item = result.items().get(0);
+        TransactionHistoryItemResponse item = result.items().get(0);
         assertThat(item.role()).isEqualTo("REQUESTER");
         assertThat(item.counterpartEmail()).isEqualTo("repairer@test.com");
         assertThat(item.postTitle()).isEqualTo("선풍기 고쳐주세요");
@@ -88,7 +89,7 @@ class ProfileServiceTest {
 
         TransactionHistoryResponse result = service.getMyTransactions("repairer@test.com", "repairer", pageable);
 
-        var item = result.items().get(0);
+        TransactionHistoryItemResponse item = result.items().get(0);
         assertThat(item.role()).isEqualTo("REPAIRER");
         assertThat(item.counterpartEmail()).isEqualTo("requester@test.com");
         assertThat(item.review()).isNull();

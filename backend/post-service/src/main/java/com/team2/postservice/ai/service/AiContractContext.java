@@ -2,8 +2,8 @@ package com.team2.postservice.ai.service;
 
 import com.team2.postservice.client.ChatRoomClient;
 import com.team2.postservice.common.exception.AiException;
-import com.team2.postservice.contract.ContractRepository;
-import com.team2.postservice.contract.RepairContract;
+import com.team2.postservice.contract.repository.ContractRepository;
+import com.team2.postservice.contract.entity.RepairContract;
 import com.team2.postservice.fixDeal.entity.FixDeal;
 import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;

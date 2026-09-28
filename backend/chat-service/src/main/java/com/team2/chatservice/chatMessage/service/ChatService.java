@@ -1,4 +1,4 @@
-package com.team2.chatservice.chatMessage;
+package com.team2.chatservice.chatMessage.service;
 
 import com.team2.chatservice.chatMessage.dto.ChatMessageResponse;
 import com.team2.chatservice.chatMessage.entity.*;
@@ -6,6 +6,7 @@ import com.team2.chatservice.chatMessage.repository.ChatMessageRepository;
 import com.team2.chatservice.chatRoom.entity.ChatRoom;
 import com.team2.chatservice.chatRoom.repository.ChatRoomRepository;
 import com.team2.chatservice.client.ChatNotificationClient;
+import com.team2.chatservice.client.dto.ChatMessageNotificationRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,13 +27,13 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public Long counterpartId(Long roomId, Long userId) {
-        var room = authorize(roomId, userId);
+        ChatRoom room = authorize(roomId, userId);
         return userId.equals(room.getRequesterId()) ? room.getRepairerId() : room.getRequesterId();
     }
 
     @Transactional(readOnly = true)
     public ChatRoom authorize(Long roomId, Long userId) {
-        var room = rooms.findById(roomId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        ChatRoom room = rooms.findById(roomId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (!room.hasParticipant(userId))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         return room;
@@ -49,7 +50,7 @@ public class ChatService {
     @Transactional
     public ChatMessageResponse delete(Long roomId, Long messageId, Long userId) {
         authorize(roomId, userId);
-        var message = messages.findById(messageId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        ChatMessage message = messages.findById(messageId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (!message.getChatRoom().getId().equals(roomId)) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         if (!userId.equals(message.getSenderId())) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         message.delete();
@@ -58,18 +59,18 @@ public class ChatService {
 
     @Transactional
     public ChatMessageResponse send(Long roomId, Long userId, String content) {
-        var room = authorize(roomId, userId);
+        ChatRoom room = authorize(roomId, userId);
         if (content == null || content.isBlank() || content.length() > 2000)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Message must contain 1 to 2000 characters");
-        var trimmed = content.trim();
-        var saved = messages.save(ChatMessage.builder()
+        String trimmed = content.trim();
+        ChatMessage saved = messages.save(ChatMessage.builder()
                 .chatRoom(room).senderId(userId).content(trimmed)
                 .messageType(MessageType.TEXT).createdAt(LocalDateTime.now()).build());
 
         try {
             Long recipientId = userId.equals(room.getRequesterId())
                     ? room.getRepairerId() : room.getRequesterId();
-            notificationClient.notifyChatMessage(new ChatNotificationClient.ChatMessageNotificationRequest(
+            notificationClient.notifyChatMessage(new ChatMessageNotificationRequest(
                     recipientId, room.getPostId(), room.getId(), trimmed));
         } catch (Exception e) {
             log.warn("채팅 메시지 알림 전송 실패 roomId={}", roomId, e);

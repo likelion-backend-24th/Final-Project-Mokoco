@@ -1,5 +1,7 @@
 package com.team2.postservice.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team2.postservice.client.UserClient;
 import com.team2.postservice.common.security.TokenAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,8 +35,11 @@ public class SecurityConfig {
     // 게시글 기준 거래상태 조회)는 이 매처에서 빠져서 permitAll 체인으로 떨어진다.
     @Bean
     @Order(1)
-    public SecurityFilterChain authenticatedApiSecurityFilterChain(HttpSecurity http,
-            com.team2.postservice.client.UserClient users, com.fasterxml.jackson.databind.ObjectMapper mapper) throws Exception {
+    public SecurityFilterChain authenticatedApiSecurityFilterChain(
+            HttpSecurity http,
+            UserClient users,
+            ObjectMapper mapper
+    ) throws Exception {
         return http
                 .securityMatcher(matchers(
                         m("/api/ai/**"), m("/api/chat-rooms/*/contract/**"),
@@ -69,8 +74,11 @@ public class SecurityConfig {
     // 보여준다 — 토큰이 없거나 잘못돼도 막지 않고 LoginUser만 비워서(null) 통과시킨다.
     @Bean
     @Order(2)
-    public SecurityFilterChain optionalAuthSecurityFilterChain(HttpSecurity http,
-            com.team2.postservice.client.UserClient users, com.fasterxml.jackson.databind.ObjectMapper mapper) throws Exception {
+    public SecurityFilterChain optionalAuthSecurityFilterChain(
+            HttpSecurity http,
+            UserClient users,
+            ObjectMapper mapper
+    ) throws Exception {
         return http
                 .securityMatcher(m(HttpMethod.GET, "/posts"))
                 .csrf(csrf -> csrf.disable())
