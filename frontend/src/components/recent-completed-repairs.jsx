@@ -2,6 +2,16 @@ import Link from "next/link";
 import { Wrench } from "@phosphor-icons/react/dist/ssr";
 import { imageSrc } from "@/lib/backend";
 
+const categoryLabel = {
+  ALL: "전체",
+  ELECTRIC_LIGHT: "전기·조명",
+  PLUMBING: "배관·설비",
+  FURNITURE_INSTALL: "가구·설치",
+  HOME_APPLIANCE: "가전제품",
+  DOOR_WINDOW: "문·창문",
+  LIVING_ETC: "생활·기타",
+};
+
 export default function RecentCompletedRepairs({ posts }) {
   if (!posts?.length) {
     return null;
@@ -39,7 +49,7 @@ export default function RecentCompletedRepairs({ posts }) {
               <h3>{post.title}</h3>
 
               <p>
-                {post.categoryLabel ?? post.category}
+                {categoryLabel[post.category] ?? post.category}
               </p>
 
               <span>
