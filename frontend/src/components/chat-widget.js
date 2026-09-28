@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChatCircleDots, ArrowRight, X, Wrench } from "@phosphor-icons/react";
+import { ChatCircleDots, ArrowRight, X } from "@phosphor-icons/react";
 import ChatRoom from "@/components/chat-room";
 import { useChatWidgetStore } from "@/store/chatWidgetStore";
 import { useAuthStore } from "@/store/authStore";
@@ -126,7 +126,9 @@ export default function ChatWidget() {
                           onClick={() => openRoom(room.chatRoomId)}
                           className={`chat-widget-room-row ${unread ? "is-unread" : ""}`}
                         >
-                          <div className="chat-widget-room-icon"><Wrench size={18} weight="duotone" /></div>
+                          <div className="chat-widget-room-icon" aria-hidden="true">
+                            {(room.counterpartNickname || "이웃").charAt(0)}
+                          </div>
                           <div className="chat-widget-room-text">
                             <h3>{room.counterpartNickname || "이웃"}{unread && <span className="chat-widget-unread-dot" aria-label="새 메시지" />}</h3>
                             <p className="chat-widget-room-preview">{room.lastMessage || "아직 메시지가 없습니다. 첫 인사를 건네보세요."}</p>

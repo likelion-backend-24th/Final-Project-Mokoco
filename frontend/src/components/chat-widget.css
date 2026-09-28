@@ -12,7 +12,7 @@
 .chat-widget-room-row{display:flex;align-items:center;gap:12px;width:100%;padding:12px 8px;border-radius:14px;border:0;text-align:left;color:inherit;background:none;font:inherit;cursor:pointer;transition:background .12s}
 .chat-widget-room-row:hover{background:#f5f2fa}
 .chat-widget-room-row.is-unread{background:#f5f2fa}
-.chat-widget-room-icon{display:grid;place-items:center;flex-shrink:0;width:38px;height:38px;border-radius:12px;background:#eeebf8;color:#72609d}
+.chat-widget-room-icon{display:grid;place-items:center;flex-shrink:0;width:38px;height:38px;border-radius:50%;background:#eeebf8;color:#65438a;font-size:15px;font-weight:800}
 .chat-widget-room-text{min-width:0;flex:1}
 .chat-widget-room-row h3{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#282838;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chat-widget-unread-dot{flex-shrink:0;width:7px;height:7px;border-radius:50%;background:#e5484d}
