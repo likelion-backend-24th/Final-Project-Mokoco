@@ -12,6 +12,8 @@ import org.springframework.messaging.simp.stomp.*;
 import org.springframework.messaging.support.*;
 import org.springframework.web.socket.config.annotation.*;
 
+import java.util.regex.Pattern;
+
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
@@ -53,7 +55,7 @@ public class ChatWebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     if (command == StompCommand.SUBSCRIBE && "/user/queue/notifications".equals(destination))
                         return message;
                     String prefix = command == StompCommand.SEND ? "/app/chat/" : "/topic/chat/";
-                    if (destination == null || !destination.matches(java.util.regex.Pattern.quote(prefix) + "[0-9]+"))
+                    if (destination == null || !destination.matches(Pattern.quote(prefix) + "[0-9]+"))
                         throw new MessagingException("Destination not allowed");
                     chat.authorize(Long.valueOf(destination.substring(prefix.length())), Long.valueOf(headers.getUser().getName()));
                 }

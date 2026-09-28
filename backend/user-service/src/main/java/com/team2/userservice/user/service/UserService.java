@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -171,7 +172,7 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public java.util.List<UserResponse> listUsers(String requesterEmail) {
+    public List<UserResponse> listUsers(String requesterEmail) {
         requireAdmin(requesterEmail);
         return userRepository.findAll().stream().map(UserResponse::new).toList();
     }
@@ -179,10 +180,10 @@ public class UserService {
     // 관리자 대시보드 개요용 — post-service가 /api/internal/users/admin-stats로 호출한다.
     // 호출부(post-service AdminOverviewService)가 이미 관리자 권한을 확인했으므로 여기선 재확인하지 않는다.
     @Transactional(readOnly = true)
-    public com.team2.userservice.user.dto.AdminUserStatsResponse getAdminStats() {
+    public AdminUserStatsResponse getAdminStats() {
         long total = userRepository.count();
-        long newToday = userRepository.countByCreatedAtAfter(java.time.LocalDate.now().atStartOfDay());
-        return new com.team2.userservice.user.dto.AdminUserStatsResponse(total, newToday);
+        long newToday = userRepository.countByCreatedAtAfter(LocalDate.now().atStartOfDay());
+        return new AdminUserStatsResponse(total, newToday);
     }
 
     @Transactional

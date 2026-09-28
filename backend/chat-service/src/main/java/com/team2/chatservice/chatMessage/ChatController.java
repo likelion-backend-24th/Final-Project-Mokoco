@@ -1,6 +1,7 @@
 package com.team2.chatservice.chatMessage;
 
 import com.team2.chatservice.client.UserClient;
+import com.team2.chatservice.client.dto.UserClientResponse;
 import com.team2.chatservice.chatMessage.dto.*;
 import com.team2.common.security.LoginUser;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,7 @@ public class ChatController {
     // SecurityConfig가 이 경로도 Bearer 인증을 요구하므로, 여기선 그 토큰으로 풍부한 프로필
     // 정보(닉네임/지역/권한 등 LoginUser엔 없는 필드)까지 다시 조회해 내려준다.
     @GetMapping("/api/chat-rooms/session")
-    public com.team2.chatservice.client.dto.UserClientResponse session(@RequestHeader("Authorization") String authorization) {
+    public UserClientResponse session(@RequestHeader("Authorization") String authorization) {
         return users.verifyToken(authorization.substring(7));
     }
 

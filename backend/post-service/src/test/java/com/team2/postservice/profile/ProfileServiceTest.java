@@ -25,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -90,7 +91,7 @@ class ProfileServiceTest {
         when(users.getUserById(200L))
                 .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region", "USER"));
         when(reviews.findByPostId(10L)).thenReturn(Optional.empty());
-        when(chatRoomClient.byFixDealIds(any())).thenReturn(java.util.Map.of(1L, 900L));
+        when(chatRoomClient.byFixDealIds(any())).thenReturn(Map.of(1L, 900L));
 
         // 채팅방(900L)은 있지만 계약서를 한 번도 안 만든 경우: 버튼을 숨겨야 한다.
         when(contracts.findDistinctChatRoomIdByChatRoomIdIn(any())).thenReturn(List.of());

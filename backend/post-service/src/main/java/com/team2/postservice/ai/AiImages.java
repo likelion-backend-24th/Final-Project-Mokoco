@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.MemoryCacheImageInputStream;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
@@ -40,7 +41,7 @@ public class AiImages {
                     BufferedImage resized = new BufferedImage(Math.max(1, (int) (width * ratio)), Math.max(1, (int) (height * ratio)), BufferedImage.TYPE_INT_RGB);
                     Graphics2D g = resized.createGraphics();
                     try {
-                        g.setColor(java.awt.Color.WHITE); g.fillRect(0, 0, resized.getWidth(), resized.getHeight());
+                        g.setColor(Color.WHITE); g.fillRect(0, 0, resized.getWidth(), resized.getHeight());
                         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                         g.drawImage(original, 0, 0, resized.getWidth(), resized.getHeight(), null);
                     } finally { g.dispose(); original.flush(); }

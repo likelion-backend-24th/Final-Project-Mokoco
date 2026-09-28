@@ -5,6 +5,7 @@ import com.team2.common.security.LoginUser;
 import com.team2.postservice.ai.AiRequestTrace;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
+import feign.FeignException;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -45,7 +46,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                 error(response, 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return;
             }
             loginUser = new LoginUser(user.id(), user.email());
-        } catch (feign.FeignException e) {
+        } catch (FeignException e) {
             if (allowAnonymous) { chain.doFilter(request, response); return; }
             error(response, e.status() == 401 ? 401 : 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return;
         }

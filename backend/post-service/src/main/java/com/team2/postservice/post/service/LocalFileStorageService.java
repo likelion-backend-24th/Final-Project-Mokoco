@@ -1,7 +1,9 @@
 package com.team2.postservice.post.service;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -38,8 +40,8 @@ public class LocalFileStorageService implements FileStorageService {
     public StoredFile store(MultipartFile file) {
         // Preserve the existing post-image limit after enabling larger chat videos.
         if (file.getSize() > 10L * 1024 * 1024) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    org.springframework.http.HttpStatus.PAYLOAD_TOO_LARGE, "게시글 이미지는 10MB 이하여야 합니다.");
+            throw new ResponseStatusException(
+                    HttpStatus.PAYLOAD_TOO_LARGE, "게시글 이미지는 10MB 이하여야 합니다.");
         }
         try {
             // 상위 디렉토리가 없으면 한 번에 생성

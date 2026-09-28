@@ -3,6 +3,7 @@ package com.team2.postservice.ai.service;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.team2.postservice.ai.AiDraftCache;
 import com.team2.postservice.ai.AiImages;
 import com.team2.postservice.ai.AiRateLimit;
 import com.team2.postservice.ai.client.GeminiClient;
@@ -18,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
+import java.security.MessageDigest;
 import java.util.*;
 
 @Service
@@ -28,7 +30,7 @@ public class AiDraftService {
     private final AiRateLimit limit;
     private final AiContractContext context;
     private final ObjectMapper mapper;
-    private final com.team2.postservice.ai.AiDraftCache cache;
+    private final AiDraftCache cache;
     private final AiPostDraftRepository postDrafts;
     static final Set<String> SERVER_FIELDS = Set.of("totalAmount", "startDate", "endDate");
     static final Map<String, Integer> TERMS = Map.ofEntries(
@@ -142,15 +144,15 @@ public class AiDraftService {
         });
         // A separate short transaction observes changes made while the provider was running.
         context.check(room, user, baseId);
-        ((com.fasterxml.jackson.databind.node.ObjectNode) result).putPOJO("baseId", baseId);
-        ((com.fasterxml.jackson.databind.node.ObjectNode) result).put("messageCount", sources.keySet().stream().filter(key -> key.startsWith("MESSAGE_")).count());
+        ((ObjectNode) result).putPOJO("baseId", baseId);
+        ((ObjectNode) result).put("messageCount", sources.keySet().stream().filter(key -> key.startsWith("MESSAGE_")).count());
         return result;
     }
 
     private String cacheKey(Long user, String feature, Object input) {
         try {
             byte[] bytes = mapper.copy().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).writeValueAsBytes(input);
-            return user + ":" + feature + ":" + HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes));
+            return user + ":" + feature + ":" + HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
         } catch (Exception e) { throw AiException.input("입력을 확인해주세요."); }
     }
     static void fillServerFields(JsonNode result, Map<String, String> sources, Map<String, String> current) {

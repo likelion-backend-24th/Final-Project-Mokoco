@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team2.postservice.common.exception.AiException;
 import com.team2.postservice.ai.AiRequestTrace;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,14 +20,14 @@ import java.util.*;
 
 @Component
 public class GeminiClient {
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GeminiClient.class);
+    private static final Logger log = LoggerFactory.getLogger(GeminiClient.class);
     private final RestClient http;
     private final ObjectMapper mapper;
     private final String key;
     private final String model;
     private final boolean enabled;
 
-    @org.springframework.beans.factory.annotation.Autowired
+    @Autowired
     public GeminiClient(ObjectMapper mapper,
             @Value("${ai.gemini.api-key:}") String key,
             @Value("${ai.gemini.model:gemini-flash-lite-latest}") String model,

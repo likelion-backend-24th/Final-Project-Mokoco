@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,7 +29,7 @@ public class InternalChatController {
     private final ChatMessageRepository chatMessageRepository;
 
     public record ChatRoomInfo(Long id, Long proposalId, Long requesterId, Long repairerId, Long postId,
-            Long fixDealId, java.time.LocalDateTime createdAt) {
+            Long fixDealId, LocalDateTime createdAt) {
         static ChatRoomInfo from(ChatRoom room) {
             return new ChatRoomInfo(room.getId(), room.getProposalId(), room.getRequesterId(),
                     room.getRepairerId(), room.getPostId(), room.getFixDealId(), room.getCreatedAt());

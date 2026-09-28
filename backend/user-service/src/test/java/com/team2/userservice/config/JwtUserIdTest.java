@@ -2,15 +2,18 @@ package com.team2.userservice.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team2.common.exception.CustomException;
+import com.team2.common.security.LoginUser;
 import com.team2.userservice.region.repository.RegionRepository;
 import com.team2.userservice.user.controller.UserClientController;
 import com.team2.userservice.user.dto.TokenReissueRequest;
+import com.team2.userservice.user.dto.TokenResponse;
 import com.team2.userservice.user.entity.RefreshToken;
 import com.team2.userservice.user.entity.Role;
 import com.team2.userservice.user.entity.User;
 import com.team2.userservice.user.repository.RefreshTokenRepository;
 import com.team2.userservice.user.dto.UserResponse;
 import com.team2.userservice.user.entity.AccountStatus;
+import com.team2.userservice.user.repository.SocialAccountRepository;
 import com.team2.userservice.user.repository.UserRepository;
 import com.team2.userservice.user.service.UserService;
 import io.jsonwebtoken.Jwts;
@@ -67,7 +70,7 @@ class JwtUserIdTest {
         try {
             new JwtAuthenticationFilter(tokens, users).doFilter(request, new MockHttpServletResponse(),
                     (req, res) -> assertThat(SecurityContextHolder.getContext().getAuthentication().getPrincipal())
-                            .isEqualTo(new com.team2.common.security.LoginUser(42L, "current@example.com")));
+                            .isEqualTo(new LoginUser(42L, "current@example.com")));
             verify(users).findById(42L);
             verify(users, never()).findByEmail(anyString());
         } finally {
@@ -95,10 +98,10 @@ class JwtUserIdTest {
         String refresh = tokens.createRefreshToken(42L);
         when(refreshTokens.findByEmail("user@example.com"))
                 .thenReturn(Optional.of(new RefreshToken("user@example.com", refresh)));
-        UserService service = new UserService(users, mock(PasswordEncoder.class), tokens, refreshTokens, mock(RegionRepository.class), mock(com.team2.userservice.user.repository.SocialAccountRepository.class));
+        UserService service = new UserService(users, mock(PasswordEncoder.class), tokens, refreshTokens, mock(RegionRepository.class), mock(SocialAccountRepository.class));
         ObjectMapper mapper = new ObjectMapper();
         TokenReissueRequest request = mapper.readValue("{\"email\":\"user@example.com\",\"refreshToken\":\"" + refresh + "\"}", TokenReissueRequest.class);
-        com.team2.userservice.user.dto.TokenResponse response = service.reissue(request);
+        TokenResponse response = service.reissue(request);
         assertThat(tokens.getUserIdFromAccessToken(response.getAccessToken())).isEqualTo(42L);
         TokenReissueRequest wrong = mapper.readValue("{\"email\":\"other@example.com\",\"refreshToken\":\"" + refresh + "\"}", TokenReissueRequest.class);
         assertThatThrownBy(() -> service.reissue(wrong)).isInstanceOf(CustomException.class);

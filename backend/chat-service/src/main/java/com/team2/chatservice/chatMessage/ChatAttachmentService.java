@@ -15,7 +15,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -83,7 +85,7 @@ public class ChatAttachmentService {
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(message.getAttachmentMime()))
                 .cacheControl(CacheControl.noStore())
                 .header("X-Content-Type-Options", "nosniff")
-                .header("Content-Disposition", ContentDisposition.inline().filename(message.getAttachmentName(), java.nio.charset.StandardCharsets.UTF_8).build().toString())
+                .header("Content-Disposition", ContentDisposition.inline().filename(message.getAttachmentName(), StandardCharsets.UTF_8).build().toString())
                 .body(new FileSystemResource(path));
     }
 
@@ -91,9 +93,9 @@ public class ChatAttachmentService {
         byte[] header;
         try (InputStream input = file.getInputStream()) { header = input.readNBytes(4096); }
         if (header.length < 16) return false;
-        Charset charset = java.nio.charset.StandardCharsets.US_ASCII;
+        Charset charset = StandardCharsets.US_ASCII;
         if (!new String(header, 4, 4, charset).equals("ftyp")) return false;
-        long boxSize = Integer.toUnsignedLong(java.nio.ByteBuffer.wrap(header).getInt());
+        long boxSize = Integer.toUnsignedLong(ByteBuffer.wrap(header).getInt());
         if (boxSize < 16 || boxSize > header.length || boxSize % 4 != 0) return false;
         Set<String> brands = Set.of("isom", "iso2", "iso3", "iso4", "iso5", "iso6", "mp41", "mp42", "avc1", "dash", "M4V ");
         for (int offset = 8; offset + 4 <= boxSize; offset += 4) {

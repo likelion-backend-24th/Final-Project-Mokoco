@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team2.chatservice.client.UserClient;
 import com.team2.chatservice.client.dto.UserClientResponse;
 import com.team2.common.security.LoginUser;
+import feign.FeignException;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,7 +35,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
             UserClientResponse user = users.verifyToken(auth.substring(7));
             if (user == null || user.id() == null || user.email() == null) { error(response, 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return; }
             loginUser = new LoginUser(user.id(), user.email());
-        } catch (feign.FeignException e) {
+        } catch (FeignException e) {
             error(response, e.status() == 401 ? 401 : 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return;
         }
         SecurityContext context = SecurityContextHolder.createEmptyContext();

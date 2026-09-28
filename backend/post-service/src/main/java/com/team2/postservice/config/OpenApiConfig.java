@@ -6,6 +6,8 @@ import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
+
 @Configuration
 public class OpenApiConfig {
 
@@ -16,6 +18,6 @@ public class OpenApiConfig {
     public OpenAPI postServiceOpenApi() {
         return new OpenAPI()
                 .info(new Info().title("post-service API").description("글/제안/계약/채팅/후기/이력서").version("v1"))
-                .servers(java.util.List.of(new Server().url("/api")));
+                .servers(List.of(new Server().url("/api")));
     }
 }

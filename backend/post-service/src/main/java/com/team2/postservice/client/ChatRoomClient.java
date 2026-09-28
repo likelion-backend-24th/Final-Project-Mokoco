@@ -3,6 +3,7 @@ package com.team2.postservice.client;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +17,7 @@ import java.util.Map;
 public interface ChatRoomClient {
 
     record ChatRoomInfo(Long id, Long proposalId, Long requesterId, Long repairerId, Long postId, Long fixDealId,
-            java.time.LocalDateTime createdAt) {}
+            LocalDateTime createdAt) {}
 
     @GetMapping("/api/internal/chat-rooms/{roomId}")
     ChatRoomInfo getRoom(@PathVariable("roomId") Long roomId);

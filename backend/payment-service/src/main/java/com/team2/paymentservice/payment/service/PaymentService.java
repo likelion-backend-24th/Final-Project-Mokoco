@@ -6,6 +6,7 @@ import com.team2.paymentservice.common.exception.ErrorCode;
 import com.team2.paymentservice.payment.client.PortOnePaymentClient;
 import com.team2.paymentservice.payment.client.PortOnePaymentResponse;
 import com.team2.paymentservice.payment.client.PostServiceClient;
+import com.team2.paymentservice.payment.dto.AdminPaymentSummaryDto;
 import com.team2.paymentservice.payment.dto.PayeePaymentsResponseDto;
 import com.team2.paymentservice.payment.dto.PaymentRequestDto;
 import com.team2.paymentservice.payment.dto.PaymentResponseDto;
@@ -163,8 +164,8 @@ public class PaymentService {
 
     // 관리자 거래 현황판 요약 카드용 — 인증/권한은 호출부(post-service AdminDealController)가
     // 이미 확인했으므로(internal 서비스 간 호출) 여기선 집계만 한다.
-    public com.team2.paymentservice.payment.dto.AdminPaymentSummaryDto getAdminSummary() {
-        return new com.team2.paymentservice.payment.dto.AdminPaymentSummaryDto(
+    public AdminPaymentSummaryDto getAdminSummary() {
+        return new AdminPaymentSummaryDto(
                 paymentRepository.sumCompletedAmount(),
                 paymentRepository.sumSettledAmountAll()
         );

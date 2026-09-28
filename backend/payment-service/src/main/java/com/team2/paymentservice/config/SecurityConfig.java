@@ -1,5 +1,7 @@
 package com.team2.paymentservice.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team2.paymentservice.client.UserClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,7 +51,7 @@ public class SecurityConfig {
     @Bean
     @Order(2)
     public SecurityFilterChain authenticatedApiSecurityFilterChain(HttpSecurity http,
-            com.team2.paymentservice.client.UserClient users, com.fasterxml.jackson.databind.ObjectMapper mapper) throws Exception {
+            UserClient users, ObjectMapper mapper) throws Exception {
         return http
                 .securityMatcher("/payments/**")
                 .csrf(csrf -> csrf.disable())

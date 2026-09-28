@@ -1,5 +1,7 @@
 package com.team2.postservice.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team2.postservice.client.UserClient;
 import com.team2.postservice.common.security.TokenAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,7 +36,7 @@ public class SecurityConfig {
     @Bean
     @Order(1)
     public SecurityFilterChain authenticatedApiSecurityFilterChain(HttpSecurity http,
-            com.team2.postservice.client.UserClient users, com.fasterxml.jackson.databind.ObjectMapper mapper) throws Exception {
+            UserClient users, ObjectMapper mapper) throws Exception {
         return http
                 .securityMatcher(matchers(
                         m("/api/ai/**"), m("/api/chat-rooms/*/contract/**"),
@@ -70,7 +72,7 @@ public class SecurityConfig {
     @Bean
     @Order(2)
     public SecurityFilterChain optionalAuthSecurityFilterChain(HttpSecurity http,
-            com.team2.postservice.client.UserClient users, com.fasterxml.jackson.databind.ObjectMapper mapper) throws Exception {
+            UserClient users, ObjectMapper mapper) throws Exception {
         return http
                 .securityMatcher(m(HttpMethod.GET, "/posts"))
                 .csrf(csrf -> csrf.disable())

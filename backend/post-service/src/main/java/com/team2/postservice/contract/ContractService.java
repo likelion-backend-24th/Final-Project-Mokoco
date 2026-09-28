@@ -1,5 +1,6 @@
 package com.team2.postservice.contract;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team2.postservice.client.ChatRoomClient;
 import com.team2.postservice.client.PaymentClient;
@@ -19,8 +20,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -42,9 +45,9 @@ public class ContractService {
 
     public record Version(Long id, int revision, String status, Long authorId, ContractTerms terms,
             String documentHash,
-            @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) Instant createdAt,
-            @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) Instant requestedAt,
-            @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING) Instant signedAt,
+            @JsonFormat(shape = JsonFormat.Shape.STRING) Instant createdAt,
+            @JsonFormat(shape = JsonFormat.Shape.STRING) Instant requestedAt,
+            @JsonFormat(shape = JsonFormat.Shape.STRING) Instant signedAt,
             List<ContractSignature> signatures) {}
     public record PaymentSummary(String status, Integer amount, Integer feeAmount, Integer netAmount, boolean settled) {}
     public record Overview(Long requesterId, Long repairerId, String requesterEmail, String repairerEmail,
@@ -80,7 +83,7 @@ public class ContractService {
                     mapper.readValue(contract.getTermsJson(), ContractTerms.class), contract.getDocumentHash(),
                     contract.getCreatedAt(), contract.getRequestedAt(), contract.getSignedAt(),
                     signatures.findByContractIdOrderBySignedAtAsc(contract.getId()));
-        } catch (java.io.IOException e) { throw new IllegalStateException("Stored contract cannot be read", e); }
+        } catch (IOException e) { throw new IllegalStateException("Stored contract cannot be read", e); }
     }
     // 결제 상태 조회 실패로 계약서 페이지 전체가 죽으면 안 되므로, 조회용으로는 어떤 Feign
     // 오류든 "아직 결제 없음"으로 취급하고 페이지는 계속 보여준다.
@@ -138,7 +141,7 @@ public class ContractService {
             String hash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonical.getBytes(StandardCharsets.UTF_8)));
             if (previous != null) previous.supersede();
             return view(contracts.saveAndFlush(new RepairContract(roomId, revision, userId, json, hash)));
-        } catch (java.io.IOException | java.security.NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+        } catch (IOException | NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
     }
     @Transactional
     public Version request(Long roomId, Long userId, Long id) {

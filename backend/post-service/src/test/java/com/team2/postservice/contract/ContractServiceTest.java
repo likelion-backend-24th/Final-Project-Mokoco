@@ -19,6 +19,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.*;
 
 // Flyway가 이제 이 모듈 클래스패스에 있어서(V1이 MySQL 전용 문법이라) 기본 설정 그대로면
@@ -49,7 +50,7 @@ class ContractServiceTest {
         roomId = 1L;
         Mockito.when(chatRoomClient.getRoom(roomId))
                 .thenReturn(new ChatRoomClient.ChatRoomInfo(roomId, proposal.getId(), 10L, 20L, post.getId(), deal.getId(),
-                        java.time.LocalDateTime.now()));
+                        LocalDateTime.now()));
     }
     ContractTerms terms(String scope) {
         return new ContractTerms("가구 수리", scope, "도색 제외", "부품비 포함", new BigDecimal("50000"), "검수 후 지급",
@@ -90,7 +91,7 @@ class ContractServiceTest {
         // ReviewService와 같은 기준(완료 후 3일)으로 판단하는지 직접 확인하려고, 완료 시각을
         // 4일 전으로 강제로 되돌린다.
         em.getEntityManager().createQuery("update FixDeal d set d.completedAt = :past where d.id = :id")
-                .setParameter("past", java.time.LocalDateTime.now().minusDays(4))
+                .setParameter("past", LocalDateTime.now().minusDays(4))
                 .setParameter("id", deal.getId())
                 .executeUpdate();
         em.clear();
