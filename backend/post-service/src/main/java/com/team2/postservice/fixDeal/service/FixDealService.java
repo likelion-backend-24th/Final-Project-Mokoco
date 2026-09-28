@@ -90,7 +90,9 @@ public class FixDealService {
     }
 
     public FixDealStatusResponse getStatusByPostId(Long postId) {
-        FixDeal fixDeal = fixDealRepository.findByPostId(postId)
+        // 취소 후 재매칭 이력이 있는 글은 같은 postId로 취소된 행이 남아있을 수 있어 findByPostId
+        // (단순 조회)가 NonUniqueResultException을 던진다 — 취소된 행을 제외하고 조회해야 안전하다.
+        FixDeal fixDeal = fixDealRepository.findByPostIdAndStatusNot(postId, FixDealStatus.CANCELED)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND));
 
         Integer estimatedPrice = proposalRepository.findById(fixDeal.getProposalId())

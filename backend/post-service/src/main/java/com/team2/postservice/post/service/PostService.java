@@ -160,7 +160,9 @@ public class PostService {
     // (fix_deals는 posts와 실제 DB 외래키가 없어서 그냥 두면 에러 없이 삭제되지만, 그러면 두 당사자가
     //  주고받던 채팅/거래 맥락이 붕 뜬 채로 남으므로 정책적으로 막는다.)
     private void guardNoActiveDeal(Long postId) {
-        fixDealRepository.findByPostId(postId).ifPresent(deal -> {
+        // 취소 후 재매칭 이력이 있는 글은 같은 postId로 취소된 행이 남아있을 수 있어 findByPostId
+        // (단순 조회)가 NonUniqueResultException을 던진다 — 취소된 행을 제외하고 조회해야 안전하다.
+        fixDealRepository.findByPostIdAndStatusNot(postId, FixDealStatus.CANCELED).ifPresent(deal -> {
             if (deal.getStatus() != FixDealStatus.COMPLETED && deal.getStatus() != FixDealStatus.CANCELED) {
                 throw new CustomException(ErrorCode.POST_HAS_ACTIVE_DEAL);
             }

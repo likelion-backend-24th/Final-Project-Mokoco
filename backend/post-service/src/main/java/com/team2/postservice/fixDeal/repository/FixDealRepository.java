@@ -35,6 +35,12 @@ public interface FixDealRepository extends JpaRepository<FixDeal, Long> {
             FixDealStatus status
     );
 
+    // 취소 후 재매칭(다른 제안 재채택) 이력이 있으면 같은 post_id로 행이 여러 개 남는다(취소된
+    // 행들 + 활성 행 하나) — findByPostId(단순 post_id 조회)는 이럴 때 NonUniqueResultException을
+    // 던진다. 활성(비취소) 거래는 uk_fix_deal_active_post 제약으로 post당 최대 하나만 보장되므로,
+    // 상태로 걸러야 안전하다. 아래 findByPostId는 남겨두되 새 호출부에서는 쓰지 않는다.
+    Optional<FixDeal> findByPostIdAndStatusNot(Long postId, FixDealStatus status);
+
     Optional<FixDeal> findByPostId(Long postId);
 
     boolean existsByProposalId(Long proposalId);
