@@ -2,6 +2,7 @@ package com.team2.userservice.user.controller;
 
 import com.team2.userservice.user.dto.UserResponse;
 import com.team2.userservice.user.entity.AccountStatus;
+import com.team2.userservice.user.entity.User;
 import com.team2.userservice.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,7 @@ public class UserClientController {
 
     @GetMapping("/by-id/{userId}")
     public UserNicknameResponse getNickname(@PathVariable Long userId) {
-        var user = userService.findById(userId);
+        User user = userService.findById(userId);
         return new UserNicknameResponse(user.getId(), user.getNickname());
     }
     private final com.team2.userservice.config.JwtTokenProvider tokenProvider;
