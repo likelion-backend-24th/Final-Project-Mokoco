@@ -2,6 +2,7 @@ package com.team2.postservice.chatRoom;
 
 import com.team2.common.exception.CustomException;
 import com.team2.postservice.client.ChatRoomClient;
+import com.team2.postservice.client.PaymentClient;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.common.exception.ErrorCode;
@@ -32,6 +33,7 @@ public class ChatRoomOrchestrationService {
     private final ContractRepository contractRepository;
     private final UserClient userClient;
     private final ChatRoomClient chatRoomClient;
+    private final PaymentClient paymentClient;
 
     @Transactional
     public ChatRoomResponse createForProposal(Long proposalId, Long userId) {
@@ -92,7 +94,19 @@ public class ChatRoomOrchestrationService {
         // 요청에서 이미 들고 있는 room 객체는 안 바뀐다). 방금 로컬에서 복구한 fixDealId로 직접
         // 채워야, 프론트가 이 응답 하나만 보고도(새로고침 한 번 더 없이) 계약서 버튼을 띄울 수 있다.
         return new ChatRoomResponse(room.id(), fixDealId, room.proposalId(), dealStatus, contractStatus,
-                room.createdAt(), room.postId(), tryPostTitle(room.postId()));
+                room.createdAt(), room.postId(), tryPostTitle(room.postId()), room.requesterId(), isPaid(room.postId()));
+    }
+
+    // 결제 완료 여부 — 채팅창 상단 배너가 의뢰인/수리자에게 다른 문구("결제하기" vs
+    // "의뢰인 결제 완료")를 보여주는 데 쓴다. 결제 조회 실패로 채팅창 전체가 죽으면 안 되므로
+    // ContractService.paymentSummaryOrNull과 같은 이유로 실패 시 "결제 안 됨"으로 조용히 처리한다.
+    private boolean isPaid(Long postId) {
+        if (postId == null) return false;
+        try {
+            return "COMPLETED".equals(paymentClient.getPaymentByPostId(postId).status());
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // ProposalService.attachDealWithRetry()는 채택 직후 한 번만(최대 3회 재시도) 채팅방에 거래를

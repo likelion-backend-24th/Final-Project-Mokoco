@@ -40,10 +40,24 @@ const dealPillLabel = {
 const matchedDealLabel = {
   DRAFT: { banner: "계약서 초안 확인하기 →", pill: "계약서 보기" },
   SIGNING: { banner: "계약서 서명하기 →", pill: "서명 대기중" },
-  SIGNED: { banner: "결제하고 수리 시작하기 →", pill: "결제하기" },
 };
-function dealLabels(detail) {
+// SIGNED(서명 완료) 단계는 "결제하기"를 의뢰인·수리자 구분 없이 똑같이 보여줬었다 — 결제는
+// 의뢰인만 할 수 있는데 수리자한테도 "결제하기"가 떠서 헷갈렸고, 의뢰인이 실제로 결제를
+// 끝낸 뒤에도 계속 "결제하기"로 남아있어 결제가 반영 안 된 것처럼 보였다. 역할과 결제
+// 완료 여부로 나눠서 보여준다.
+function signedLabel(paid, isRequester) {
+  if (paid) {
+    return isRequester
+      ? { banner: "결제 완료 · 수리자 작업 시작 대기 →", pill: "결제 완료" }
+      : { banner: "의뢰인 결제 완료 · 작업을 시작해주세요 →", pill: "의뢰인 결제 완료" };
+  }
+  return isRequester
+    ? { banner: "결제하고 수리 시작하기 →", pill: "결제하기" }
+    : { banner: "의뢰인 결제 대기중 →", pill: "결제 대기중" };
+}
+function dealLabels(detail, userId) {
   if (detail.dealStatus === "MATCHED") {
+    if (detail.contractStatus === "SIGNED") return signedLabel(detail.paid, userId === detail.requesterId);
     return matchedDealLabel[detail.contractStatus] || { banner: "계약서 작성하고 결제하기 →", pill: "계약서 작성" };
   }
   return { banner: dealBannerLabel[detail.dealStatus], pill: dealPillLabel[detail.dealStatus] };
@@ -281,7 +295,7 @@ export default function ChatRoom({ roomId, embedded = false, onBack }) {
       })}<div ref={bottom} />
     </div>
     {hasDealFab && (() => {
-      const { banner, pill } = dealLabels(detail);
+      const { banner, pill } = dealLabels(detail, userId);
       return (
         <div className="deal-banner-wrap">
           <button

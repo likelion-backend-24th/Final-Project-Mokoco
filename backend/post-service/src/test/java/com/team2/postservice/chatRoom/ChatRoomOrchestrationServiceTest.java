@@ -2,6 +2,7 @@ package com.team2.postservice.chatRoom;
 
 import com.team2.common.exception.CustomException;
 import com.team2.postservice.client.ChatRoomClient;
+import com.team2.postservice.client.PaymentClient;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.postservice.common.exception.ErrorCode;
@@ -40,6 +41,7 @@ class ChatRoomOrchestrationServiceTest {
     @Autowired ChatRoomOrchestrationService service;
     @MockitoBean UserClient userClient;
     @MockitoBean ChatRoomClient chatRoomClient;
+    @MockitoBean PaymentClient paymentClient;
 
     Post post;
     Proposal proposal;
