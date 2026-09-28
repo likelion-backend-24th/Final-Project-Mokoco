@@ -1,0 +1,102 @@
+name: Payment Service CI
+
+on:
+  pull_request:
+    branches: [main, dev, release]
+    paths:
+      - "backend/payment-service/**"
+      - "backend/common/**"
+      - ".github/workflows/ci-payment.yml"
+
+  push:
+    branches: [main, dev, release]
+    paths:
+      - "backend/payment-service/**"
+      - "backend/common/**"
+      - ".github/workflows/ci-payment.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: payment-service-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root1234
+          MYSQL_DATABASE: payment_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot1234"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/payment_db?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root1234
+
+      INTERNAL_SERVICE_KEY: ci-internal-service-key
+
+      POST_SERVICE_BASE_URL: http://localhost:8082
+      USER_SERVICE_BASE_URL: http://localhost:8081
+
+      # PortOne 실제 호출 방지용 CI 값
+      PORTONE_API_SECRET: ci-portone-api-secret
+      PORTONE_WEBHOOK_SECRET: ci-portone-webhook-secret
+      PORTONE_STORE_ID: ci-portone-store-id
+
+    defaults:
+      run:
+        working-directory: backend/payment-service
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+          cache-dependency-path: |
+            backend/payment-service/*.gradle*
+            backend/payment-service/gradle/wrapper/gradle-wrapper.properties
+            backend/common/*.gradle*
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Compile
+        run: ./gradlew clean classes testClasses --no-daemon
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon --stacktrace
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: payment-service-test-report
+          path: |
+            backend/payment-service/build/reports/tests/test/**
+            backend/payment-service/build/test-results/test/**
+          if-no-files-found: ignore
+          retention-days: 7
