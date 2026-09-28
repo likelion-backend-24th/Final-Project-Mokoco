@@ -65,7 +65,9 @@ export default function NotificationSettingsView() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "저장에 실패했습니다.");
       setSettings(data);
-      setSavedAt(Date.now());
+      // 실제 시각은 안 쓰고 "방금 저장됨" 신호로만 쓰므로, Date.now() 대신 카운터를 올린다
+      // (렌더 순수성 린트 규칙이 컴포넌트 함수 내부의 Date.now() 호출을 막는다).
+      setSavedAt((n) => n + 1);
     } catch (err) {
       setError(err.message);
       setSettings((s) => ({ ...s, [key]: !next[key] })); // 롤백
