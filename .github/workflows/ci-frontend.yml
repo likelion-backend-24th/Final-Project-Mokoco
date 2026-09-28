@@ -29,7 +29,8 @@ jobs:
     timeout-minutes: 20
 
     env:
-      NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
+      BACKEND_API_URL: http://localhost:8000
+      NEXT_PUBLIC_BACKEND_API_URL: http://localhost:8000
 
     defaults:
       run:
