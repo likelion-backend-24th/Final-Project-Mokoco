@@ -48,15 +48,14 @@ jobs:
       SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/payment_db?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root1234
-
+    
       INTERNAL_SERVICE_KEY: ci-internal-service-key
-
+    
       POST_SERVICE_BASE_URL: http://localhost:8082
       USER_SERVICE_BASE_URL: http://localhost:8081
-
-      # PortOne 실제 호출 방지용 CI 값
+    
       PORTONE_API_SECRET: ci-portone-api-secret
-      PORTONE_WEBHOOK_SECRET: ci-portone-webhook-secret
+      PORTONE_WEBHOOK_SECRET: "whsec_dGVzdC13ZWJob29rLXNlY3JldA=="
       PORTONE_STORE_ID: ci-portone-store-id
 
     defaults:
