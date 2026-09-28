@@ -2,10 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { normalizeRegionScope, regionListHref } from "./region-scope.js";
 
-test("default and invalid URL scopes use no filter (ALL)", () => {
-  assert.equal(normalizeRegionScope(undefined), "ALL");
-  assert.equal(normalizeRegionScope("unknown"), "ALL");
+test("default and invalid URL scopes fall back to my 시·군·구 (SIGUNGU)", () => {
+  assert.equal(normalizeRegionScope(undefined), "SIGUNGU");
+  assert.equal(normalizeRegionScope("unknown"), "SIGUNGU");
   assert.equal(normalizeRegionScope("SIGUNGU"), "SIGUNGU");
+  assert.equal(normalizeRegionScope("ALL"), "ALL");
 });
 
 test("filter changes reset page while preserving category and region scope", () => {

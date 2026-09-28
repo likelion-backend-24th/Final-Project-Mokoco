@@ -4,7 +4,7 @@ import { getNearbyPosts } from "./nearby-posts.js";
 
 test("guest requests all regions without an authorization header and keeps paging", async (t) => {
   t.mock.method(globalThis, "fetch", async (url, options) => {
-    const query = new URL(url).searchParams;
+    const query = new URL(url, "http://test").searchParams;
     assert.equal(query.has("regionScope"), false);
     assert.equal(query.get("page"), "1");
     assert.equal(query.get("category"), "PLUMBING");
@@ -27,7 +27,7 @@ test("invalid logged-in token does not silently fall back to guest data", async 
 
 test("forwards verified-token input and paging parameters, preserves total count", async (t) => {
   t.mock.method(globalThis, "fetch", async (url, options) => {
-    const query = new URL(url).searchParams;
+    const query = new URL(url, "http://test").searchParams;
     assert.equal(query.get("page"), "2");
     assert.equal(query.get("category"), "PLUMBING");
     assert.equal(query.get("regionScope"), "ALL");
@@ -43,7 +43,7 @@ test("forwards verified-token input and paging parameters, preserves total count
 test("selected district and dong scopes are sent to the backend", async (t) => {
   const scopes = [];
   t.mock.method(globalThis, "fetch", async (url) => {
-    scopes.push(new URL(url).searchParams.get("regionScope"));
+    scopes.push(new URL(url, "http://test").searchParams.get("regionScope"));
     return Response.json({ content: [], totalElements: 0 });
   });
   await getNearbyPosts("token", "ALL", 0, 20, "SIGUNGU");
