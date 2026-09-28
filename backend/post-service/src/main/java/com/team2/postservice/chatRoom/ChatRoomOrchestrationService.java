@@ -82,11 +82,34 @@ public class ChatRoomOrchestrationService {
         }
         if (!userId.equals(room.requesterId()) && !userId.equals(room.repairerId()))
             throw new CustomException(ErrorCode.UNAUTHORIZED_CHAT_ROOM_ACCESS);
-        String dealStatus = room.fixDealId() == null ? null
-                : fixDealRepository.findById(room.fixDealId()).map(deal -> deal.getStatus().name()).orElse(null);
+        Long fixDealId = room.fixDealId() != null ? room.fixDealId() : repairFixDealLink(room);
+        String dealStatus = fixDealId == null ? null
+                : fixDealRepository.findById(fixDealId).map(deal -> deal.getStatus().name()).orElse(null);
         String contractStatus = contractRepository.findFirstByChatRoomIdOrderByRevisionDesc(roomId)
                 .map(RepairContract::getStatus).orElse(null);
         return ChatRoomResponse.from(room, dealStatus, contractStatus, tryPostTitle(room.postId()));
+    }
+
+    // ProposalService.attachDealWithRetry()는 채택 직후 한 번만(최대 3회 재시도) 채팅방에 거래를
+    // 연결한다 — 그 순간 아직 채팅방이 없었거나(제안 단계 채팅방을 나중에 연 경우) chat-service가
+    // 일시적으로 응답하지 않았다면, 그 뒤로는 영영 연결이 안 된 채 남아 계약서 진입 버튼이 뜨지
+    // 않는 문제가 있었다. 채팅방을 열 때마다(포커스 재조회 포함) 여기서 다시 확인해서, 이 제안에
+    // 실제로는 거래가 있는데 채팅방에 안 걸려있으면 다시 연결을 시도한다.
+    private Long repairFixDealLink(ChatRoomClient.ChatRoomInfo room) {
+        if (room.proposalId() == null) return null;
+        return fixDealRepository.findByProposalId(room.proposalId())
+                .filter(deal -> deal.getStatus() != FixDealStatus.CANCELED)
+                .map(deal -> {
+                    try {
+                        chatRoomClient.attachDeal(new ChatRoomClient.DealLinkRequest(
+                                room.proposalId(), deal.getId(), deal.getRequesterId(), deal.getRepairerId(), deal.getPostId()));
+                    } catch (Exception e) {
+                        // chat-service에 반영은 이번에도 실패할 수 있지만, 이 응답만큼은 로컬 FixDeal
+                        // 기준으로 정확하게 보여준다 — 다음 조회 때 다시 복구를 시도하면 된다.
+                    }
+                    return deal.getId();
+                })
+                .orElse(null);
     }
 
     // 채팅창 헤더에 글 제목 링크를 보여주기 위한 best-effort 조회 — 글이 삭제됐어도 채팅 자체는 봐야 하므로 실패는 삼킨다.
