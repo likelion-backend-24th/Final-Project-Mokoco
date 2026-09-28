@@ -14,7 +14,16 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
   const { userEmail: storeEmail, initAuth, setLogout } = useAuthStore();
   // const [mounted, setMounted] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [nickname, setNickname] = useState(null);
+  //const [nickname, setNickname] = useState(null);
+  const [nickname, setNickname] = useState(() => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return localStorage.getItem("nickname");
+  } catch {
+    return null;
+  }
+});
 
   useEffect(() => {
     //setMounted(true);
@@ -22,10 +31,10 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
     // 닉네임은 아래 effect에서 /api/users/me로 매번 새로 조회하는데, 그 응답이 오기 전까지
     // userEmail이 폴백으로 보여서 화면 전환마다 이메일이 잠깐 스쳐 지나간다. 직전에 받아둔
     // 닉네임을 캐시해뒀다가 먼저 보여주면(네트워크 왕복 없이 즉시) 그 틈을 없앨 수 있다.
-    try {
-      const cached = localStorage.getItem("nickname");
-      if (cached) setNickname(cached);
-    } catch { /* 무시 */ }
+    // try {
+    //   const cached = localStorage.getItem("nickname");
+    //   if (cached) setNickname(cached);
+    // } catch { /* 무시 */ }
   }, [initAuth]);
 
   const cookieEmail = typeof document !== "undefined"
@@ -107,8 +116,18 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
         {userEmail && (
           <Link href="/profile" className={`nav-link ${pathname.startsWith("/profile") ? "nav-link-active" : ""}`}>내 프로필</Link>
         )}
-        {isAdmin && (
-          <Link href="/admin" className={`nav-link ${pathname.startsWith("/admin") ? "nav-link-active" : ""}`}>관리자</Link>
+        // {isAdmin && (
+        //   <Link href="/admin" className={`nav-link ${pathname.startsWith("/admin") ? "nav-link-active" : ""}`}>관리자</Link>
+        // )}
+        {displayIsAdmin && (
+          <Link
+            href="/admin"
+            className={`nav-link ${
+              pathname.startsWith("/admin") ? "nav-link-active" : ""
+            }`}
+          >
+            관리자
+          </Link>
         )}
       </nav>
       {userEmail ? (
@@ -117,7 +136,10 @@ export default function SiteHeader({ userEmail: serverUserEmail }) {
           <Link href="/profile" aria-label="내 프로필로 이동">
             <UserCircle size={29} weight="duotone" className="text-blue-600" />
           </Link>
-          <span className="header-email">{nickname || userEmail}</span>
+          // <span className="header-email">{nickname || userEmail}</span>
+          <span className="header-email">
+            {displayNickname || userEmail}
+          </span>
           <form onSubmit={handleLogout}>
             <button type="submit">로그아웃</button>
           </form>
