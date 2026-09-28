@@ -87,7 +87,12 @@ public class ChatRoomOrchestrationService {
                 : fixDealRepository.findById(fixDealId).map(deal -> deal.getStatus().name()).orElse(null);
         String contractStatus = contractRepository.findFirstByChatRoomIdOrderByRevisionDesc(roomId)
                 .map(RepairContract::getStatus).orElse(null);
-        return ChatRoomResponse.from(room, dealStatus, contractStatus, tryPostTitle(room.postId()));
+        // ChatRoomResponse.from(room, ...)은 room.fixDealId()를 그대로 쓰는데, 그건 chat-service에서
+        // 막 읽어온 "복구 전" 값이다(repairFixDealLink가 chat-service에 다시 연결을 반영해도 이
+        // 요청에서 이미 들고 있는 room 객체는 안 바뀐다). 방금 로컬에서 복구한 fixDealId로 직접
+        // 채워야, 프론트가 이 응답 하나만 보고도(새로고침 한 번 더 없이) 계약서 버튼을 띄울 수 있다.
+        return new ChatRoomResponse(room.id(), fixDealId, room.proposalId(), dealStatus, contractStatus,
+                room.createdAt(), room.postId(), tryPostTitle(room.postId()));
     }
 
     // ProposalService.attachDealWithRetry()는 채택 직후 한 번만(최대 3회 재시도) 채팅방에 거래를
