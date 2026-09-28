@@ -15,7 +15,11 @@
 .rte-content p:last-child{margin-bottom:0}
 .rte-content h2{font-size:19px;font-weight:750;margin:.7em 0 .35em}
 .rte-content h3{font-size:16px;font-weight:700;margin:.6em 0 .3em}
-.rte-content ul,.rte-content ol{padding-left:1.4em;margin:0 0 .6em}
+/* Tailwind 기본 리셋이 ul/ol의 list-style을 none으로 지워버려서, 목록 버튼을 눌러도
+   들여쓰기만 되고 글머리 기호·번호가 안 보였다 — 여기서 다시 켜준다. */
+.rte-content ul{padding-left:1.4em;margin:0 0 .6em;list-style-type:disc}
+.rte-content ol{padding-left:1.4em;margin:0 0 .6em;list-style-type:decimal}
 .rte-content li{margin:.15em 0}
+.rte-content li::marker{color:#64748b}
 .rte-content blockquote{margin:0 0 .6em;padding:2px 0 2px 12px;border-left:3px solid #cbd5e1;color:#64748b}
 .rte-content p.is-editor-empty:first-child::before{content:attr(data-placeholder);float:left;height:0;pointer-events:none;color:#94a3b8}
