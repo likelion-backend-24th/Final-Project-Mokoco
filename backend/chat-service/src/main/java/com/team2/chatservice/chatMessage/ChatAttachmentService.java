@@ -3,6 +3,7 @@ package com.team2.chatservice.chatMessage;
 import com.team2.chatservice.chatMessage.dto.ChatMessageResponse;
 import com.team2.chatservice.chatMessage.entity.*;
 import com.team2.chatservice.chatMessage.repository.ChatMessageRepository;
+import com.team2.chatservice.chatRoom.entity.ChatRoom;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.*;
@@ -13,6 +14,8 @@ import org.springframework.transaction.support.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -33,11 +36,11 @@ public class ChatAttachmentService {
 
     @Transactional
     public ChatMessageResponse upload(Long roomId, Long userId, MultipartFile file) throws IOException {
-        var room = chat.authorize(roomId, userId);
+        ChatRoom room = chat.authorize(roomId, userId);
         if (file.isEmpty() || file.getSize() > 50L * 1024 * 1024)
             throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "파일은 1바이트 이상 50MB 이하여야 합니다.");
         String mime;
-        try (var input = file.getInputStream()) { mime = new Tika().detect(input); }
+        try (InputStream input = file.getInputStream()) { mime = new Tika().detect(input); }
         // Some MP4 files are detected as QuickTime; verify ISO container brands before normalizing.
         if (("application/mp4".equals(mime) || "video/quicktime".equals(mime)) && hasMp4Brand(file)) mime = "video/mp4";
         boolean image = IMAGES.contains(mime);
@@ -56,11 +59,11 @@ public class ChatAttachmentService {
                 }
             }
         });
-        try (var input = file.getInputStream()) { Files.copy(input, target); }
+        try (InputStream input = file.getInputStream()) { Files.copy(input, target); }
         String name = Optional.ofNullable(file.getOriginalFilename()).orElse("attachment")
                 .replaceAll("[\\\\/\\p{Cntrl}]", "_");
         if (name.length() > 180) name = name.substring(0, 180);
-        var message = messages.save(ChatMessage.builder().chatRoom(room).senderId(userId)
+        ChatMessage message = messages.save(ChatMessage.builder().chatRoom(room).senderId(userId)
                 .content(image ? "사진" : "동영상").messageType(image ? MessageType.IMAGE : MessageType.VIDEO)
                 .createdAt(LocalDateTime.now()).attachmentKey(key).attachmentName(name)
                 .attachmentMime(mime).attachmentSize(file.getSize()).build());
@@ -70,7 +73,7 @@ public class ChatAttachmentService {
     @Transactional(readOnly = true)
     public ResponseEntity<Resource> download(Long roomId, Long messageId, Long userId) {
         chat.authorize(roomId, userId);
-        var message = messages.findById(messageId)
+        ChatMessage message = messages.findById(messageId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (!message.getChatRoom().getId().equals(roomId) || message.getAttachmentKey() == null || message.getDeletedAt() != null)
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -86,13 +89,13 @@ public class ChatAttachmentService {
 
     private boolean hasMp4Brand(MultipartFile file) throws IOException {
         byte[] header;
-        try (var input = file.getInputStream()) { header = input.readNBytes(4096); }
+        try (InputStream input = file.getInputStream()) { header = input.readNBytes(4096); }
         if (header.length < 16) return false;
-        var charset = java.nio.charset.StandardCharsets.US_ASCII;
+        Charset charset = java.nio.charset.StandardCharsets.US_ASCII;
         if (!new String(header, 4, 4, charset).equals("ftyp")) return false;
         long boxSize = Integer.toUnsignedLong(java.nio.ByteBuffer.wrap(header).getInt());
         if (boxSize < 16 || boxSize > header.length || boxSize % 4 != 0) return false;
-        var brands = Set.of("isom", "iso2", "iso3", "iso4", "iso5", "iso6", "mp41", "mp42", "avc1", "dash", "M4V ");
+        Set<String> brands = Set.of("isom", "iso2", "iso3", "iso4", "iso5", "iso6", "mp41", "mp42", "avc1", "dash", "M4V ");
         for (int offset = 8; offset + 4 <= boxSize; offset += 4) {
             if (offset != 12 && brands.contains(new String(header, offset, 4, charset))) return true;
         }

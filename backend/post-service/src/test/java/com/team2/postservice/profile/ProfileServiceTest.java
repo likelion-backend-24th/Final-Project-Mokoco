@@ -11,6 +11,7 @@ import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.entity.PostCategory;
 import com.team2.postservice.post.repository.PostRepository;
 import com.team2.postservice.profile.dto.MyWrittenReviewsResponse;
+import com.team2.postservice.profile.dto.TransactionHistoryItemResponse;
 import com.team2.postservice.profile.dto.TransactionHistoryResponse;
 import com.team2.postservice.profile.service.ProfileService;
 import com.team2.postservice.review.entity.Review;
@@ -22,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,7 +70,7 @@ class ProfileServiceTest {
         TransactionHistoryResponse result = service.getMyTransactions("requester@test.com", "requester", pageable);
 
         assertThat(result.totalCount()).isEqualTo(1);
-        var item = result.items().get(0);
+        TransactionHistoryItemResponse item = result.items().get(0);
         assertThat(item.role()).isEqualTo("REQUESTER");
         assertThat(item.counterpartEmail()).isEqualTo("repairer@test.com");
         assertThat(item.counterpartNickname()).isEqualTo("repairer");
@@ -92,13 +94,13 @@ class ProfileServiceTest {
 
         // 채팅방(900L)은 있지만 계약서를 한 번도 안 만든 경우: 버튼을 숨겨야 한다.
         when(contracts.findDistinctChatRoomIdByChatRoomIdIn(any())).thenReturn(List.of());
-        var withoutContract = service.getMyTransactions("requester@test.com", "requester", pageable).items().get(0);
+        TransactionHistoryItemResponse withoutContract = service.getMyTransactions("requester@test.com", "requester", pageable).items().get(0);
         assertThat(withoutContract.chatRoomId()).isEqualTo(900L);
         assertThat(withoutContract.hasContract()).isFalse();
 
         // 계약서가 있는 경우엔 보여줘야 한다.
         when(contracts.findDistinctChatRoomIdByChatRoomIdIn(any())).thenReturn(List.of(900L));
-        var withContract = service.getMyTransactions("requester@test.com", "requester", pageable).items().get(0);
+        TransactionHistoryItemResponse withContract = service.getMyTransactions("requester@test.com", "requester", pageable).items().get(0);
         assertThat(withContract.hasContract()).isTrue();
     }
 
@@ -118,11 +120,11 @@ class ProfileServiceTest {
         when(users.getUserById(200L))
                 .thenReturn(new UserClientResponse(200L, "repairer@test.com", "repairer", "region", "USER"));
         when(reviews.findByPostId(10L)).thenReturn(Optional.empty());
-        var chatRoomIdsByDealId = new java.util.HashMap<Long, Long>();
+        HashMap<Long, Long> chatRoomIdsByDealId = new HashMap<>();
         chatRoomIdsByDealId.put(1L, null);
         when(chatRoomClient.byFixDealIds(any())).thenReturn(chatRoomIdsByDealId);
 
-        var item = service.getMyTransactions("requester@test.com", "requester", pageable).items().get(0);
+        TransactionHistoryItemResponse item = service.getMyTransactions("requester@test.com", "requester", pageable).items().get(0);
 
         assertThat(item.chatRoomId()).isNull();
         assertThat(item.hasContract()).isFalse();
@@ -143,7 +145,7 @@ class ProfileServiceTest {
 
         TransactionHistoryResponse result = service.getMyTransactions("repairer@test.com", "repairer", pageable);
 
-        var item = result.items().get(0);
+        TransactionHistoryItemResponse item = result.items().get(0);
         assertThat(item.role()).isEqualTo("REPAIRER");
         assertThat(item.counterpartEmail()).isEqualTo("requester@test.com");
         assertThat(item.review()).isNull();

@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -81,15 +82,15 @@ public class PostService {
         // 활동 지역을 아직 등록하지 않은 사용자도 있어(온보딩 프롬프트가 강제가 아니라 건너뛸 수 있음),
         // ALL이 아닌 범위를 요청했더라도 지역이 없으면 에러 대신 필터 없이(전체) 보여준다.
         // 칩에 표시할 지역명은 있으면 보여주도록 best-effort로만 조회(없어도 에러 아님).
-        var region = email == null ? null : postViewerService.tryRegion(email);
+        RegionResponse region = email == null ? null : postViewerService.tryRegion(email);
         String regionPattern = regionScope == RegionScope.ALL || region == null
                 ? null : regionScope.queryPattern(region.regionCode());
-        var pageable = PageRequest.of(page, size,
+        PageRequest pageable = PageRequest.of(page, size,
                 Sort.by(Sort.Direction.DESC, "createdAt", "id"));
-        var posts = postRepository.findNearby(regionPattern, category == PostCategory.ALL ? null : category, pageable);
+        Page<NearbyRepairRequest> posts = postRepository.findNearby(regionPattern, category == PostCategory.ALL ? null : category, pageable);
         // 같은 페이지 안에서 작성자가 겹칠 수 있어(같은 사람의 여러 글), 이메일당 한 번만 조회하도록
         // 이 요청 범위에서만 쓰는 로컬 캐시를 사용한다(인스턴스 필드로 두면 요청 간에 공유되어 버그가 된다).
-        var nicknameCache = new java.util.HashMap<String, String>();
+        HashMap<String, String> nicknameCache = new HashMap<>();
         posts = posts.map(item -> item.withAuthorNickname(
                 nicknameCache.computeIfAbsent(item.authorEmail(), postViewerService::tryNickname)));
         return NearbyRepairRequest.Result.from(posts, regionScope, region);

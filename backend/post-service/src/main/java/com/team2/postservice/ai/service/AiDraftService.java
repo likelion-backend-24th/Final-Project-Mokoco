@@ -1,6 +1,7 @@
 package com.team2.postservice.ai.service;
 
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.team2.postservice.ai.AiImages;
 import com.team2.postservice.ai.AiRateLimit;
@@ -42,10 +43,10 @@ public class AiDraftService {
         inputText(title, 100); inputText(content, 2000);
         if (category != null && !category.isBlank()) try { PostCategory.valueOf(category); } catch (IllegalArgumentException e) { throw AiException.input("카테고리를 확인해주세요."); }
         gemini.requireAvailable();
-        var parts = images.parts(files);
+        List<Map<String, Object>> parts = images.parts(files);
         parts.add(Map.of("text", "현재 입력(참고 자료): " + Map.of("title", title, "content", content, "category", category)));
         JsonNode result = cache.get(cacheKey(user, "post", parts), () -> limit.acquire(user), () -> {
-            var generated = gemini.generate(COMMON + " 사진에서 제품 종류와 외관 손상을 관찰하고 의뢰 제목/설명/카테고리를 제안하세요. "
+            JsonNode generated = gemini.generate(COMMON + " 사진에서 제품 종류와 외관 손상을 관찰하고 의뢰 제목/설명/카테고리를 제안하세요. "
                     + "실제 이 물건을 쓰다가 문제가 생긴 사람이 동네 커뮤니티에 편하게 글을 올리듯 자연스러운 1인칭 구어체로 작성하세요. "
                     + "'~관찰됩니다', '~확인이 필요합니다', '~점검이 필요합니다', '외관상 큰 파손은 명확히 보이지 않으나' 같은 딱딱한 점검 보고서 투는 쓰지 말고, "
                     + "이웃에게 편하게 부탁하듯 자연스러운 문장으로 쓰세요. "
@@ -85,7 +86,7 @@ public class AiDraftService {
 
             Map<String, Object> input = Map.of("currentContent", content, "userInstruction", instruction);
 
-            var generated = gemini.generate(
+            JsonNode generated = gemini.generate(
                     COMMON
                             + " 사용자의 지시사항에 맞게 글 전체를 다시 쓰세요. 기존 글의 핵심 정보(증상, 상황)는 유지하고, "
                             + "새 사실, 가격, 고장 원인 또는 수리 가능 여부를 만들지 마세요. "
@@ -110,15 +111,15 @@ public class AiDraftService {
     public JsonNode contract(Long user, Long room, Long baseId, Map<String, String> currentTerms, String instructions) {
         validateTerms(currentTerms, false);
         inputText(instructions, 2000);
-        var sources = context.read(room, user, baseId);
-        for (var entry : currentTerms.entrySet()) if (entry.getValue() != null && !entry.getValue().isBlank()) sources.put("USER_" + entry.getKey(), entry.getValue());
+        Map<String, String> sources = context.read(room, user, baseId);
+        for (Map.Entry<String, String> entry : currentTerms.entrySet()) if (entry.getValue() != null && !entry.getValue().isBlank()) sources.put("USER_" + entry.getKey(), entry.getValue());
         if (!instructions.isBlank()) sources.put("USER_INSTRUCTIONS", instructions);
         String input;
         try { input = mapper.writeValueAsString(sources); } catch (Exception e) { throw AiException.input("입력을 확인해주세요."); }
         if (input.length() > 60000) throw AiException.input("대화와 입력 내용이 너무 길어 자동 정리할 수 없습니다. 계약 내용을 직접 작성해주세요 (60,000자 이하).");
         gemini.requireAvailable();
-        var result = cache.get(cacheKey(user, "contract", Arrays.asList(room, baseId, new TreeMap<>(sources))), () -> limit.acquire(user), () -> {
-            var generated = gemini.generate(COMMON + " 채팅방의 텍스트 대화를 시간순으로 읽고 합의한 내용을 요약 정리하여 계약서의 텍스트 항목만 간결하게 작성하세요. 각 항목은 최대 500자, 제목은 120자 이내로 작성하세요. "
+        JsonNode result = cache.get(cacheKey(user, "contract", Arrays.asList(room, baseId, new TreeMap<>(sources))), () -> limit.acquire(user), () -> {
+            JsonNode generated = gemini.generate(COMMON + " 채팅방의 텍스트 대화를 시간순으로 읽고 합의한 내용을 요약 정리하여 계약서의 텍스트 항목만 간결하게 작성하세요. 각 항목은 최대 500자, 제목은 120자 이내로 작성하세요. "
                     + "의뢰인의 요청과 수리자의 답변을 구분하고, 나중에 양측이 합의한 변경사항을 반영하세요. 제안이나 질문만으로 합의를 확정하지 마세요. "
                     + "기존 입력값을 존중하고 상충하는 조건은 conflicts에 기록하세요. "
                     + "각 필드 출처는 실제 제공된 sourceId와 그 자료의 정확한 연속 인용문 quote로 기록하세요. "
@@ -154,8 +155,8 @@ public class AiDraftService {
     }
     static void fillServerFields(JsonNode result, Map<String, String> sources, Map<String, String> current) {
         if (!result.path("suggestedTerms").isObject() || !result.path("fieldSources").isObject()) throw AiException.output();
-        var terms = (com.fasterxml.jackson.databind.node.ObjectNode) result.path("suggestedTerms");
-        var evidence = (com.fasterxml.jackson.databind.node.ObjectNode) result.path("fieldSources");
+        ObjectNode terms = (ObjectNode) result.path("suggestedTerms");
+        ObjectNode evidence = (ObjectNode) result.path("fieldSources");
         for (String field : SERVER_FIELDS) {
             if (field.equals("totalAmount")) {
                 String value = sources.get("PROPOSAL_AMOUNT");
@@ -184,7 +185,7 @@ public class AiDraftService {
     static void validateTerms(Map<String, String> terms, boolean output) {
         try {
             if (terms == null || !TERMS.keySet().containsAll(terms.keySet())) throw new IllegalArgumentException();
-            for (var entry : terms.entrySet()) {
+            for (Map.Entry<String, String> entry : terms.entrySet()) {
                 String value = entry.getValue();
                 if (value == null || value.isBlank()) continue;
                 if (value.length() > TERMS.get(entry.getKey())) throw new IllegalArgumentException();
@@ -213,7 +214,7 @@ public class AiDraftService {
 
     static Map<String, Object> contractSchema(Set<String> sourceIds) {
         Map<String, Object> terms = new LinkedHashMap<>(), sources = new LinkedHashMap<>();
-        var allowed = new ArrayList<>(sourceIds); allowed.add("SUGGESTED_CLAUSE");
+        ArrayList<String> allowed = new ArrayList<>(sourceIds); allowed.add("SUGGESTED_CLAUSE");
         TERMS.forEach((field, max) -> {
             if (SERVER_FIELDS.contains(field)) return;
             terms.put(field, nullableText(Math.min(max, 500)));
@@ -237,17 +238,17 @@ public class AiDraftService {
     }
     static void validatePost(JsonNode result) {
         keys(result, Set.of("suggestion"));
-        var suggestion = result.path("suggestion"); keys(suggestion, Set.of("title", "content", "category"));
+        JsonNode suggestion = result.path("suggestion"); keys(suggestion, Set.of("title", "content", "category"));
         if (text(suggestion.path("title"),100,false).isBlank() || text(suggestion.path("content"),800,false).isBlank()) throw AiException.output();
         try { PostCategory.valueOf(text(suggestion.path("category"),50,false)); } catch (IllegalArgumentException e) { throw AiException.output(); }
     }
     static void validateContract(JsonNode result, Map<String, String> sources, Map<String, String> current) {
         keys(result, Set.of("suggestedTerms", "fieldSources", "conflicts", "warnings"));
-        var termsNode = result.path("suggestedTerms"); keys(termsNode, TERMS.keySet()); keys(result.path("fieldSources"), TERMS.keySet());
+        JsonNode termsNode = result.path("suggestedTerms"); keys(termsNode, TERMS.keySet()); keys(result.path("fieldSources"), TERMS.keySet());
         Map<String, String> terms = new HashMap<>(); List<String> missing = new ArrayList<>();
         TERMS.forEach((field, max) -> {
             String value = text(termsNode.path(field), SERVER_FIELDS.contains(field) ? max : Math.min(max, 500), true); terms.put(field, value);
-            var evidence = result.path("fieldSources").path(field); keys(evidence, Set.of("sourceId", "quote"));
+            JsonNode evidence = result.path("fieldSources").path(field); keys(evidence, Set.of("sourceId", "quote"));
             String source = text(evidence.path("sourceId"),100,false), quote = text(evidence.path("quote"),2000,false);
             if (!source.equals("SUGGESTED_CLAUSE") && !sources.containsKey(source)) throw AiException.output();
             if (value == null || value.isBlank()) { missing.add(field); return; }
@@ -265,7 +266,7 @@ public class AiDraftService {
             }
         });
         validateTerms(terms, true); strings(result.path("conflicts")); strings(result.path("warnings"));
-        var missingArray = ((com.fasterxml.jackson.databind.node.ObjectNode) result).putArray("missingFields");
+        ArrayNode missingArray = ((ObjectNode) result).putArray("missingFields");
         missing.forEach(missingArray::add);
     }
 }

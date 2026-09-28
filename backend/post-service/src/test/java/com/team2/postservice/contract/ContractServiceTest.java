@@ -56,15 +56,15 @@ class ContractServiceTest {
                 LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 2), "방문 작업", "흔들림 없음", "30일 재수리", "착수 전 취소 가능", "추가 비용 사전 승인");
     }
     ContractService.Version signing() {
-        var draft = service.draft(roomId, 10L, null, terms("의자 다리 수리"));
+        ContractService.Version draft = service.draft(roomId, 10L, null, terms("의자 다리 수리"));
         return service.request(roomId, 10L, draft.id());
     }
     @Test void bothSignaturesRequiredBeforeRepairerCanStartAndRequesterCanAccept() {
-        var contract = signing();
+        ContractService.Version contract = signing();
         assertThatThrownBy(() -> service.advance(roomId, 20L, contract.id(), "start")).isInstanceOf(ResponseStatusException.class);
         service.sign(roomId, 10L, contract.id(), contract.documentHash(), "의뢰인", true);
         assertThat(service.get(roomId, 10L).versions().getFirst().status()).isEqualTo("SIGNING");
-        var signed = service.sign(roomId, 20L, contract.id(), contract.documentHash(), "수리자", true);
+        ContractService.Version signed = service.sign(roomId, 20L, contract.id(), contract.documentHash(), "수리자", true);
         assertThat(signed.status()).isEqualTo("SIGNED");
         assertThat(signed.signatures()).hasSize(2);
         assertThatThrownBy(() -> service.advance(roomId, 10L, contract.id(), "start")).isInstanceOf(ResponseStatusException.class);
@@ -73,7 +73,7 @@ class ContractServiceTest {
         assertThatThrownBy(() -> service.advance(roomId, 10L, contract.id(), "accept")).isInstanceOf(ResponseStatusException.class);
         service.advance(roomId, 20L, contract.id(), "finish");
         service.advance(roomId, 10L, contract.id(), "accept");
-        var completed = service.get(roomId, 10L);
+        ContractService.Overview completed = service.get(roomId, 10L);
         assertThat(completed.dealStatus()).isEqualTo(FixDealStatus.COMPLETED);
         // 막 완료됐으니 원글도 그대로 있고, 3일 기한도 당연히 안 지났어야 한다.
         assertThat(completed.postDeleted()).isFalse();
@@ -81,7 +81,7 @@ class ContractServiceTest {
         Mockito.verify(paymentClient).settle(ArgumentMatchers.anyLong());
     }
     @Test void reviewDeadlineExpiresThreeDaysAfterCompletion() {
-        var contract = signing();
+        ContractService.Version contract = signing();
         service.sign(roomId, 10L, contract.id(), contract.documentHash(), "의뢰인", true);
         service.sign(roomId, 20L, contract.id(), contract.documentHash(), "수리자", true);
         service.advance(roomId, 20L, contract.id(), "start");
@@ -111,7 +111,7 @@ class ContractServiceTest {
         assertThat(service.get(roomId, 10L).postDeleted()).isTrue();
     }
     @Test void startIsBlockedUntilPaymentIsCompleted() {
-        var contract = signing();
+        ContractService.Version contract = signing();
         service.sign(roomId, 10L, contract.id(), contract.documentHash(), "의뢰인", true);
         service.sign(roomId, 20L, contract.id(), contract.documentHash(), "수리자", true);
         Mockito.when(paymentClient.getPaymentByPostId(ArgumentMatchers.anyLong()))
@@ -120,13 +120,13 @@ class ContractServiceTest {
         assertThat(service.get(roomId, 10L).dealStatus()).isEqualTo(FixDealStatus.MATCHED);
     }
     @Test void revisionPreservesOldContentAndDoesNotReuseSignatures() {
-        var first = signing();
+        ContractService.Version first = signing();
         service.sign(roomId, 10L, first.id(), first.documentHash(), "의뢰인", true);
-        var second = service.draft(roomId, 20L, first.id(), terms("의자 다리와 등받이 수리"));
+        ContractService.Version second = service.draft(roomId, 20L, first.id(), terms("의자 다리와 등받이 수리"));
         assertThat(second.revision()).isEqualTo(2);
         assertThat(second.documentHash()).isNotEqualTo(first.documentHash());
         assertThat(second.signatures()).isEmpty();
-        var old = service.get(roomId, 10L).versions().get(1);
+        ContractService.Version old = service.get(roomId, 10L).versions().get(1);
         assertThat(old.status()).isEqualTo("SUPERSEDED");
         assertThat(old.signatures()).hasSize(1);
         assertThat(old.terms().scope()).isEqualTo("의자 다리 수리");
@@ -134,7 +134,7 @@ class ContractServiceTest {
         assertThatThrownBy(() -> service.draft(roomId, 10L, first.id(), terms("stale"))).isInstanceOf(ResponseStatusException.class);
     }
     @Test void rejectsOutsiderHashMismatchAndMissingConsent() {
-        var contract = signing();
+        ContractService.Version contract = signing();
         assertThatThrownBy(() -> service.get(roomId, 99L)).isInstanceOf(ResponseStatusException.class);
         assertThatThrownBy(() -> service.sign(roomId, 99L, contract.id(), contract.documentHash(), "외부인", true)).isInstanceOf(ResponseStatusException.class);
         assertThatThrownBy(() -> service.sign(roomId, 10L, contract.id(), "changed", "의뢰인", true)).isInstanceOf(ResponseStatusException.class);
@@ -142,10 +142,10 @@ class ContractServiceTest {
         assertThat(service.get(roomId, 10L).versions().getFirst().signatures()).isEmpty();
     }
     @Test void duplicateSigningIsIdempotentAndSignedTermsAreImmutable() {
-        var contract = signing();
+        ContractService.Version contract = signing();
         service.sign(roomId, 10L, contract.id(), contract.documentHash(), "의뢰인", true);
         service.sign(roomId, 10L, contract.id(), contract.documentHash(), "다른 이름", true);
-        var signed = service.sign(roomId, 20L, contract.id(), contract.documentHash(), "수리자", true);
+        ContractService.Version signed = service.sign(roomId, 20L, contract.id(), contract.documentHash(), "수리자", true);
         assertThat(signed.signatures()).hasSize(2);
         assertThat(signed.signatures().getFirst().getSignerName()).isEqualTo("의뢰인");
         assertThatThrownBy(() -> service.draft(roomId, 10L, contract.id(), terms("변경"))).isInstanceOf(ResponseStatusException.class);

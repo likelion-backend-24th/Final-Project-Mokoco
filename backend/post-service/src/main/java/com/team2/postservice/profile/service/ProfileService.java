@@ -59,7 +59,7 @@ public class ProfileService {
                 ? Set.of()
                 : Set.copyOf(contractRepository.findDistinctChatRoomIdByChatRoomIdIn(chatRoomIds));
 
-        var items = page.getContent().stream()
+        List<TransactionHistoryItemResponse> items = page.getContent().stream()
                 .map(deal -> toItem(deal, asRequester, chatRoomIdsByDealId.get(deal.getId()), chatRoomIdsWithContract))
                 .toList();
 

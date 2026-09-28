@@ -36,7 +36,7 @@ public class GeminiClient {
         this.http = builder.baseUrl("https://generativelanguage.googleapis.com/v1beta").build();
     }
     private static RestClient.Builder clientBuilder() {
-        var factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build());
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build());
         factory.setReadTimeout(Duration.ofSeconds(20));
         return RestClient.builder().requestFactory(factory);
     }
@@ -62,12 +62,12 @@ public class GeminiClient {
                         String version = envelope.path("modelVersion").asText("unknown").replaceAll("[^a-zA-Z0-9._-]", "");
                         log.info("AI provider request={} model={} version={} promptVersion=repair-assist-v2 tokens={}",
                                 AiRequestTrace.requestId(), model, version.substring(0, Math.min(version.length(),100)), envelope.path("usageMetadata").path("totalTokenCount").asLong(-1));
-                        var candidate = envelope.path("candidates").path(0);
+                        JsonNode candidate = envelope.path("candidates").path(0);
                         if (candidate.isMissingNode() || "SAFETY".equals(candidate.path("finishReason").asText()))
                             throw new AiException(HttpStatus.UNPROCESSABLE_ENTITY, "NO_AI_RESULT", "분석 가능한 결과가 없습니다. 사진이나 설명을 바꾸거나 직접 작성해주세요.");
                         if (!"STOP".equals(candidate.path("finishReason").asText())) throw AiException.output();
                         StringBuilder json = new StringBuilder();
-                        for (var part : candidate.path("content").path("parts")) if (!part.path("thought").asBoolean()) json.append(part.path("text").asText(""));
+                        for (JsonNode part : candidate.path("content").path("parts")) if (!part.path("thought").asBoolean()) json.append(part.path("text").asText(""));
                         JsonNode result = mapper.readTree(json.toString());
                         if (result == null || !result.isObject()) throw AiException.output();
                         return result;

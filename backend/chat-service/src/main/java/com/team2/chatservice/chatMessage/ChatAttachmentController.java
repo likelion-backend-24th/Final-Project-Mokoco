@@ -22,7 +22,7 @@ public class ChatAttachmentController {
     public ChatMessageResponse upload(@PathVariable Long roomId,
             @AuthenticationPrincipal LoginUser user,
             @RequestPart("file") MultipartFile file) throws IOException {
-        var saved = attachments.upload(roomId, user.id(), file);
+        ChatMessageResponse saved = attachments.upload(roomId, user.id(), file);
         broker.convertAndSend("/topic/chat/" + roomId, saved);
         return saved;
     }

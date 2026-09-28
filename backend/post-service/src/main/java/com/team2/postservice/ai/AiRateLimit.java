@@ -24,7 +24,7 @@ public class AiRateLimit {
         LocalDate today = now.atOffset(ZoneOffset.UTC).toLocalDate();
         if (!day.equals(today)) { calls.clear(); total = 0; day = today; }
         if (total >= globalLimit) throw limited();
-        var history = calls.computeIfAbsent(userId, ignored -> new ArrayDeque<>());
+        ArrayDeque<Instant> history = calls.computeIfAbsent(userId, ignored -> new ArrayDeque<>());
         if (history.size() >= dayLimit || history.stream().filter(t -> t.isAfter(now.minusSeconds(60))).count() >= minuteLimit) throw limited();
         history.add(now); total++;
     }

@@ -3,6 +3,7 @@ package com.team2.postservice.post.service;
 import com.team2.common.security.LoginUser;
 import com.team2.postservice.client.UserClient;
 import com.team2.postservice.client.dto.RegionResponse;
+import com.team2.postservice.client.dto.UserClientResponse;
 import com.team2.common.exception.CustomException;
 import com.team2.postservice.common.exception.ErrorCode;
 import feign.FeignException;
@@ -27,7 +28,7 @@ public class PostViewerService {
 
     public RegionResponse requireRegion(String email) {
         try {
-            var region = userClient.getRegionByEmail(email);
+            RegionResponse region = userClient.getRegionByEmail(email);
             if (region == null || region.regionCode() == null || region.regionCode().isBlank())
                 throw new CustomException(ErrorCode.ACTIVITY_REGION_REQUIRED);
             return region;
@@ -50,7 +51,7 @@ public class PostViewerService {
     // user-service 장애나 탈퇴 등으로 조회에 실패해도 게시글 자체는 보여야 하므로 예외를 삼키고 null 반환.
     public String tryNickname(String email) {
         try {
-            var user = userClient.getUserByEmail(email);
+            UserClientResponse user = userClient.getUserByEmail(email);
             return user == null ? null : user.nickname();
         } catch (Exception ex) {
             return null;

@@ -8,6 +8,7 @@ import org.springframework.mock.web.MockMultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
@@ -28,13 +29,13 @@ class LocalFileStorageServiceTest {
     @Test
     void resizesOversizedUploadAndConvertsToJpeg() throws Exception {
         BufferedImage big = new BufferedImage(3000, 2000, BufferedImage.TYPE_INT_RGB);
-        var g = big.createGraphics();
+        Graphics2D g = big.createGraphics();
         g.setColor(Color.RED);
         g.fillRect(0, 0, big.getWidth(), big.getHeight());
         g.dispose();
-        var pngBytes = new ByteArrayOutputStream();
+        ByteArrayOutputStream pngBytes = new ByteArrayOutputStream();
         ImageIO.write(big, "png", pngBytes);
-        var upload = new MockMultipartFile("images", "big.png", "image/png", pngBytes.toByteArray());
+        MockMultipartFile upload = new MockMultipartFile("images", "big.png", "image/png", pngBytes.toByteArray());
 
         FileStorageService.StoredFile stored = storage.store(upload);
         storedFileName = stored.storedFileName();

@@ -5,11 +5,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.MemoryCacheImageInputStream;
 import javax.imageio.stream.MemoryCacheImageOutputStream;
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -65,10 +67,10 @@ public class LocalFileStorageService implements FileStorageService {
     }
 
     private byte[] reencodeAsJpeg(MultipartFile file) {
-        try (var in = new MemoryCacheImageInputStream(file.getInputStream())) {
-            Iterator<javax.imageio.ImageReader> readers = ImageIO.getImageReaders(in);
+        try (MemoryCacheImageInputStream in = new MemoryCacheImageInputStream(file.getInputStream())) {
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
             if (!readers.hasNext()) return null;
-            var reader = readers.next();
+            ImageReader reader = readers.next();
             try {
                 reader.setInput(in, true, true);
                 int width = reader.getWidth(0), height = reader.getHeight(0);
@@ -79,7 +81,7 @@ public class LocalFileStorageService implements FileStorageService {
                 int targetW = Math.max(1, (int) Math.round(width * ratio));
                 int targetH = Math.max(1, (int) Math.round(height * ratio));
                 BufferedImage target = new BufferedImage(targetW, targetH, BufferedImage.TYPE_INT_RGB);
-                var g = target.createGraphics();
+                Graphics2D g = target.createGraphics();
                 try {
                     // JPEG는 투명도가 없으니, 투명 배경(PNG 등)은 흰 배경으로 깔고 그 위에 그린다.
                     g.setColor(Color.WHITE);
@@ -95,8 +97,8 @@ public class LocalFileStorageService implements FileStorageService {
                     ImageWriteParam params = writer.getDefaultWriteParam();
                     params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
                     params.setCompressionQuality(JPEG_QUALITY);
-                    var bytes = new ByteArrayOutputStream();
-                    try (var out = new MemoryCacheImageOutputStream(bytes)) {
+                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                    try (MemoryCacheImageOutputStream out = new MemoryCacheImageOutputStream(bytes)) {
                         writer.setOutput(out);
                         writer.write(null, new IIOImage(target, null, null), params);
                     }

@@ -2,10 +2,12 @@ package com.team2.chatservice.chatMessage;
 
 import com.team2.chatservice.chatRoom.entity.ChatRoom;
 import com.team2.chatservice.chatRoom.repository.ChatRoomRepository;
+import com.team2.chatservice.chatMessage.dto.ChatMessageResponse;
 import com.team2.chatservice.chatMessage.entity.ChatMessage;
 import com.team2.chatservice.chatMessage.repository.ChatMessageRepository;
 import com.team2.chatservice.client.ChatNotificationClient;
 import org.junit.jupiter.api.Test;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.*;
@@ -36,7 +38,7 @@ class ChatServiceTest {
     @Test void savesWithVerifiedSenderAndTimestamp() {
         room();
         when(messages.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        var result = service.send(1L, 3L, " hello ");
+        ChatMessageResponse result = service.send(1L, 3L, " hello ");
         assertThat(result.senderId()).isEqualTo(3L);
         assertThat(result.content()).isEqualTo("hello");
         assertThat(result.createdAt()).isNotNull();
@@ -50,17 +52,17 @@ class ChatServiceTest {
     }
     @Test void onlySenderCanDeleteAndDeletionHidesAttachment() {
         room();
-        var message = ChatMessage.builder().id(7L).chatRoom(rooms.findById(1L).orElseThrow())
+        ChatMessage message = ChatMessage.builder().id(7L).chatRoom(rooms.findById(1L).orElseThrow())
                 .senderId(2L).content("photo").attachmentKey("private-file").attachmentName("name.png").build();
         when(messages.findById(7L)).thenReturn(Optional.of(message));
         assertThatThrownBy(() -> service.delete(1L, 7L, 3L)).isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
         assertThat(message.getDeletedAt()).isNull();
-        var result = service.delete(1L, 7L, 2L);
+        ChatMessageResponse result = service.delete(1L, 7L, 2L);
         assertThat(result.deleted()).isTrue();
         assertThat(result.content()).isEqualTo("삭제된 메시지입니다.");
         assertThat(result.attachmentUrl()).isNull();
         assertThat(result.attachmentName()).isNull();
-        var deletedAt = message.getDeletedAt();
+        LocalDateTime deletedAt = message.getDeletedAt();
         service.delete(1L, 7L, 2L);
         assertThat(message.getDeletedAt()).isEqualTo(deletedAt);
     }

@@ -3,9 +3,11 @@ package com.team2.paymentservice.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team2.common.security.LoginUser;
 import com.team2.paymentservice.client.UserClient;
+import com.team2.paymentservice.client.dto.UserClientResponse;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
@@ -31,7 +33,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         }
         LoginUser loginUser;
         try {
-            var user = users.verifyToken(auth.substring(7));
+            UserClientResponse user = users.verifyToken(auth.substring(7));
             if (user == null || user.id() == null || user.email() == null) { error(response, 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return; }
             loginUser = new LoginUser(user.id(), user.email());
         } catch (RestClientResponseException e) {
@@ -39,7 +41,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         } catch (RestClientException e) {
             error(response, 502, "AUTH_FAILED", "로그인 정보를 확인하지 못했습니다."); return;
         }
-        var context = SecurityContextHolder.createEmptyContext();
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(loginUser, null, List.of()));
         SecurityContextHolder.setContext(context);
         try { chain.doFilter(request, response); }
