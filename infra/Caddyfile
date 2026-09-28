@@ -141,6 +141,16 @@
 		reverse_proxy api-gateway:8000
 	}
 
+	# Swagger "Try it out" 전용 직결 경로. 위 handle /api/posts/* 등이 실제 브라우저 트래픽을
+	# 위해 /api/* 를 먼저 프론트(BFF)로 가로채버려서, 문서상 서버 URL을 그냥 /api로 두면
+	# "Try it out"이 게이트웨이가 아니라 프론트로 가버려 405/404가 난다(post/user/payment
+	# 서비스 OpenApiConfig 참고). /gateway-api/* 로 오는 건 게이트웨이로 바로 보내고,
+	# 이 접두어만 벗겨서 게이트웨이가 원래 보는 /api/... 그대로 전달한다.
+	handle /gateway-api/* {
+		uri strip_prefix /gateway-api
+		reverse_proxy api-gateway:8000
+	}
+
 	# 그 외 전부 프론트엔드 (Next.js). WebSocket 업그레이드는 Caddy 가 자동 처리.
 	handle {
 		reverse_proxy frontend:3000

@@ -11,13 +11,14 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
-    // 참고: payment-service의 /payments/** 경로는 게이트웨이 안에서만 쓰이고 외부(Caddy)로는
-    // 열려 있지 않아서, 여기 문서의 "Try it out"은 게이트웨이에 모아둔 화면에서 실행되지 않는다.
-    // 스키마·설명 열람용으로만 쓴다.
+    // payment-service의 /payments/** 경로는 프론트가 쓰는 공개 /api/payments/* 와 별개로
+    // 게이트웨이 내부에서만 매치되던 경로라, 예전엔 "Try it out"이 실행될 방법이 없어 문서
+    // 열람용으로만 뒀다. Caddy에 새로 둔 /gateway-api/* 직결 경로(뒤에 /payments/... 그대로
+    // 붙여 게이트웨이로 전달)를 쓰면 게이트웨이의 payment-service 라우트에 그대로 매치된다.
     @Bean
     public OpenAPI paymentServiceOpenApi() {
         return new OpenAPI()
                 .info(new Info().title("payment-service API").description("결제·정산 (PortOne 연동)").version("v1"))
-                .servers(List.of(new Server().url("/")));
+                .servers(List.of(new Server().url("/gateway-api")));
     }
 }
