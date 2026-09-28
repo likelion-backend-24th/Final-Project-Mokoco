@@ -13,8 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/payments")
 @RequiredArgsConstructor
@@ -66,12 +64,5 @@ public class PaymentController {
     public ResponseEntity<PaymentResponseDto> getPaymentByPostId(@PathVariable Long postId,
                                                                   @AuthenticationPrincipal LoginUser user) {
         return ResponseEntity.ok(paymentService.getPaymentByPostId(postId, user.email()));
-    }
-
-    // 마이페이지용 내 결제 이력 전체(의뢰자로 결제한 건 + 수리자로 정산받은 건, 최신순) — 위 /mine과는
-    // 별개 화면이라 경로를 나눴다(/mine은 수리자 정산 요약, 이쪽은 역할 구분 없는 전체 이력 목록).
-    @GetMapping("/history")
-    public ResponseEntity<List<PaymentResponseDto>> getMyPaymentHistory(@RequestHeader("X-User-Email") String userEmail) {
-        return ResponseEntity.ok(paymentService.getMyPaymentHistory(userEmail));
     }
 }

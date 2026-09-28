@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
@@ -19,9 +18,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     boolean existsByPortonePaymentId(String portonePaymentId);
 
     Page<Payment> findByPayeeEmailOrderByCreatedAtDesc(String payeeEmail, Pageable pageable);
-
-    // 내 정산내역 목록: 결제자(의뢰자) 또는 수신자(수리자)로 걸린 건을 최신순으로 조회
-    List<Payment> findByPayerEmailOrPayeeEmailOrderByCreatedAtDesc(String payerEmail, String payeeEmail);
 
     // 관리자 결제/정산 상세 내역용
     Page<Payment> findAllByOrderByCreatedAtDesc(Pageable pageable);

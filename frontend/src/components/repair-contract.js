@@ -47,7 +47,6 @@ function SignatureForm({ version, consentText, busy, onSign }) {
   </form>;
 }
 
-// mypage의 계약서 목록(contract-list.js)이 채팅 임베드 화면과 같은 문서 서식을 재사용할 수 있도록
 // 계약 문서 렌더링만 따로 뽑아냈다(기존 인라인 JSX와 내용은 동일, 컴포넌트로 추출만 한 것).
 export function ContractDocument({ selected, overview, roomId }) {
   return (

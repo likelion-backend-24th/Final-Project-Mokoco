@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -228,15 +227,6 @@ public class PaymentService {
                 page.getTotalElements(),
                 page.getContent().stream().map(PaymentResponseDto::from).toList()
         );
-    }
-
-    // 마이페이지용 내 결제 이력 전체: 의뢰자로 결제한 건 + 수리자로 정산받은 건을 역할 구분 없이
-    // 모두 최신순으로 반환한다(위 getMyPayments는 수리자 정산 요약 화면 전용이라 페이로드가 다르다).
-    public List<PaymentResponseDto> getMyPaymentHistory(String userEmail) {
-        return paymentRepository.findByPayerEmailOrPayeeEmailOrderByCreatedAtDesc(userEmail, userEmail)
-                .stream()
-                .map(PaymentResponseDto::from)
-                .toList();
     }
 
     @Transactional
