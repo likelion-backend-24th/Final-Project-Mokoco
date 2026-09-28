@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import jakarta.persistence.LockModeType;
+import java.util.List;
 
 import java.util.Optional;
 
@@ -52,4 +53,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
           and (:status is null or p.status = :status)
         """)
     Page<Post> searchForAdmin(@Param("keyword") String keyword, @Param("status") PostStatus status, Pageable pageable);
+
+    List<Post> findByStatusAndPubliclyVisibleTrueOrderByUpdatedAtDesc(
+        PostStatus status,
+        Pageable pageable
+    );
 }

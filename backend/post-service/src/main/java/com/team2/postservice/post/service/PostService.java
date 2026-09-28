@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import com.team2.postservice.post.dto.PostResponseDto;
+import com.team2.postservice.post.dto.RecentCompletedPostResponse;
 import com.team2.postservice.post.entity.ContentFormat;
 import com.team2.postservice.post.entity.Post;
 import com.team2.postservice.post.entity.PostCategory;
@@ -202,6 +203,20 @@ public class PostService {
         fileStorageService.delete(image.getStoredFileName());
     }
 
+    public List<RecentCompletedPostResponse> getRecentCompletedPosts(int size) {
+        int safeSize = Math.min(Math.max(size, 1), 10);
+    
+        List<Post> posts =
+                postRepository.findByStatusAndPubliclyVisibleTrueOrderByUpdatedAtDesc(
+                        PostStatus.COMPLETED,
+                        PageRequest.of(0, safeSize)
+                );
+    
+        return posts.stream()
+                .map(RecentCompletedPostResponse::from)
+                .toList();
+    }
+    
     private void attachImages(Post post, List<MultipartFile> images) {
         if (images == null || images.isEmpty()) {
             return;
