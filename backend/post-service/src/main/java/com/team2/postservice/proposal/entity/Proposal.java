@@ -6,11 +6,16 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "proposals")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 public class Proposal {
 
     @Id
@@ -35,6 +40,9 @@ public class Proposal {
 
     @Column(nullable = false)
     private boolean attachResume = false; // 이 제안에 내 이력서를 보여줄지 여부
+
+    @CreatedDate
+    private LocalDateTime createdAt;
 
     @Builder
     public Proposal(Post post, int estimatedPrice, String repairerEmail, String content, boolean attachResume) {

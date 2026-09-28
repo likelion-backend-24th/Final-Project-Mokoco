@@ -50,7 +50,9 @@ public class ReviewService {
             throw new CustomException(ErrorCode.TOO_MANY_REVIEW_IMAGES);
         }
 
-        FixDeal fixDeal = fixDealRepository.findByPostId(request.postId())
+        // 취소 후 재매칭 이력이 있는 글은 같은 postId로 취소된 행이 남아있을 수 있어 findByPostId
+        // (단순 조회)가 NonUniqueResultException을 던진다 — 취소된 행을 제외하고 조회해야 안전하다.
+        FixDeal fixDeal = fixDealRepository.findByPostIdAndStatusNot(request.postId(), FixDealStatus.CANCELED)
                 .orElseThrow(() -> new CustomException(ErrorCode.FIX_DEAL_NOT_FOUND_FOR_REVIEW));
 
         UserClientResponse reviewer = userClient.getUserByEmail(reviewerEmail);

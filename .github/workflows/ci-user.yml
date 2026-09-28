@@ -85,6 +85,24 @@ jobs:
             backend/user-service/gradle/wrapper/gradle-wrapper.properties
             backend/common/*.gradle*
 
+      # deploy.yml은 실제 배포 때 GitHub Secret(USER_SERVICE_SECRET_YML)으로 이 파일을 만들어주는데,
+      # 이 CI 워크플로엔 그 단계가 없었다 — jwt.secretKey 등이 base application.yaml엔 없고
+      # 이 프로필 파일(git 추적 안 됨, 로컬에만 있음)에서만 오다 보니, CI에서는
+      # PlaceholderResolutionException으로 컨텍스트 로딩 자체가 실패했다. 실제 키가 아닌
+      # CI 전용 더미 값으로 같은 파일을 만들어 테스트가 최소한 기동은 되게 한다.
+      - name: Create test secret file
+        shell: bash
+        run: |
+          set -e
+          mkdir -p src/main/resources
+          cat > src/main/resources/application-secret.yml <<'EOF'
+          jwt:
+            secretKey: I/2HwMgdbvn/O1Zm82DlFvnids2po4zR7QLcXik67Ms=
+            refreshKey: kVgxtW8FPkQCyphZqYyFqGe8KLrw07d/wbj17H9EWRU=
+            access-expiration-ms: 1800000
+            refresh-expiration-ms: 604800000
+          EOF
+
       - name: Grant execute permission
         run: chmod +x gradlew
 

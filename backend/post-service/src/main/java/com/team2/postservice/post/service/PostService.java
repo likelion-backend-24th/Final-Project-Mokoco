@@ -86,8 +86,10 @@ public class PostService {
         RegionResponse region = email == null ? null : postViewerService.tryRegion(email);
         String regionPattern = regionScope == RegionScope.ALL || region == null
                 ? null : regionScope.queryPattern(region.regionCode());
+        // 제안이 없어 끌어올려진(bumpToTop) 글이 최신 글처럼 다시 위로 오도록 createdAt이 아닌
+        // bumpedAt으로 정렬한다 — PostReminderScheduler가 끌어올릴 때마다 이 값을 갱신한다.
         PageRequest pageable = PageRequest.of(page, size,
-                Sort.by(Sort.Direction.DESC, "createdAt", "id"));
+                Sort.by(Sort.Direction.DESC, "bumpedAt", "id"));
         Page<NearbyRepairRequest> posts = postRepository.findNearby(regionPattern, category == PostCategory.ALL ? null : category, pageable);
         // 같은 페이지 안에서 작성자가 겹칠 수 있어(같은 사람의 여러 글), 이메일당 한 번만 조회하도록
         // 이 요청 범위에서만 쓰는 로컬 캐시를 사용한다(인스턴스 필드로 두면 요청 간에 공유되어 버그가 된다).
@@ -158,7 +160,9 @@ public class PostService {
     // (fix_deals는 posts와 실제 DB 외래키가 없어서 그냥 두면 에러 없이 삭제되지만, 그러면 두 당사자가
     //  주고받던 채팅/거래 맥락이 붕 뜬 채로 남으므로 정책적으로 막는다.)
     private void guardNoActiveDeal(Long postId) {
-        fixDealRepository.findByPostId(postId).ifPresent(deal -> {
+        // 취소 후 재매칭 이력이 있는 글은 같은 postId로 취소된 행이 남아있을 수 있어 findByPostId
+        // (단순 조회)가 NonUniqueResultException을 던진다 — 취소된 행을 제외하고 조회해야 안전하다.
+        fixDealRepository.findByPostIdAndStatusNot(postId, FixDealStatus.CANCELED).ifPresent(deal -> {
             if (deal.getStatus() != FixDealStatus.COMPLETED && deal.getStatus() != FixDealStatus.CANCELED) {
                 throw new CustomException(ErrorCode.POST_HAS_ACTIVE_DEAL);
             }

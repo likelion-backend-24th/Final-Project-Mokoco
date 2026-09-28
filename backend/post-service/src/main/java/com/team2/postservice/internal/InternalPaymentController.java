@@ -2,6 +2,7 @@ package com.team2.postservice.internal;
 
 import com.team2.common.payment.PaymentContext;
 import com.team2.postservice.fixDeal.entity.FixDeal;
+import com.team2.postservice.fixDeal.entity.FixDealStatus;
 import com.team2.postservice.fixDeal.repository.FixDealRepository;
 import com.team2.postservice.proposal.entity.Proposal;
 import com.team2.postservice.proposal.repository.ProposalRepository;
@@ -24,7 +25,11 @@ public class InternalPaymentController {
     @GetMapping("/payments/context/{postId}")
     @Transactional(readOnly = true)
     public PaymentContext context(@PathVariable Long postId) {
-        FixDeal deal = fixDealRepository.findByPostId(postId)
+        // 취소 후 재매칭(다른 제안 재채택) 이력이 있는 글은 같은 postId로 취소된 행이 남아있을 수
+        // 있어 findByPostId(단순 조회)가 NonUniqueResultException을 던진다 — post-service가 500을
+        // 내면 payment-service는 이걸 "게시글 정보를 확인할 수 없습니다"로 보여준다. 취소된 행을
+        // 제외하고 조회해야 안전하다(활성 거래는 uk_fix_deal_active_post 제약으로 post당 최대 하나).
+        FixDeal deal = fixDealRepository.findByPostIdAndStatusNot(postId, FixDealStatus.CANCELED)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         Proposal proposal = proposalRepository.findById(deal.getProposalId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
