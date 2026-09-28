@@ -1,0 +1,100 @@
+name: Chat Service CI
+
+on:
+  pull_request:
+    branches: [main, dev, release]
+    paths:
+      - "backend/chat-service/**"
+      - "backend/common/**"
+      - ".github/workflows/ci-chat.yml"
+
+  push:
+    branches: [main, dev, release]
+    paths:
+      - "backend/chat-service/**"
+      - "backend/common/**"
+      - ".github/workflows/ci-chat.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chat-service-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root1234
+          MYSQL_DATABASE: post_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot1234"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/post_db?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root1234
+
+      INTERNAL_SERVICE_KEY: ci-internal-service-key
+
+      SERVICES_USER_SERVICE_URL: http://localhost:8081
+      SERVICES_POST_SERVICE_URL: http://localhost:8082
+
+      CHAT_ALLOWED_ORIGINS: http://localhost:3000
+      CHAT_ATTACHMENT_DIR: ./build/ci-chat-files
+
+    defaults:
+      run:
+        working-directory: backend/chat-service
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+          cache-dependency-path: |
+            backend/chat-service/*.gradle*
+            backend/chat-service/gradle/wrapper/gradle-wrapper.properties
+            backend/common/*.gradle*
+
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Compile
+        run: ./gradlew clean classes testClasses --no-daemon
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon --stacktrace
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-service-test-report
+          path: |
+            backend/chat-service/build/reports/tests/test/**
+            backend/chat-service/build/test-results/test/**
+          if-no-files-found: ignore
+          retention-days: 7
