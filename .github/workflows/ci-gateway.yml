@@ -2,13 +2,13 @@ name: API Gateway CI
 
 on:
   pull_request:
-    branches: [main, dev, release]
+    branches: [main]
     paths:
       - "backend/api-gateway/**"
       - ".github/workflows/ci-gateway.yml"
 
   push:
-    branches: [main, dev, release]
+    branches: [main]
     paths:
       - "backend/api-gateway/**"
       - ".github/workflows/ci-gateway.yml"

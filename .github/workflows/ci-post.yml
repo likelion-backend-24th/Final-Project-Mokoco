@@ -2,14 +2,14 @@ name: Post Service CI
 
 on:
   pull_request:
-    branches: [main, dev, release]
+    branches: [main]
     paths:
       - "backend/post-service/**"
       - "backend/common/**"
       - ".github/workflows/ci-post.yml"
 
   push:
-    branches: [main, dev, release]
+    branches: [main]
     paths:
       - "backend/post-service/**"
       - "backend/common/**"

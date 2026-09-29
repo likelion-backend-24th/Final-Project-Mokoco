@@ -3,7 +3,7 @@ name: CI/CD to AWS EC2
 on:
   push:
     branches:
-      - release
+      - main
 
   # GitHub Actions 화면에서 수동 재배포도 가능하게
   workflow_dispatch:

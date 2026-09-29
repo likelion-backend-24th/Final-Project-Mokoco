@@ -2,14 +2,14 @@ name: Chat Service CI
 
 on:
   pull_request:
-    branches: [main, dev, release]
+    branches: [main]
     paths:
       - "backend/chat-service/**"
       - "backend/common/**"
       - ".github/workflows/ci-chat.yml"
 
   push:
-    branches: [main, dev, release]
+    branches: [main]
     paths:
       - "backend/chat-service/**"
       - "backend/common/**"
