@@ -4,8 +4,6 @@ on:
   pull_request:
     branches:
       - main
-      - dev
-      - release
     paths:
       - "backend/user-service/**"
       - "backend/common/**"
@@ -14,8 +12,6 @@ on:
   push:
     branches:
       - main
-      - dev
-      - release
     paths:
       - "backend/user-service/**"
       - "backend/common/**"

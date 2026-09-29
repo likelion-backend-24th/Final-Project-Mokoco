@@ -2,14 +2,14 @@ name: Payment Service CI
 
 on:
   pull_request:
-    branches: [main, dev, release]
+    branches: [main]
     paths:
       - "backend/payment-service/**"
       - "backend/common/**"
       - ".github/workflows/ci-payment.yml"
 
   push:
-    branches: [main, dev, release]
+    branches: [main]
     paths:
       - "backend/payment-service/**"
       - "backend/common/**"

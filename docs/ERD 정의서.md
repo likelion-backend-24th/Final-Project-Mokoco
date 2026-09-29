@@ -267,20 +267,21 @@ erDiagram
         bigint id PK
         bigint postId UK
         varchar portonePaymentId UK
-        bigint payerId
-        bigint payeeId
+        varchar payerEmail
+        varchar payeeEmail
         int amount
         int feeAmount
         int netAmount
-        varchar status "COMPLETED, FAILED"
+        varchar status "COMPLETED, FAILED, CANCELLED"
         datetime createdAt
         datetime paidAt
+        datetime settledAt "nullable, 정산 확정 시각"
     }
 
     User ||--o{ PaymentOrder : "payerId"
     User ||--o{ PaymentOrder : "payeeId"
-    User ||--o{ Payment : "payerId"
-    User ||--o{ Payment : "payeeId"
+    User ||--o{ Payment : "payerEmail"
+    User ||--o{ Payment : "payeeEmail"
 
     Post ||--o| PaymentOrder : "postId"
     FixDeal ||--o| PaymentOrder : "fixDealId"
@@ -320,10 +321,7 @@ erDiagram
         bigint requesterId "User Service User.id 논리 참조"
         bigint repairerId "User Service User.id 논리 참조"
         bigint postId "Post Service Post.id 논리 참조"
-        varchar postTitle "생성 시점 snapshot"
-        varchar status "enum: OPEN, CLOSED"
         datetime createdAt
-        datetime closedAt
     }
 
     ChatMessage {
@@ -331,7 +329,7 @@ erDiagram
         bigint chat_room_id FK
         bigint senderId "User Service User.id 논리 참조"
         text content
-        varchar messageType "enum: TEXT, IMAGE, VIDEO, FILE 등"
+        varchar messageType "enum: TEXT, IMAGE, VIDEO, SYSTEM"
         datetime createdAt
         datetime readAt
         varchar attachmentKey
